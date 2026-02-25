@@ -112,6 +112,17 @@ h1 {
     margin-top: 10px;
 }
 
+.menu-btn,
+.mode-btn,
+.choice-btn,
+.table-btn,
+.big-choice-btn {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
 .menu-btn:hover {
     transform: scale(1.05);
     box-shadow: 0 0 20px #ff00cc, 0 0 30px #6a00ff;
@@ -320,6 +331,14 @@ select:focus {
     gap: 10px;
     justify-content: center;
     margin-top: 8px;
+}
+
+#in-game-back-btn {
+    display: block;
+    width: min(92%, 520px);
+    margin: 10px auto 0;
+    position: relative;
+    z-index: 5;
 }
 
 .choice-btn {
@@ -1071,11 +1090,13 @@ body.bg-home #end-screen {
     }
 
     .result-tool-buttons .menu-btn,
+    #in-game-back-btn,
     #play-again-btn,
     #back-home-btn {
         width: 100%;
         max-width: none;
         margin-top: 8px;
+        min-height: 48px;
     }
 
     #certificate-preview {
@@ -1217,6 +1238,14 @@ body.bg-home #end-screen {
 }
 
 @media (hover: none) and (pointer: coarse) {
+    .menu-btn:hover,
+    .mode-btn:hover,
+    .choice-btn:hover,
+    .table-btn:hover,
+    .big-choice-btn:hover {
+        transform: none;
+    }
+
     #quiz-mobile-controls,
     #arcade-mobile-controls {
         display: flex;
