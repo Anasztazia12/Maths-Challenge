@@ -211,6 +211,40 @@ select:focus {
     box-shadow: 0 0 15px #ff00cc;
 }
 
+.mode-buttons {
+    width: 90%;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+}
+
+.mode-btn {
+    flex: 1 1 120px;
+    min-width: 120px;
+    padding: 10px;
+    border-radius: 10px;
+    border: 2px solid #ff00cc;
+    background: black;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.mode-btn:hover {
+    transform: scale(1.02);
+    box-shadow: 0 0 10px #ff00cc;
+}
+
+.mode-btn.selected {
+    background: linear-gradient(90deg, #ff00cc, #6a00ff);
+    box-shadow: 0 0 12px #ff00cc;
+    border-color: #ffd700;
+}
+
 /* ============================
    GAME UI
    ============================ */
@@ -1056,6 +1090,20 @@ body.bg-home #end-screen {
 
     .certificate-highlight {
         font-size: 13px;
+    }
+
+    .mode-buttons {
+        width: 100%;
+        gap: 6px;
+        flex-wrap: nowrap;
+    }
+
+    .mode-btn {
+        flex: 1 1 0;
+        min-width: 0;
+        padding: 8px 6px;
+        font-size: 12px;
+        line-height: 1.2;
     }
 }
 

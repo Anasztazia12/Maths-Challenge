@@ -554,6 +554,7 @@ function renderEndScreenFromData(data, playAgainTarget, backTarget) {
     if (!data || !endScreen) return;
 
     if (counterEl) counterEl.style.display = "none";
+    if (timerWrapEl) timerWrapEl.classList.add("hidden");
     if (questionEl) questionEl.style.display = "none";
     if (inputContainer) inputContainer.style.display = "none";
     if (multipleContainer) multipleContainer.style.display = "none";
@@ -634,6 +635,7 @@ function showEndScreen() {
     const backTarget = isWeekly ? "weekly.html" : "index.html";
 
     if (counterEl) counterEl.style.display = "none";
+    if (timerWrapEl) timerWrapEl.classList.add("hidden");
     if (questionEl) questionEl.style.display = "none";
     if (inputContainer) inputContainer.style.display = "none";
     if (multipleContainer) multipleContainer.style.display = "none";

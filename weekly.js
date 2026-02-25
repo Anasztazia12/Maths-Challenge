@@ -252,7 +252,8 @@ function startWeeklyTask() {
         return;
     }
 
-    const mode = document.getElementById("weekly-mode").value;
+    const modeButtonsWrap = document.getElementById("weekly-mode-buttons");
+    const mode = modeButtonsWrap?.dataset.selected || "input";
     const diff = document.getElementById("weekly-difficulty").value;
     const op = document.getElementById("weekly-operation").value;
 

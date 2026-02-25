@@ -24,10 +24,10 @@
             <h2>Math Quiz</h2>
             <div class="section">
                 <h2>Game Mode</h2>
-                <select id="game-mode">
-                    <option value="input">Type Answer</option>
-                    <option value="multiple">Multiple Choice</option>
-                </select>
+                <div id="game-mode-buttons" class="mode-buttons" data-selected="input">
+                    <button type="button" class="mode-btn selected" data-value="input">Type Answer</button>
+                    <button type="button" class="mode-btn" data-value="multiple">Multiple Choice</button>
+                </div>
             </div>
 
             <div class="section">
@@ -120,6 +120,16 @@
         const startQuizBtn = document.getElementById("start-quiz-btn");
         const quizBackBtn = document.getElementById("quiz-back-btn");
         const runnerBackBtn = document.getElementById("runner-back-btn");
+        const gameModeButtonsWrap = document.getElementById("game-mode-buttons");
+        const gameModeButtons = gameModeButtonsWrap ? gameModeButtonsWrap.querySelectorAll(".mode-btn") : [];
+
+        gameModeButtons.forEach((button) => {
+            button.addEventListener("click", () => {
+                gameModeButtonsWrap.dataset.selected = button.dataset.value;
+                gameModeButtons.forEach((btn) => btn.classList.remove("selected"));
+                button.classList.add("selected");
+            });
+        });
 
         function openMenu() {
             playChoicePanel.classList.remove("hidden");
@@ -144,7 +154,7 @@
         openMenu();
 
         startQuizBtn.addEventListener("click", () => {
-            const mode = document.getElementById("game-mode").value;
+            const mode = gameModeButtonsWrap?.dataset.selected || "input";
             const op = document.getElementById("operation").value;
             const diff = document.getElementById("quiz-difficulty").value;
             location.href = `play.html?mode=${mode}&op=${op}&diff=${diff}`;

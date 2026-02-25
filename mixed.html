@@ -26,10 +26,10 @@
         <!-- Game mode selection -->
         <div class="section">
             <h2>Game Mode</h2>
-            <select id="mode">
-                <option value="input">Type Answer</option>
-                <option value="multiple">Multiple Choice</option>
-            </select>
+            <div id="mode-buttons" class="mode-buttons" data-selected="input">
+                <button type="button" class="mode-btn selected" data-value="input">Type Answer</button>
+                <button type="button" class="mode-btn" data-value="multiple">Multiple Choice</button>
+            </div>
         </div>
 
         <!-- Start buttons -->
@@ -38,9 +38,24 @@
     </div>
 
     <script>
+        const modeButtonsWrap = document.getElementById("mode-buttons");
+        const modeButtons = modeButtonsWrap ? modeButtonsWrap.querySelectorAll(".mode-btn") : [];
+
+        modeButtons.forEach((button) => {
+            button.addEventListener("click", () => {
+                modeButtonsWrap.dataset.selected = button.dataset.value;
+                modeButtons.forEach((btn) => btn.classList.remove("selected"));
+                button.classList.add("selected");
+            });
+        });
+
+        function getSelectedMode() {
+            return modeButtonsWrap?.dataset.selected || "input";
+        }
+
         function startMixed() {
             const diff = document.getElementById("difficulty").value;
-            const mode = document.getElementById("mode").value;
+            const mode = getSelectedMode();
 
             // Redirect to play.html with parameters
             location.href = `play.html?mode=${mode}&op=mixed&diff=${diff}`;
