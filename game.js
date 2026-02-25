@@ -1,11 +1,23 @@
-// URL paraméterek
+// URL parameters
 const urlParams = new URLSearchParams(window.location.search);
-const mode = urlParams.get("mode");        // input vagy multiple
+const mode = urlParams.get("mode");        // input or multiple
 const op = urlParams.get("op");            // addition, subtraction, multiplication, division, mixed
 const diff = urlParams.get("diff");        // easy, medium, hard
+const tablesParam = urlParams.get("tables") || "";
 const isWeekly = urlParams.get("weekly") === "1";
 
-// DOM elemek
+const selectedTables = tablesParam
+    .split(",")
+    .map((item) => Number(item.trim()))
+    .filter((num) => Number.isInteger(num) && num >= 1 && num <= 12);
+
+function randomFromTables() {
+    if (selectedTables.length === 0) return rand(12);
+    const index = Math.floor(Math.random() * selectedTables.length);
+    return selectedTables[index];
+}
+
+// DOM elements
 const questionEl = document.getElementById("question");
 const counterEl = document.getElementById("counter");
 const inputContainer = document.getElementById("input-container");
@@ -18,13 +30,49 @@ const quizSubmitBtn = document.getElementById("quiz-submit-btn");
 const endScreen = document.getElementById("end-screen");
 const resultSummaryEl = document.getElementById("result-summary");
 const resultListEl = document.getElementById("result-list");
+const resultBadgeEl = document.getElementById("result-badge");
+const studentNameInput = document.getElementById("student-name");
+const saveResultBtn = document.getElementById("save-result-btn");
+const printResultBtn = document.getElementById("print-result-btn");
 
-// Hangok
+let lastResultData = null;
+
+function getCurrentDateLabel() {
+    return new Date().toLocaleDateString();
+}
+
+// Sounds
 const correctSound = document.getElementById("correct-sound");
 const wrongSound = document.getElementById("wrong-sound");
 
-// Állapot
-let currentQuestion = 0;  // Kezdő kérdés
+let quizAudioUnlocked = false;
+
+function unlockQuizAudio() {
+    if (quizAudioUnlocked) return;
+    quizAudioUnlocked = true;
+
+    [correctSound, wrongSound].forEach((sound) => {
+        if (!sound) return;
+        sound.volume = 0;
+        const playPromise = sound.play();
+        if (playPromise && typeof playPromise.then === "function") {
+            playPromise
+                .then(() => {
+                    sound.pause();
+                    sound.currentTime = 0;
+                    sound.volume = 1;
+                })
+                .catch(() => {
+                    sound.volume = 1;
+                });
+        } else {
+            sound.volume = 1;
+        }
+    });
+}
+
+// State
+let currentQuestion = 0;  // Starting question
 let correctAnswer = 0;
 let currentExpression = "";
 const questionResults = [];
@@ -37,19 +85,35 @@ function getResultRating(correctCount, totalCount) {
     return "Keep practicing!";
 }
 
-// Nehézségi szintek
+function getBadgeLevel(correctCount, totalCount) {
+    if (correctCount === totalCount && totalCount > 0) return { label: "Gold Badge", className: "badge-gold" };
+    if (correctCount >= 16) return { label: "Silver Badge", className: "badge-silver" };
+    if (correctCount >= 10) return { label: "Bronze Badge", className: "badge-bronze" };
+    return { label: "Practice Badge", className: "badge-practice" };
+}
+
+function sanitizeHtml(text) {
+    return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+// Difficulty levels
 const ranges = {
     easy: 20,
     medium: 60,
     hard: 150
 };
 
-// Véletlenszám generálása
+// Random number generator
 function rand(max) {
     return Math.floor(Math.random() * max) + 1;
 }
 
-// Új kérdés generálása
+// Generate new question
 function generateQuestion() {
     if (currentQuestion >= 20) {
         showEndScreen();
@@ -74,11 +138,15 @@ function generateQuestion() {
             questionEl.innerText = `${currentExpression} = ?`;
             break;
         case "multiplication":
+            a = randomFromTables();
+            b = rand(12);
             correctAnswer = a * b;
             currentExpression = `${a} × ${b}`;
             questionEl.innerText = `${currentExpression} = ?`;
             break;
         case "division":
+            b = randomFromTables();
+            a = rand(12);
             correctAnswer = a;
             let product = a * b;
             currentExpression = `${product} ÷ ${b}`;
@@ -111,7 +179,7 @@ function generateQuestion() {
     if (mode === "multiple") setupMultipleChoice();
 }
 
-// Multiple choice beállítása
+// Multiple choice setup
 function setupMultipleChoice() {
     let answers = [correctAnswer];
     while (answers.length < 3) {
@@ -126,7 +194,7 @@ function setupMultipleChoice() {
     });
 }
 
-// Ellenőrzés
+// Check answer
 function checkAnswer(value) {
     const rawInput = mode === "input" ? answerInput.value.trim() : String(value);
     if (mode === "input" && rawInput === "") return;
@@ -148,7 +216,7 @@ function checkAnswer(value) {
 
     answerInput.value = "";
 
-    // Következő kérdés vagy vége
+    // Next question or end
     if (currentQuestion < 20) {
         generateQuestion();
     } else {
@@ -162,7 +230,8 @@ function showEndScreen() {
         localStorage.setItem("weeklyTaskDone", "1");
     }
 
-    const replayQuery = `mode=${mode || "input"}&op=${op || "mixed"}&diff=${diff || "easy"}`;
+    const tablesQuery = tablesParam ? `&tables=${encodeURIComponent(tablesParam)}` : "";
+    const replayQuery = `mode=${mode || "input"}&op=${op || "mixed"}&diff=${diff || "easy"}${tablesQuery}`;
     const playAgainTarget = isWeekly ? "weekly.html" : `play.html?${replayQuery}`;
     const backTarget = isWeekly ? "weekly.html" : "index.html";
 
@@ -178,11 +247,27 @@ function showEndScreen() {
         const correctCount = questionResults.filter((item) => item.isCorrect).length;
         const total = questionResults.length;
         const rating = getResultRating(correctCount, total);
+        const badge = getBadgeLevel(correctCount, total);
+        const studentName = studentNameInput?.value?.trim() || "Player";
+
+        lastResultData = {
+            studentName,
+            correctCount,
+            total,
+            rating,
+            badge,
+            dateLabel: getCurrentDateLabel(),
+            results: [...questionResults]
+        };
 
         if (endTitle) endTitle.innerText = "Done!";
-        if (endText) endText.innerText = "You finished all 20 questions. Done!";
+        if (endText) endText.innerText = `You finished all ${total} questions. Done ${total}/${correctCount}.`;
         if (resultSummaryEl) {
-            resultSummaryEl.innerText = `Your result is ${total}/${correctCount} — ${rating}`;
+            resultSummaryEl.innerText = `Your result: ${total}/${correctCount} • Correct answers: ${correctCount}/${total} • ${rating}`;
+        }
+        if (resultBadgeEl) {
+            resultBadgeEl.innerText = badge.label;
+            resultBadgeEl.className = `result-badge ${badge.className}`;
         }
 
         if (resultListEl) {
@@ -211,13 +296,95 @@ function showEndScreen() {
     }
 }
 
-// OK gomb input módhoz
+function buildResultText(data) {
+    const lines = [
+        `Name: ${data.studentName}`,
+        `Date: ${data.dateLabel}`,
+        `Result: ${data.total}/${data.correctCount}`,
+        `Rating: ${data.rating}`,
+        `Badge: ${data.badge.label}`,
+        "",
+        "Question Details:"
+    ];
+
+    data.results.forEach((item) => {
+        const status = item.isCorrect ? "CORRECT" : `WRONG (Your answer: ${item.userAnswerLabel})`;
+        lines.push(`${item.index}. ${item.expression} = ${item.correctAnswer} -> ${status}`);
+    });
+
+    return lines.join("\n");
+}
+
+function saveResultToFile() {
+    if (!lastResultData) return;
+
+    const nameRaw = (studentNameInput?.value || lastResultData.studentName || "player").trim();
+    const safeName = (nameRaw || "player").replace(/[^a-zA-Z0-9_-]/g, "_");
+    const text = buildResultText({
+        ...lastResultData,
+        studentName: nameRaw || "Player",
+        dateLabel: getCurrentDateLabel()
+    });
+    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `math_result_${safeName}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+}
+
+function printResultSheet() {
+    if (!lastResultData) return;
+
+    const studentName = (studentNameInput?.value || lastResultData.studentName || "Player").trim() || "Player";
+    const data = { ...lastResultData, studentName, dateLabel: getCurrentDateLabel() };
+    const rows = data.results.map((item) => {
+        const color = item.isCorrect ? "#14532d" : "#7f1d1d";
+        const bg = item.isCorrect ? "#dcfce7" : "#fee2e2";
+        const tail = item.isCorrect ? "✓ Correct" : `✗ Your answer: ${sanitizeHtml(item.userAnswerLabel)}`;
+        return `<div style="padding:8px 10px;margin-bottom:6px;border-radius:8px;background:${bg};color:${color};font-size:14px;">
+            <strong>${item.index}. ${sanitizeHtml(item.expression)} = ${item.correctAnswer}</strong><br>
+            <span>${tail}</span>
+        </div>`;
+    }).join("");
+
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+
+    printWindow.document.write(`
+        <html>
+        <head>
+            <title>Result Sheet</title>
+        </head>
+        <body style="font-family:Arial,sans-serif;padding:24px;background:#f8fafc;color:#0f172a;">
+            <p style="margin:0 0 8px;"><strong>Name:</strong> ${sanitizeHtml(data.studentName)}</p>
+            <p style="margin:0 0 8px;"><strong>Date:</strong> ${sanitizeHtml(data.dateLabel)}</p>
+            <p style="margin:0 0 8px;"><strong>Done:</strong> ${data.total}/${data.correctCount}</p>
+            <p style="margin:0 0 8px;"><strong>Your result:</strong> ${data.total}/${data.correctCount} (${sanitizeHtml(data.rating)})</p>
+            <p style="margin:0 0 18px;"><strong>Badge:</strong> ${sanitizeHtml(data.badge.label)}</p>
+            <h2 style="margin:12px 0 10px;">Question Results</h2>
+            ${rows}
+        </body>
+        </html>
+    `);
+
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+}
+
+// OK button for input mode
 okBtn.onclick = () => {
     if (mode === "input") checkAnswer(Number(answerInput.value));
 };
 
 if (quizSubmitBtn) {
     quizSubmitBtn.onclick = () => {
+        unlockQuizAudio();
         if (mode === "input") checkAnswer(Number(answerInput.value));
     };
 }
@@ -228,7 +395,18 @@ if (quizClearBtn) {
     };
 }
 
-// Kezdeti megjelenítés
+window.addEventListener("pointerdown", unlockQuizAudio, { once: true });
+window.addEventListener("touchstart", unlockQuizAudio, { once: true });
+
+if (saveResultBtn) {
+    saveResultBtn.onclick = saveResultToFile;
+}
+
+if (printResultBtn) {
+    printResultBtn.onclick = printResultSheet;
+}
+
+// Initial display setup
 if (endScreen) endScreen.classList.add("hidden");
 
 if (mode === "multiple") {
@@ -239,5 +417,5 @@ if (mode === "multiple") {
     multipleContainer.style.display = "none";
 }
 
-// Első kérdés
+// First question
 generateQuestion();

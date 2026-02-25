@@ -15,17 +15,15 @@
     <div class="game-container arcade-container">
 
         <h1>Play Game</h1>
-        <p class="subtitle">Choose: classic math quiz or arcade math runner.</p>
+        <p class="subtitle">Pick one mode to start.</p>
 
-        <div class="section">
-            <h2>Play Style</h2>
-            <select id="play-style">
-                <option value="quiz" selected>Math Quiz</option>
-                <option value="arcade">Math Runner (Jump & Shoot)</option>
-            </select>
+        <div id="play-choice-panel" class="play-choice-grid">
+            <button class="big-choice-btn" id="open-quiz-btn">Math Quiz</button>
+            <button class="big-choice-btn special" id="open-runner-btn">Math Runner</button>
         </div>
 
-        <div id="quiz-panel">
+        <div id="quiz-panel" class="hidden">
+            <h2>Math Quiz</h2>
             <div class="section">
                 <h2>Game Mode</h2>
                 <select id="game-mode">
@@ -55,6 +53,7 @@
             </div>
 
             <button class="menu-btn special" id="start-quiz-btn">Start Quiz ▶</button>
+            <button class="menu-btn" id="quiz-back-btn">⬅ Back</button>
         </div>
 
         <div id="arcade-panel" class="hidden">
@@ -95,6 +94,8 @@
                 <p id="arcade-overlay-text">Your final score: 0</p>
                 <button class="menu-btn special" id="arcade-restart-btn">Restart ▶</button>
             </div>
+
+            <button class="menu-btn" id="runner-back-btn">⬅ Back</button>
         </div>
 
         <button class="menu-btn" onclick="location.href='index.html'">
@@ -104,24 +105,36 @@
     </div>
 
     <script>
-        const playStyleEl = document.getElementById("play-style");
+        const playChoicePanel = document.getElementById("play-choice-panel");
+        const openQuizBtn = document.getElementById("open-quiz-btn");
+        const openRunnerBtn = document.getElementById("open-runner-btn");
         const quizPanel = document.getElementById("quiz-panel");
         const arcadePanel = document.getElementById("arcade-panel");
         const startQuizBtn = document.getElementById("start-quiz-btn");
+        const quizBackBtn = document.getElementById("quiz-back-btn");
+        const runnerBackBtn = document.getElementById("runner-back-btn");
 
-        function updatePlayStyle() {
-            const style = playStyleEl.value;
-            if (style === "quiz") {
-                quizPanel.classList.remove("hidden");
-                arcadePanel.classList.add("hidden");
-            } else {
-                quizPanel.classList.add("hidden");
-                arcadePanel.classList.remove("hidden");
-            }
+        function openMenu() {
+            playChoicePanel.classList.remove("hidden");
+            quizPanel.classList.add("hidden");
+            arcadePanel.classList.add("hidden");
         }
 
-        playStyleEl.addEventListener("change", updatePlayStyle);
-        updatePlayStyle();
+        openQuizBtn.addEventListener("click", () => {
+            playChoicePanel.classList.add("hidden");
+            quizPanel.classList.remove("hidden");
+            arcadePanel.classList.add("hidden");
+        });
+
+        openRunnerBtn.addEventListener("click", () => {
+            playChoicePanel.classList.add("hidden");
+            quizPanel.classList.add("hidden");
+            arcadePanel.classList.remove("hidden");
+        });
+
+        quizBackBtn.addEventListener("click", openMenu);
+        runnerBackBtn.addEventListener("click", openMenu);
+        openMenu();
 
         startQuizBtn.addEventListener("click", () => {
             const mode = document.getElementById("game-mode").value;

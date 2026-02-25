@@ -12,7 +12,6 @@ if (arcadeCanvas) {
     const arcadeOverlayText = document.getElementById("arcade-overlay-text");
     const arcadeRestartBtn = document.getElementById("arcade-restart-btn");
     const arcadeDifficultyEl = document.getElementById("arcade-difficulty");
-    const playStyleEl = document.getElementById("play-style");
     const arcadeJumpBtn = document.getElementById("arcade-jump-btn");
     const arcadeShootBtn = document.getElementById("arcade-shoot-btn");
 
@@ -61,6 +60,8 @@ if (arcadeCanvas) {
         enemies: [],
         bullets: [],
         enemyBullets: [],
+        aimAngle: -0.08,
+        aimTarget: null,
         spawnAppleTick: 0,
         spawnHazardTick: 0,
         spawnEnemyTick: 0,
@@ -69,6 +70,62 @@ if (arcadeCanvas) {
         messageUntil: 0,
         messageText: ""
     };
+
+    function getMuzzlePosition() {
+        return {
+            x: player.x + player.width - 2,
+            y: player.y + player.height * 0.45
+        };
+    }
+
+    function updateAim() {
+        const muzzle = getMuzzlePosition();
+        const candidates = [];
+
+        state.apples.forEach((apple) => {
+            if (apple.x > muzzle.x - 10) {
+                candidates.push({ x: apple.x, y: apple.y, priority: 1 });
+            }
+        });
+
+        state.enemies.forEach((enemy) => {
+            if (enemy.x + enemy.width > muzzle.x - 10) {
+                candidates.push({ x: enemy.x + enemy.width * 0.5, y: enemy.y + enemy.height * 0.5, priority: 0.85 });
+            }
+        });
+
+        const breakable = state.obstacles.filter((obstacle) => obstacle.breakable);
+        breakable.forEach((obstacle) => {
+            if (obstacle.x + obstacle.width > muzzle.x - 10) {
+                candidates.push({ x: obstacle.x + obstacle.width * 0.5, y: obstacle.y + obstacle.height * 0.5, priority: 0.92 });
+            }
+        });
+
+        if (candidates.length === 0) {
+            state.aimTarget = null;
+            state.aimAngle = -0.08;
+            return;
+        }
+
+        let best = candidates[0];
+        let bestScore = Number.POSITIVE_INFINITY;
+
+        for (const target of candidates) {
+            const dx = target.x - muzzle.x;
+            const dy = target.y - muzzle.y;
+            const distance = Math.hypot(dx, dy);
+            const score = distance * target.priority;
+
+            if (score < bestScore) {
+                best = target;
+                bestScore = score;
+            }
+        }
+
+        state.aimTarget = best;
+        const angle = Math.atan2(best.y - muzzle.y, best.x - muzzle.x);
+        state.aimAngle = Math.max(-0.75, Math.min(0.38, angle));
+    }
 
     function playTone(freq, duration, type = "sine", volume = 0.05) {
         if (!audioCtx) return;
@@ -185,20 +242,34 @@ if (arcadeCanvas) {
         const spawnX = world.width + 100 + randInt(0, 120);
 
         if (makePlatform) {
-            state.platforms.push({
-                x: spawnX,
-                y: world.groundY - randInt(82, 140),
-                width: randInt(90, 140),
-                height: 18
-            });
+            const count = Math.random() < 0.45 ? 2 : 1;
+            for (let i = 0; i < count; i++) {
+                state.platforms.push({
+                    x: spawnX + i * randInt(68, 92),
+                    y: world.groundY - randInt(82, 140),
+                    width: randInt(86, 136),
+                    height: 18
+                });
+            }
             return;
         }
 
+        const obstacleTypeRoll = Math.random();
+        let type = "spike";
+        if (obstacleTypeRoll < 0.42) type = "crate";
+        else if (obstacleTypeRoll < 0.78) type = "block";
+
+        const height = type === "spike" ? randInt(20, 42) : randInt(28, 64);
+        const width = type === "spike" ? randInt(26, 46) : randInt(30, 64);
+
         state.obstacles.push({
             x: spawnX,
-            y: world.groundY - randInt(22, 62),
-            width: randInt(24, 60),
-            height: randInt(22, 62)
+            y: world.groundY - height,
+            width,
+            height,
+            type,
+            breakable: type === "crate",
+            standable: type !== "spike"
         });
     }
 
@@ -266,12 +337,17 @@ if (arcadeCanvas) {
         if (!world.running) return;
         if (state.shootCooldown > 0) return;
 
+        updateAim();
+        const muzzle = getMuzzlePosition();
+        const bulletSpeed = 8.6;
+
         state.shootCooldown = 14;
         state.bullets.push({
-            x: player.x + player.width - 2,
-            y: player.y + player.height * 0.45,
-            radius: 5,
-            vx: 8.3
+            x: muzzle.x,
+            y: muzzle.y,
+            radius: 7,
+            vx: Math.cos(state.aimAngle) * bulletSpeed,
+            vy: Math.sin(state.aimAngle) * bulletSpeed
         });
         playShootSound();
     }
@@ -311,14 +387,31 @@ if (arcadeCanvas) {
                 player.onGround = true;
             }
         }
+
+        for (const obstacle of state.obstacles) {
+            if (!obstacle.standable) continue;
+
+            const onTop = previousBottom <= obstacle.y
+                && player.y + player.height >= obstacle.y
+                && player.x + player.width > obstacle.x + 4
+                && player.x < obstacle.x + obstacle.width - 4
+                && player.velocityY >= 0;
+
+            if (onTop) {
+                player.y = obstacle.y - player.height;
+                player.velocityY = 0;
+                player.onGround = true;
+            }
+        }
     }
 
     function update() {
         if (!world.running) return;
-        if (playStyleEl && playStyleEl.value !== "arcade") return;
+        if (document.getElementById("arcade-panel")?.classList.contains("hidden")) return;
 
         world.frame++;
         if (state.shootCooldown > 0) state.shootCooldown--;
+        updateAim();
 
         updatePlayerPhysics();
 
@@ -354,14 +447,17 @@ if (arcadeCanvas) {
             }
         });
 
-        state.bullets.forEach((bullet) => { bullet.x += bullet.vx; });
+        state.bullets.forEach((bullet) => {
+            bullet.x += bullet.vx;
+            bullet.y += bullet.vy;
+        });
         state.enemyBullets.forEach((bullet) => { bullet.x += bullet.vx; });
 
         state.apples = state.apples.filter((apple) => apple.x > -90);
         state.obstacles = state.obstacles.filter((obstacle) => obstacle.x > -100);
         state.platforms = state.platforms.filter((platform) => platform.x + platform.width > -100);
         state.enemies = state.enemies.filter((enemy) => enemy.x + enemy.width > -120);
-        state.bullets = state.bullets.filter((bullet) => bullet.x < world.width + 80);
+        state.bullets = state.bullets.filter((bullet) => bullet.x < world.width + 80 && bullet.y > -80 && bullet.y < world.height + 80);
         state.enemyBullets = state.enemyBullets.filter((bullet) => bullet.x > -80);
 
         for (const apple of state.apples) {
@@ -382,30 +478,86 @@ if (arcadeCanvas) {
             }
         }
 
-        for (const bullet of state.bullets) {
-            for (const apple of state.apples) {
+        for (let bulletIndex = state.bullets.length - 1; bulletIndex >= 0; bulletIndex--) {
+            const bullet = state.bullets[bulletIndex];
+            let hitSomething = false;
+
+            for (let appleIndex = state.apples.length - 1; appleIndex >= 0; appleIndex--) {
+                const apple = state.apples[appleIndex];
                 const dx = bullet.x - apple.x;
                 const dy = bullet.y - apple.y;
-                if (dx * dx + dy * dy <= (bullet.radius + apple.radius) ** 2) {
-                    apple.x = -999;
-                    bullet.x = world.width + 999;
-                    showMessage("Apple removed", 520);
+                const hitRadius = bullet.radius + apple.radius + 3;
+
+                if (dx * dx + dy * dy <= hitRadius * hitRadius) {
+                    state.apples.splice(appleIndex, 1);
+                    state.bullets.splice(bulletIndex, 1);
+                    playCollectSound();
+                    showMessage("Number shot away", 620);
+                    hitSomething = true;
+                    break;
                 }
             }
 
-            for (const enemy of state.enemies) {
+            if (hitSomething) continue;
+
+            for (let enemyIndex = state.enemies.length - 1; enemyIndex >= 0; enemyIndex--) {
+                const enemy = state.enemies[enemyIndex];
                 if (intersectsCircleRect(bullet.x, bullet.y, bullet.radius, enemy.x, enemy.y, enemy.width, enemy.height)) {
-                    enemy.x = -999;
-                    bullet.x = world.width + 999;
+                    state.enemies.splice(enemyIndex, 1);
+                    state.bullets.splice(bulletIndex, 1);
                     playCollectSound();
                     showMessage("Enemy down", 700);
+                    hitSomething = true;
+                    break;
                 }
+            }
+
+            if (hitSomething) continue;
+
+            for (let obstacleIndex = state.obstacles.length - 1; obstacleIndex >= 0; obstacleIndex--) {
+                const obstacle = state.obstacles[obstacleIndex];
+                if (!intersectsCircleRect(bullet.x, bullet.y, bullet.radius, obstacle.x, obstacle.y, obstacle.width, obstacle.height)) continue;
+
+                state.bullets.splice(bulletIndex, 1);
+
+                if (obstacle.breakable) {
+                    state.obstacles.splice(obstacleIndex, 1);
+                    playCollectSound();
+                    showMessage("Crate destroyed", 650);
+                }
+
+                break;
             }
         }
 
         if (performance.now() > state.invincibleUntil) {
             for (const obstacle of state.obstacles) {
-                if (intersectsRect(player.x, player.y, player.width, player.height, obstacle.x, obstacle.y, obstacle.width, obstacle.height)) {
+                const playerHitX = player.x + 6;
+                const playerHitY = player.y + 6;
+                const playerHitW = player.width - 12;
+                const playerHitH = player.height - 8;
+
+                const obstacleHitX = obstacle.x + 3;
+                const obstacleHitY = obstacle.y + 2;
+                const obstacleHitW = Math.max(4, obstacle.width - 6);
+                const obstacleHitH = Math.max(4, obstacle.height - 4);
+
+                const touching = intersectsRect(
+                    playerHitX,
+                    playerHitY,
+                    playerHitW,
+                    playerHitH,
+                    obstacleHitX,
+                    obstacleHitY,
+                    obstacleHitW,
+                    obstacleHitH
+                );
+
+                const standingOnTop = player.y + player.height <= obstacle.y + 3
+                    && player.x + player.width > obstacle.x + 4
+                    && player.x < obstacle.x + obstacle.width - 4;
+
+                if (touching && !(obstacle.standable && standingOnTop)) {
                     loseLife("You hit an obstacle.");
                     return;
                 }
@@ -532,10 +684,35 @@ if (arcadeCanvas) {
         });
 
         state.obstacles.forEach((obstacle) => {
-            arcadeCtx.fillStyle = "#6b336f";
+            if (obstacle.type === "spike") {
+                arcadeCtx.fillStyle = "#ff7b7b";
+                arcadeCtx.beginPath();
+                arcadeCtx.moveTo(obstacle.x, obstacle.y + obstacle.height);
+                arcadeCtx.lineTo(obstacle.x + obstacle.width * 0.5, obstacle.y);
+                arcadeCtx.lineTo(obstacle.x + obstacle.width, obstacle.y + obstacle.height);
+                arcadeCtx.closePath();
+                arcadeCtx.fill();
+                return;
+            }
+
+            if (obstacle.type === "crate") {
+                arcadeCtx.fillStyle = "#8b5a2b";
+                arcadeCtx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+                arcadeCtx.strokeStyle = "#c99658";
+                arcadeCtx.strokeRect(obstacle.x + 3, obstacle.y + 3, obstacle.width - 6, obstacle.height - 6);
+                arcadeCtx.beginPath();
+                arcadeCtx.moveTo(obstacle.x + 4, obstacle.y + 4);
+                arcadeCtx.lineTo(obstacle.x + obstacle.width - 4, obstacle.y + obstacle.height - 4);
+                arcadeCtx.moveTo(obstacle.x + obstacle.width - 4, obstacle.y + 4);
+                arcadeCtx.lineTo(obstacle.x + 4, obstacle.y + obstacle.height - 4);
+                arcadeCtx.stroke();
+                return;
+            }
+
+            arcadeCtx.fillStyle = "#5f45a9";
             arcadeCtx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
-            arcadeCtx.fillStyle = "#f4be4f";
-            arcadeCtx.fillRect(obstacle.x + 5, obstacle.y + 5, Math.max(8, obstacle.width - 10), 5);
+            arcadeCtx.fillStyle = "#c6b2ff";
+            arcadeCtx.fillRect(obstacle.x + 4, obstacle.y + 4, Math.max(8, obstacle.width - 8), 5);
         });
     }
 
@@ -569,12 +746,39 @@ if (arcadeCanvas) {
         });
     }
 
+    function drawAimLine() {
+        const muzzle = getMuzzlePosition();
+        const lineLength = 180;
+        const endX = muzzle.x + Math.cos(state.aimAngle) * lineLength;
+        const endY = muzzle.y + Math.sin(state.aimAngle) * lineLength;
+
+        arcadeCtx.save();
+        arcadeCtx.strokeStyle = "rgba(255, 228, 94, 0.65)";
+        arcadeCtx.setLineDash([7, 6]);
+        arcadeCtx.lineWidth = 2;
+        arcadeCtx.beginPath();
+        arcadeCtx.moveTo(muzzle.x, muzzle.y);
+        arcadeCtx.lineTo(endX, endY);
+        arcadeCtx.stroke();
+        arcadeCtx.setLineDash([]);
+
+        if (state.aimTarget) {
+            arcadeCtx.strokeStyle = "rgba(140, 255, 214, 0.85)";
+            arcadeCtx.lineWidth = 2;
+            arcadeCtx.beginPath();
+            arcadeCtx.arc(state.aimTarget.x, state.aimTarget.y, 14, 0, Math.PI * 2);
+            arcadeCtx.stroke();
+        }
+        arcadeCtx.restore();
+    }
+
     function draw() {
         drawBackground();
         drawChallengeOverlay();
         drawPlatformsAndObstacles();
         drawEnemies();
         drawApples();
+        drawAimLine();
         drawBullets();
         drawBear();
     }

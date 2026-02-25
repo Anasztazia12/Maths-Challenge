@@ -12,16 +12,15 @@
 
     <div class="game-container">
         <h1>Division Practice</h1>
-        <p class="subtitle">Choose difficulty and start!</p>
+        <p class="subtitle">Choose one or more division tables (1-12).</p>
 
-        <!-- Difficulty selection -->
         <div class="section">
-            <h2>Difficulty</h2>
-            <select id="difficulty">
-                <option value="easy">Easy (1–12)</option>
-                <option value="medium">Medium (1–12)</option>
-                <option value="hard">Hard (1–12)</option>
-            </select>
+            <h2>Division Tables</h2>
+            <div id="table-buttons" class="tables-grid"></div>
+            <div class="table-actions">
+                <button class="menu-btn" id="select-all-btn" type="button">Select All</button>
+                <button class="menu-btn" id="clear-all-btn" type="button">Clear</button>
+            </div>
         </div>
 
         <!-- Game mode selection -->
@@ -39,12 +38,46 @@
     </div>
 
     <script>
-        function startDivision() {
-            const diff = document.getElementById("difficulty").value;
-            const mode = document.getElementById("mode").value;
+        const tableButtons = document.getElementById("table-buttons");
+        const selectedTables = new Set([1,2,3,4,5,6,7,8,9,10,11,12]);
 
-            // Átirányítás a play.html-re paraméterekkel
-            location.href = `play.html?mode=${mode}&op=division&diff=${diff}`;
+        function renderTableButtons() {
+            tableButtons.innerHTML = "";
+
+            for (let i = 1; i <= 12; i++) {
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = `table-btn ${selectedTables.has(i) ? "selected" : ""}`;
+                btn.innerText = String(i);
+                btn.onclick = () => {
+                    if (selectedTables.has(i)) selectedTables.delete(i);
+                    else selectedTables.add(i);
+                    renderTableButtons();
+                };
+                tableButtons.appendChild(btn);
+            }
+        }
+
+        document.getElementById("select-all-btn").onclick = () => {
+            selectedTables.clear();
+            for (let i = 1; i <= 12; i++) selectedTables.add(i);
+            renderTableButtons();
+        };
+
+        document.getElementById("clear-all-btn").onclick = () => {
+            selectedTables.clear();
+            renderTableButtons();
+        };
+
+        renderTableButtons();
+
+        function startDivision() {
+            const diff = "easy";
+            const mode = document.getElementById("mode").value;
+            const picked = selectedTables.size ? Array.from(selectedTables).sort((a,b)=>a-b) : [1,2,3,4,5,6,7,8,9,10,11,12];
+            const tables = picked.join(",");
+
+            location.href = `play.html?mode=${mode}&op=division&diff=${diff}&tables=${tables}`;
         }
     </script>
     <script src="sw-register.js"></script>
