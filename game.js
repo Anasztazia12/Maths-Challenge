@@ -104,6 +104,12 @@ function getCertificateHeadline(correctCount, totalCount, rating) {
     return `${rating} Result: ${correctCount}/${totalCount}`;
 }
 
+function addArcadeCoinsFromQuiz(correctCount) {
+    const current = Math.max(0, Number(localStorage.getItem("arcadeCoins") || 0));
+    const gained = Math.max(0, Number(correctCount) || 0);
+    localStorage.setItem("arcadeCoins", String(current + gained));
+}
+
 // Sounds
 const correctSound = document.getElementById("correct-sound");
 const wrongSound = document.getElementById("wrong-sound");
@@ -487,6 +493,8 @@ function showEndScreen() {
         const rating = getResultRating(correctCount, total);
         const badge = getBadgeLevel(correctCount, total);
         const studentName = studentNameInput?.value?.trim() || "Player";
+
+        addArcadeCoinsFromQuiz(correctCount);
 
         lastResultData = {
             studentName,

@@ -5,6 +5,7 @@ if (arcadeCanvas) {
     const arcadeBasketEl = document.getElementById("arcade-basket");
     const arcadeNeedEl = document.getElementById("arcade-need");
     const arcadeScoreEl = document.getElementById("arcade-score");
+    const arcadePointsEl = document.getElementById("arcade-points");
     const arcadeLivesEl = document.getElementById("arcade-lives");
     const arcadeComboEl = document.getElementById("arcade-combo");
     const arcadeCheckpointEl = document.getElementById("arcade-checkpoint");
@@ -15,6 +16,18 @@ if (arcadeCanvas) {
     const arcadeDifficultyEl = document.getElementById("arcade-difficulty");
     const arcadeJumpBtn = document.getElementById("arcade-jump-btn");
     const arcadeShootBtn = document.getElementById("arcade-shoot-btn");
+    const arcadeRulesEl = document.getElementById("arcade-rules");
+    const arcadeStartBtn = document.getElementById("arcade-start-btn");
+    const arcadeShopEl = document.getElementById("arcade-shop");
+    const arcadeShopPointsEl = document.getElementById("arcade-shop-points");
+    const shopWeaponBtn = document.getElementById("shop-weapon-btn");
+    const shopFurBrownBtn = document.getElementById("shop-fur-brown-btn");
+    const shopFurPinkBtn = document.getElementById("shop-fur-pink-btn");
+    const shopEyesSparkBtn = document.getElementById("shop-eyes-spark-btn");
+    const shopEarsRoundBtn = document.getElementById("shop-ears-round-btn");
+    const shopSmileBigBtn = document.getElementById("shop-smile-big-btn");
+    const shopContinueBtn = document.getElementById("shop-continue-btn");
+    const openRunnerBtn = document.getElementById("open-runner-btn");
 
     const ctx = arcadeCanvas.getContext("2d");
     const audioCtx = window.AudioContext ? new AudioContext() : null;
@@ -52,9 +65,34 @@ if (arcadeCanvas) {
         onGround: false
     };
 
+    const savedArcadeProfile = JSON.parse(localStorage.getItem("arcadeProfile") || "null") || {};
+
+    const profile = {
+        coins: Math.max(0, Number(savedArcadeProfile.coins) || Number(localStorage.getItem("arcadeCoins") || 0)),
+        weaponLevel: Math.max(1, Number(savedArcadeProfile.weaponLevel) || 1),
+        cosmetics: {
+            fur: savedArcadeProfile?.cosmetics?.fur || "brown",
+            eyes: savedArcadeProfile?.cosmetics?.eyes || "normal",
+            ears: savedArcadeProfile?.cosmetics?.ears || "normal",
+            smile: savedArcadeProfile?.cosmetics?.smile || "normal"
+        },
+        unlocked: {
+            furBrown: true,
+            furPink: Boolean(savedArcadeProfile?.unlocked?.furPink),
+            eyesSpark: Boolean(savedArcadeProfile?.unlocked?.eyesSpark),
+            earsRound: Boolean(savedArcadeProfile?.unlocked?.earsRound),
+            smileBig: Boolean(savedArcadeProfile?.unlocked?.smileBig)
+        }
+    };
+
+    function saveArcadeProfile() {
+        localStorage.setItem("arcadeCoins", String(profile.coins));
+        localStorage.setItem("arcadeProfile", JSON.stringify(profile));
+    }
+
     const state = {
         score: 0,
-        lives: 5,
+        lives: 10,
         combo: 0,
         bestCombo: 0,
         nextCheckpoint: 5,
@@ -62,6 +100,8 @@ if (arcadeCanvas) {
         levelDistance: 0,
         levelGoal: 1350,
         basket: 0,
+        awaitingStart: true,
+        awaitingNextField: false,
         challenge: null,
         apples: [],
         platforms: [],
@@ -121,7 +161,7 @@ if (arcadeCanvas) {
     }
 
     function formatHeartLives() {
-        const maxHearts = 5;
+        const maxHearts = 10;
         let value = Math.max(0, Math.min(maxHearts, state.lives));
         let text = "";
 
@@ -225,13 +265,14 @@ if (arcadeCanvas) {
 
     function resetGame() {
         state.score = 0;
-        state.lives = 5;
+        state.lives = 10;
         state.combo = 0;
         state.bestCombo = 0;
         state.nextCheckpoint = 5;
         state.level = 1;
         state.powerShotUntil = 0;
         state.invincibleUntil = 0;
+        state.awaitingNextField = false;
         world.running = true;
         if (arcadeOverlay) arcadeOverlay.classList.add("hidden");
         startLevel(false);
@@ -244,7 +285,8 @@ if (arcadeCanvas) {
         if (arcadeBasketEl) arcadeBasketEl.style.display = "none";
         if (arcadeNeedEl) arcadeNeedEl.style.display = "none";
         if (arcadeScoreEl) arcadeScoreEl.innerText = `Score: ${state.score}`;
-        if (arcadeLivesEl) arcadeLivesEl.innerText = `Lives: ${formatHeartLives()} (${formatLives()}/5)`;
+        if (arcadePointsEl) arcadePointsEl.innerText = `Points: ${profile.coins}`;
+        if (arcadeLivesEl) arcadeLivesEl.innerText = `Lives: ${formatHeartLives()} (${formatLives()}/10)`;
         if (arcadeComboEl) arcadeComboEl.innerText = `Combo: x${state.combo}`;
         if (arcadeCheckpointEl) arcadeCheckpointEl.innerText = `Field ${state.level} • Finish ${progress}%`;
     }
@@ -259,6 +301,16 @@ if (arcadeCanvas) {
 
     function addScore(delta) {
         state.score = Math.max(0, state.score + delta);
+    }
+
+    function addCoins(delta) {
+        profile.coins = Math.max(0, profile.coins + delta);
+        saveArcadeProfile();
+    }
+
+    function appleColorByValue(value) {
+        const palette = ["#ff7a59", "#7c3aed", "#06b6d4", "#f59e0b", "#10b981", "#ec4899", "#3b82f6", "#a855f7", "#eab308", "#14b8a6", "#ef4444", "#22c55e"];
+        return palette[Math.abs(value) % palette.length];
     }
 
     function hasNeededAppleOnField() {
@@ -421,7 +473,7 @@ if (arcadeCanvas) {
     }
 
     function addHalfLife() {
-        state.lives = Math.min(5, Math.round((state.lives + 0.5) * 2) / 2);
+        state.lives = Math.min(10, Math.round((state.lives + 0.5) * 2) / 2);
     }
 
     function loseLife(amount, reason) {
@@ -446,20 +498,21 @@ if (arcadeCanvas) {
 
     function completeMathGoal(source) {
         addScore(3);
+        addCoins(1);
+        addHalfLife();
         state.combo += 1;
         state.bestCombo = Math.max(state.bestCombo, state.combo);
 
         if (source === "shot") {
-            addHalfLife();
             state.enemies = [];
             state.enemyBullets = [];
             showMessage("Perfect shot! +0.5 life", 1100);
         } else {
-            showMessage("Goal completed", 850);
+            showMessage("Correct! +0.5 life", 900);
         }
 
         if (state.score >= state.nextCheckpoint) {
-            state.lives += 1;
+            state.lives = Math.min(10, state.lives + 1);
             state.nextCheckpoint += 5;
             showMessage("Checkpoint! +1 life", 1200);
         }
@@ -478,11 +531,13 @@ if (arcadeCanvas) {
 
         state.shootCooldown = 12;
         const powered = hasPowerShot();
+        const baseRadius = 7 + (profile.weaponLevel - 1);
+        const baseSpeed = 9.2 + (profile.weaponLevel - 1) * 0.4;
         state.bullets.push({
             x: player.x + player.width - 2,
             y: player.y + player.height * 0.45,
-            radius: powered ? 11 : 7,
-            vx: powered ? 11.2 : 9.2,
+            radius: powered ? baseRadius + 4 : baseRadius,
+            vx: powered ? baseSpeed + 2 : baseSpeed,
             vy: 0,
             power: powered,
             piercing: powered
@@ -681,7 +736,8 @@ if (arcadeCanvas) {
             }
             if (state.basket > state.challenge.target) {
                 addScore(-1);
-                loseLife(1, "Too much collected.");
+                addCoins(-1);
+                loseLife(0.5, "Too much collected.");
                 state.basket = 0;
                 showMessage("Wrong total! Try again.", 900);
                 updateHud();
@@ -704,6 +760,7 @@ if (arcadeCanvas) {
                 showMessage("Power shot ready!", 900);
             } else {
                 addHalfLife();
+                addCoins(1);
                 showMessage("Life pickup +0.5", 900);
             }
 
@@ -724,6 +781,7 @@ if (arcadeCanvas) {
             player.vy = player.jumpPower * 0.62;
             player.onGround = false;
             addScore(2);
+            addCoins(1);
             state.combo += 1;
             state.bestCombo = Math.max(state.bestCombo, state.combo);
             showMessage("Enemy stomped!", 760);
@@ -760,6 +818,7 @@ if (arcadeCanvas) {
                     completeMathGoal("shot");
                 } else {
                     addScore(-1);
+                    addCoins(-1);
                     playWrongPickSound();
                     loseLife(0.5, "Wrong number shot.");
                     showMessage("Wrong number shot", 900);
@@ -783,6 +842,7 @@ if (arcadeCanvas) {
                 if (enemy.hp <= 0) {
                     state.enemies.splice(enemyIndex, 1);
                     addScore(1);
+                    addCoins(1);
                     showMessage("Enemy defeated", 650);
                 } else {
                     showMessage(`Enemy hit (${enemy.hp} left)`, 520);
@@ -854,12 +914,17 @@ if (arcadeCanvas) {
         state.levelDistance += world.speed;
         if (state.levelDistance < state.levelGoal) return;
 
-        showMessage(`NEW FIELD! ${state.level + 1}`, 1500);
-        startLevel(true);
+        if (!state.awaitingNextField) {
+            state.awaitingNextField = true;
+            world.running = false;
+            if (arcadeShopPointsEl) arcadeShopPointsEl.innerText = `Points: ${profile.coins}`;
+            arcadeShopEl?.classList.remove("hidden");
+            showMessage(`NEW FIELD! ${state.level + 1}`, 1500);
+        }
     }
 
     function update() {
-        if (!world.running) return;
+        if (!world.running || state.awaitingStart) return;
         if (document.getElementById("arcade-panel")?.classList.contains("hidden")) return;
 
         world.frame += 1;
@@ -956,14 +1021,18 @@ if (arcadeCanvas) {
         if (blink) return;
 
         const cx = player.x + player.width * 0.5;
-        ctx.fillStyle = "#9b6b42";
+        const furMain = profile.cosmetics.fur === "pink" ? "#d977b3" : "#9b6b42";
+        const furDark = profile.cosmetics.fur === "pink" ? "#b45595" : "#7a5233";
+        const paws = profile.cosmetics.fur === "pink" ? "#9a3f77" : "#74482b";
+
+        ctx.fillStyle = furMain;
         ctx.fillRect(player.x + 10, player.y + 26, 48, 42);
 
-        ctx.fillStyle = "#7a5233";
+        ctx.fillStyle = furDark;
         ctx.fillRect(player.x + 4, player.y + 30, 10, 26);
         ctx.fillRect(player.x + player.width - 14, player.y + 30, 10, 26);
 
-        ctx.fillStyle = "#74482b";
+        ctx.fillStyle = paws;
         ctx.fillRect(player.x + 18, player.y + 64, 10, 10);
         ctx.fillRect(player.x + 40, player.y + 64, 10, 10);
 
@@ -972,8 +1041,9 @@ if (arcadeCanvas) {
         ctx.fill();
 
         ctx.beginPath();
-        ctx.arc(cx - 12, player.y + 8, 8, 0, Math.PI * 2);
-        ctx.arc(cx + 12, player.y + 8, 8, 0, Math.PI * 2);
+        const earRadius = profile.cosmetics.ears === "round" ? 10 : 8;
+        ctx.arc(cx - 12, player.y + 8, earRadius, 0, Math.PI * 2);
+        ctx.arc(cx + 12, player.y + 8, earRadius, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.fillStyle = "#f6dfc3";
@@ -983,16 +1053,25 @@ if (arcadeCanvas) {
 
         ctx.fillStyle = "#1f1f1f";
         ctx.beginPath();
-        ctx.arc(cx - 5, player.y + 19, 2, 0, Math.PI * 2);
-        ctx.arc(cx + 5, player.y + 19, 2, 0, Math.PI * 2);
+        const eyeRadius = profile.cosmetics.eyes === "spark" ? 3 : 2;
+        ctx.arc(cx - 5, player.y + 19, eyeRadius, 0, Math.PI * 2);
+        ctx.arc(cx + 5, player.y + 19, eyeRadius, 0, Math.PI * 2);
         ctx.arc(cx, player.y + 26, 2, 0, Math.PI * 2);
         ctx.fill();
+
+        if (profile.cosmetics.smile === "big") {
+            ctx.strokeStyle = "#1f1f1f";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(cx, player.y + 29, 6, 0.1 * Math.PI, 0.9 * Math.PI);
+            ctx.stroke();
+        }
     }
 
     function drawApples() {
         state.apples.forEach((apple) => {
             ctx.beginPath();
-            ctx.fillStyle = apple.isAnswer ? "#18d96b" : "#ff3158";
+            ctx.fillStyle = appleColorByValue(apple.value);
             ctx.arc(apple.x, apple.y, apple.radius, 0, Math.PI * 2);
             ctx.fill();
 
@@ -1155,6 +1234,28 @@ if (arcadeCanvas) {
         drawBear();
     }
 
+    function tryBuy(cost, unlockKey, onSuccess) {
+        if (unlockKey && profile.unlocked[unlockKey]) {
+            onSuccess();
+            saveArcadeProfile();
+            updateHud();
+            if (arcadeShopPointsEl) arcadeShopPointsEl.innerText = `Points: ${profile.coins}`;
+            return;
+        }
+
+        if (profile.coins < cost) {
+            showMessage("Not enough points", 900);
+            return;
+        }
+
+        profile.coins -= cost;
+        if (unlockKey) profile.unlocked[unlockKey] = true;
+        onSuccess();
+        saveArcadeProfile();
+        updateHud();
+        if (arcadeShopPointsEl) arcadeShopPointsEl.innerText = `Points: ${profile.coins}`;
+    }
+
     function loop() {
         update();
         draw();
@@ -1193,6 +1294,7 @@ if (arcadeCanvas) {
     if (arcadeRestartBtn) {
         arcadeRestartBtn.addEventListener("click", () => {
             difficulty = arcadeDifficultyEl?.value || "easy";
+            state.awaitingStart = false;
             resetGame();
         });
     }
@@ -1200,11 +1302,90 @@ if (arcadeCanvas) {
     if (arcadeDifficultyEl) {
         arcadeDifficultyEl.addEventListener("change", () => {
             difficulty = arcadeDifficultyEl.value || "easy";
+            state.awaitingStart = false;
             resetGame();
         });
     }
 
+    if (openRunnerBtn) {
+        openRunnerBtn.addEventListener("click", () => {
+            state.awaitingStart = true;
+            world.running = false;
+            arcadeRulesEl?.classList.remove("hidden");
+            arcadeShopEl?.classList.add("hidden");
+        });
+    }
+
+    if (arcadeStartBtn) {
+        arcadeStartBtn.addEventListener("click", () => {
+            state.awaitingStart = false;
+            arcadeRulesEl?.classList.add("hidden");
+            world.running = true;
+            resetGame();
+        });
+    }
+
+    if (shopWeaponBtn) {
+        shopWeaponBtn.addEventListener("click", () => {
+            tryBuy(20, null, () => {
+                profile.weaponLevel = Math.min(5, profile.weaponLevel + 1);
+                showMessage(`Weapon level ${profile.weaponLevel}`, 900);
+            });
+        });
+    }
+
+    if (shopFurBrownBtn) {
+        shopFurBrownBtn.addEventListener("click", () => {
+            tryBuy(0, null, () => {
+                profile.cosmetics.fur = "brown";
+            });
+        });
+    }
+
+    if (shopFurPinkBtn) {
+        shopFurPinkBtn.addEventListener("click", () => {
+            tryBuy(10, "furPink", () => {
+                profile.cosmetics.fur = "pink";
+            });
+        });
+    }
+
+    if (shopEyesSparkBtn) {
+        shopEyesSparkBtn.addEventListener("click", () => {
+            tryBuy(10, "eyesSpark", () => {
+                profile.cosmetics.eyes = "spark";
+            });
+        });
+    }
+
+    if (shopEarsRoundBtn) {
+        shopEarsRoundBtn.addEventListener("click", () => {
+            tryBuy(10, "earsRound", () => {
+                profile.cosmetics.ears = "round";
+            });
+        });
+    }
+
+    if (shopSmileBigBtn) {
+        shopSmileBigBtn.addEventListener("click", () => {
+            tryBuy(10, "smileBig", () => {
+                profile.cosmetics.smile = "big";
+            });
+        });
+    }
+
+    if (shopContinueBtn) {
+        shopContinueBtn.addEventListener("click", () => {
+            arcadeShopEl?.classList.add("hidden");
+            state.awaitingNextField = false;
+            world.running = true;
+            startLevel(true);
+        });
+    }
+
     player.y = world.groundY - player.height;
+    arcadeRulesEl?.classList.remove("hidden");
+    arcadeShopEl?.classList.add("hidden");
     resetGame();
     loop();
 }

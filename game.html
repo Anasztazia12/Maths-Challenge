@@ -69,6 +69,7 @@
 
             <div class="arcade-stats">
                 <div id="arcade-target" class="arcade-chip">Target: 2 + 3</div>
+                <div id="arcade-points" class="arcade-chip">Points: 0</div>
                 <div id="arcade-score" class="arcade-chip">Score: 0</div>
                 <div id="arcade-lives" class="arcade-chip">Lives: ❤️❤️❤️❤️❤️ (5/5)</div>
                 <div id="arcade-combo" class="arcade-chip">Combo: x0</div>
@@ -90,6 +91,29 @@
                 <h2 id="arcade-overlay-title">Game Over</h2>
                 <p id="arcade-overlay-text">Your final score: 0</p>
                 <button class="menu-btn special" id="arcade-restart-btn">Restart ▶</button>
+            </div>
+
+            <div id="arcade-rules" class="arcade-modal-panel">
+                <h2>How to Play</h2>
+                <p><strong>Desktop:</strong> <strong>Space / ↑ / W</strong> = Jump, <strong>F</strong> = Shoot</p>
+                <p><strong>Mobile / Tablet:</strong> Use on-screen <strong>Jump</strong> and <strong>Shoot</strong> buttons</p>
+                <p>Solve math by collecting the right apples. Wrong choices cost life.</p>
+                <p>You gain points during play. At field end, spend points on upgrades/customization.</p>
+                <button class="menu-btn special" id="arcade-start-btn" type="button">Start ▶</button>
+            </div>
+
+            <div id="arcade-shop" class="arcade-modal-panel hidden">
+                <h2>Field Shop</h2>
+                <p id="arcade-shop-points">Points: 0</p>
+                <div class="arcade-shop-grid">
+                    <button class="menu-btn" id="shop-weapon-btn" type="button">Upgrade Weapon (20)</button>
+                    <button class="menu-btn" id="shop-fur-brown-btn" type="button">Fur Brown (Free)</button>
+                    <button class="menu-btn" id="shop-fur-pink-btn" type="button">Fur Pink (10)</button>
+                    <button class="menu-btn" id="shop-eyes-spark-btn" type="button">Eyes Spark (10)</button>
+                    <button class="menu-btn" id="shop-ears-round-btn" type="button">Round Ears (10)</button>
+                    <button class="menu-btn" id="shop-smile-big-btn" type="button">Big Smile (10)</button>
+                </div>
+                <button class="menu-btn special" id="shop-continue-btn" type="button">Continue ▶</button>
             </div>
 
             <button class="menu-btn" id="runner-back-btn">⬅ Back</button>
