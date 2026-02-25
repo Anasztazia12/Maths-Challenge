@@ -284,3 +284,101 @@ select:focus {
 #multiple-container {
     display: none;
 }
+
+#result-summary {
+    margin: 8px 0 10px;
+    font-weight: bold;
+}
+
+#result-list {
+    max-height: 260px;
+    overflow-y: auto;
+    text-align: left;
+    padding: 10px;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.result-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    margin-bottom: 6px;
+    font-size: 13px;
+}
+
+.result-row:last-child {
+    margin-bottom: 0;
+}
+
+.result-correct {
+    background: rgba(0, 255, 127, 0.12);
+    border: 1px solid rgba(0, 255, 127, 0.35);
+    color: #a8ffcf;
+}
+
+.result-wrong {
+    background: rgba(255, 60, 60, 0.12);
+    border: 1px solid rgba(255, 60, 60, 0.35);
+    color: #ffb4b4;
+}
+
+.arcade-container {
+    width: min(940px, 94vw);
+}
+
+.arcade-stats {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.arcade-chip {
+    padding: 6px 10px;
+    border-radius: 12px;
+    font-size: 13px;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    min-width: 112px;
+}
+
+#arcade-canvas-wrap {
+    width: 100%;
+    max-width: 860px;
+    margin: 0 auto 14px;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+}
+
+#arcade-canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    touch-action: manipulation;
+}
+
+#arcade-help {
+    margin-bottom: 10px;
+}
+
+#arcade-overlay {
+    margin: 12px auto 8px;
+    padding: 14px;
+    border-radius: 14px;
+    max-width: 520px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+body.bg-home #end-screen {
+    max-width: 780px;
+    margin: 10px auto 0;
+}

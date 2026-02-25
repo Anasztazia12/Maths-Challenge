@@ -1,4 +1,5 @@
-const CACHE_NAME = "maths-challenge-v2";
+const CACHE_VERSION = "2026-02-25";
+const CACHE_NAME = `maths-challenge-${CACHE_VERSION}`;
 
 const CORE_ASSETS = [
   "./",
@@ -13,6 +14,7 @@ const CORE_ASSETS = [
   "mixed.html",
   "style.css",
   "game.js",
+  "arcade.js",
   "weekly.js",
   "pophunters.webp",
   "background_game.webp",

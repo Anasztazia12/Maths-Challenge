@@ -14,6 +14,8 @@ const answerInput = document.getElementById("answer-input");
 const choiceButtons = document.querySelectorAll(".choice-btn");
 const okBtn = document.getElementById("ok-btn");
 const endScreen = document.getElementById("end-screen");
+const resultSummaryEl = document.getElementById("result-summary");
+const resultListEl = document.getElementById("result-list");
 
 // Hangok
 const correctSound = document.getElementById("correct-sound");
@@ -22,6 +24,8 @@ const wrongSound = document.getElementById("wrong-sound");
 // Állapot
 let currentQuestion = 0;  // Kezdő kérdés
 let correctAnswer = 0;
+let currentExpression = "";
+const questionResults = [];
 
 // Nehézségi szintek
 const ranges = {
@@ -51,28 +55,46 @@ function generateQuestion() {
     switch (op) {
         case "addition":
             correctAnswer = a + b;
-            questionEl.innerText = `${a} + ${b} = ?`;
+            currentExpression = `${a} + ${b}`;
+            questionEl.innerText = `${currentExpression} = ?`;
             break;
         case "subtraction":
             correctAnswer = a - b;
-            questionEl.innerText = `${a} - ${b} = ?`;
+            currentExpression = `${a} - ${b}`;
+            questionEl.innerText = `${currentExpression} = ?`;
             break;
         case "multiplication":
             correctAnswer = a * b;
-            questionEl.innerText = `${a} × ${b} = ?`;
+            currentExpression = `${a} × ${b}`;
+            questionEl.innerText = `${currentExpression} = ?`;
             break;
         case "division":
             correctAnswer = a;
             let product = a * b;
-            questionEl.innerText = `${product} ÷ ${b} = ?`;
+            currentExpression = `${product} ÷ ${b}`;
+            questionEl.innerText = `${currentExpression} = ?`;
             break;
         case "mixed":
             const ops = ["+", "-", "×", "÷"];
             const pick = ops[Math.floor(Math.random() * 4)];
-            if (pick === "+") { correctAnswer = a + b; questionEl.innerText = `${a} + ${b} = ?`; }
-            if (pick === "-") { correctAnswer = a - b; questionEl.innerText = `${a} - ${b} = ?`; }
-            if (pick === "×") { correctAnswer = a * b; questionEl.innerText = `${a} × ${b} = ?`; }
-            if (pick === "÷") { correctAnswer = a; let product2 = a * b; questionEl.innerText = `${product2} ÷ ${b} = ?`; }
+            if (pick === "+") {
+                correctAnswer = a + b;
+                currentExpression = `${a} + ${b}`;
+            }
+            if (pick === "-") {
+                correctAnswer = a - b;
+                currentExpression = `${a} - ${b}`;
+            }
+            if (pick === "×") {
+                correctAnswer = a * b;
+                currentExpression = `${a} × ${b}`;
+            }
+            if (pick === "÷") {
+                correctAnswer = a;
+                let product2 = a * b;
+                currentExpression = `${product2} ÷ ${b}`;
+            }
+            questionEl.innerText = `${currentExpression} = ?`;
             break;
     }
 
@@ -96,9 +118,21 @@ function setupMultipleChoice() {
 
 // Ellenőrzés
 function checkAnswer(value) {
-    if (mode === "input") value = Number(answerInput.value);
+    const rawInput = mode === "input" ? answerInput.value.trim() : String(value);
+    if (mode === "input") value = Number(rawInput);
 
-    if (value === correctAnswer) correctSound.play();
+    const isCorrect = value === correctAnswer;
+    const answerLabel = rawInput === "" ? "(no answer)" : rawInput;
+
+    questionResults.push({
+        index: currentQuestion,
+        expression: currentExpression,
+        correctAnswer,
+        userAnswerLabel: answerLabel,
+        isCorrect
+    });
+
+    if (isCorrect) correctSound.play();
     else wrongSound.play();
 
     answerInput.value = "";
@@ -117,7 +151,8 @@ function showEndScreen() {
         localStorage.setItem("weeklyTaskDone", "1");
     }
 
-    const playAgainTarget = isWeekly ? "weekly.html" : "game.html";
+    const replayQuery = `mode=${mode || "input"}&op=${op || "mixed"}&diff=${diff || "easy"}`;
+    const playAgainTarget = isWeekly ? "weekly.html" : `play.html?${replayQuery}`;
     const backTarget = isWeekly ? "weekly.html" : "index.html";
 
     if (counterEl) counterEl.style.display = "none";
@@ -129,9 +164,27 @@ function showEndScreen() {
         const endTitle = endScreen.querySelector("h2");
         const endText = endScreen.querySelector("p");
         const endButtons = endScreen.querySelectorAll("button");
+        const correctCount = questionResults.filter((item) => item.isCorrect).length;
 
         if (endTitle) endTitle.innerText = "Done!";
         if (endText) endText.innerText = "You finished all 20 questions!";
+        if (resultSummaryEl) resultSummaryEl.innerText = `Correct answers: ${correctCount} / ${questionResults.length}`;
+
+        if (resultListEl) {
+            const resultRows = questionResults.map((item) => {
+                const line = `${item.index}. ${item.expression} = ${item.correctAnswer}`;
+                const answerText = item.isCorrect
+                    ? "✓ Correct"
+                    : `✗ Your answer: ${item.userAnswerLabel}`;
+
+                return `<div class="result-row ${item.isCorrect ? "result-correct" : "result-wrong"}">
+                    <span>${line}</span>
+                    <strong>${answerText}</strong>
+                </div>`;
+            });
+
+            resultListEl.innerHTML = resultRows.join("");
+        }
 
         if (endButtons[0]) endButtons[0].setAttribute("onclick", `location.href='${playAgainTarget}'`);
         if (endButtons[1]) {

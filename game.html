@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maths Challenge - Game Menu</title>
+    <title>Math Runner</title>
     <link rel="preload" as="image" href="background_game.webp">
     <link rel="preload" as="image" href="background_operations.webp">
     <link rel="preload" as="image" href="background_weekly.webp">
@@ -12,65 +12,48 @@
 
 <body class="bg-game">
 
-    <div class="game-container">
+    <div class="game-container arcade-container">
 
-        <h1>Maths Challenge</h1>
-        <p class="subtitle">Choose how you want to play</p>
+        <h1>Math Runner</h1>
+        <p class="subtitle">Jump, collect apples, solve math to survive!</p>
 
-        <!-- GAME MODE -->
-        <div class="section">
-            <h2>Game Mode</h2>
-            <select id="game-mode">
-                <option value="input">Type Answer</option>
-                <option value="multiple">Multiple Choice</option>
-            </select>
-        </div>
-
-        <!-- OPERATION TYPE -->
-        <div class="section">
-            <h2>Operation</h2>
-            <select id="operation">
-                <option value="addition">Addition</option>
-                <option value="subtraction">Subtraction</option>
-                <option value="multiplication">Multiplication</option>
-                <option value="division">Division</option>
-                <option value="mixed">Mixed</option>
-            </select>
-        </div>
-
-        <!-- DIFFICULTY -->
         <div class="section">
             <h2>Difficulty</h2>
-            <select id="difficulty">
+            <select id="arcade-difficulty">
                 <option value="easy">Easy</option>
-                <option value="medium">Medium</option>
+                <option value="medium" selected>Medium</option>
                 <option value="hard">Hard</option>
             </select>
         </div>
 
-        <!-- START BUTTON -->
-        <button class="menu-btn special" onclick="startGame()">
-            Start Game ▶
-        </button>
+        <div class="arcade-stats">
+            <div id="arcade-target" class="arcade-chip">Target: 2 + 3 = 5</div>
+            <div id="arcade-basket" class="arcade-chip">Basket: 0</div>
+            <div id="arcade-score" class="arcade-chip">Score: 0</div>
+            <div id="arcade-lives" class="arcade-chip">Lives: 3</div>
+            <div id="arcade-combo" class="arcade-chip">Combo: x0</div>
+            <div id="arcade-checkpoint" class="arcade-chip">Checkpoint: 5</div>
+        </div>
 
-        <!-- BACK TO HOME -->
+        <div id="arcade-canvas-wrap">
+            <canvas id="arcade-canvas" width="860" height="420"></canvas>
+        </div>
+
+        <div class="subtitle" id="arcade-help">Controls: Space / ↑ to jump • Collect apples until basket equals target.</div>
+
+        <div id="arcade-overlay" class="hidden">
+            <h2 id="arcade-overlay-title">Game Over</h2>
+            <p id="arcade-overlay-text">Your final score: 0</p>
+            <button class="menu-btn special" id="arcade-restart-btn">Restart ▶</button>
+        </div>
+
         <button class="menu-btn" onclick="location.href='index.html'">
             ⬅ Back to Home
         </button>
 
     </div>
 
-    <script>
-        function startGame() {
-            const mode = document.getElementById("game-mode").value;
-            const op = document.getElementById("operation").value;
-            const diff = document.getElementById("difficulty").value;
-
-            // Átirányítás a play.html-re a paraméterekkel
-            const url = `play.html?mode=${mode}&op=${op}&diff=${diff}`;
-            location.href = url;
-        }
-    </script>
+    <script src="arcade.js"></script>
     <script src="sw-register.js"></script>
 
 </body>
