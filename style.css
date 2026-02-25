@@ -798,7 +798,7 @@ button.result-badge {
 .arcade-chip {
     padding: 6px 10px;
     border-radius: 12px;
-    font-size: 13px;
+    font-size: 14px;
     background: rgba(0, 0, 0, 0.35);
     border: 1px solid rgba(255, 255, 255, 0.2);
     min-width: 112px;
@@ -990,6 +990,10 @@ body.bg-home #end-screen {
     .arcade-modal-panel {
         max-width: 100%;
         padding: 12px;
+    }
+
+    .arcade-chip {
+        font-size: 15px;
     }
 
     .arcade-field-modal {

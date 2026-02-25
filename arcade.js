@@ -137,6 +137,10 @@ if (arcadeCanvas) {
         playTone(620, 0.09, "triangle", 0.06);
         setTimeout(() => playTone(760, 0.11, "triangle", 0.05), 65);
     }
+    function playNewTaskSound() {
+        playTone(820, 0.07, "triangle", 0.05);
+        setTimeout(() => playTone(980, 0.08, "triangle", 0.045), 70);
+    }
     function playHitSound() { playTone(180, 0.14, "sawtooth", 0.06); }
     function playWrongPickSound() { playTone(230, 0.12, "square", 0.05); }
 
@@ -249,6 +253,7 @@ if (arcadeCanvas) {
         state.failThisChallenge = 0;
         state.solvedThisLevel = 0;
         state.challenge = newChallenge();
+        playNewTaskSound();
         resetWaveObjects();
         applyDifficulty();
 
@@ -294,8 +299,6 @@ if (arcadeCanvas) {
 
         spawnApple(true);
         spawnApple(false);
-        spawnApple(false);
-        spawnApple(false);
     }
 
     function handleWrongMath(reasonText) {
@@ -339,6 +342,20 @@ if (arcadeCanvas) {
         profile.coins = Math.max(0, profile.coins + delta);
         saveArcadeProfile();
     }
+    function getReadabilityScale() {
+        const clientWidth = arcadeCanvas.clientWidth || world.width;
+        if (clientWidth <= 420) return 1.45;
+        if (clientWidth <= 520) return 1.3;
+        if (clientWidth <= 680) return 1.15;
+        return 1;
+    }
+
+    function maxApplesOnField() {
+        const clientWidth = arcadeCanvas.clientWidth || world.width;
+        if (clientWidth <= 420) return 3;
+        if (clientWidth <= 680) return 4;
+        return 5;
+    }
 
     function appleColorByValue(value) {
         const palette = ["#ff7a59", "#7c3aed", "#06b6d4", "#f59e0b", "#10b981", "#ec4899", "#3b82f6", "#a855f7", "#eab308", "#14b8a6", "#ef4444", "#22c55e"];
@@ -352,6 +369,7 @@ if (arcadeCanvas) {
 
     function spawnApple(forceAnswer = false) {
         const x = world.width + randInt(80, 160);
+        const scale = getReadabilityScale();
         const hasUpperRoute = state.platforms.some((platform) => platform.y < world.groundY - 100 && platform.x > player.x - 160 && platform.x < world.width + 220);
 
         let y;
@@ -375,7 +393,7 @@ if (arcadeCanvas) {
         state.apples.push({
             x,
             y,
-            radius: 18,
+            radius: Math.round(18 * scale),
             value,
             isAnswer: value === need
         });
@@ -475,8 +493,7 @@ if (arcadeCanvas) {
             width: 64,
             height: 52,
             hp: randInt(3, 4),
-            maxHp: 4,
-            shootTick: randInt(70, 130)
+            maxHp: 4
         });
     }
 
@@ -554,6 +571,7 @@ if (arcadeCanvas) {
         state.basket = 0;
         state.challenge = newChallenge();
         playSuccessSound();
+        setTimeout(() => playNewTaskSound(), 120);
         updateHud();
     }
 
@@ -677,10 +695,10 @@ if (arcadeCanvas) {
             state.spawnAppleTick += 1;
             const noExactNeededVisible = !hasNeededAppleOnField();
             const spawnThreshold = noExactNeededVisible
-                ? Math.max(20, cfg.appleTick - state.level * 3)
-                : Math.max(38, cfg.appleTick - state.level * 2);
+                ? Math.max(52, cfg.appleTick + 12 - state.level)
+                : Math.max(74, cfg.appleTick + 24 - state.level);
 
-            if (state.spawnAppleTick > spawnThreshold) {
+            if (state.spawnAppleTick > spawnThreshold && state.apples.length < maxApplesOnField()) {
                 state.spawnAppleTick = 0;
                 spawnApple(noExactNeededVisible);
             }
@@ -715,16 +733,6 @@ if (arcadeCanvas) {
         state.obstacles.forEach((obstacle) => { obstacle.x -= world.speed + 0.35; });
         state.enemies.forEach((enemy) => {
             enemy.x -= world.speed + 0.7;
-            enemy.shootTick -= 1;
-            if (enemy.shootTick <= 0) {
-                enemy.shootTick = randInt(70, 120);
-                state.enemyBullets.push({
-                    x: enemy.x + 2,
-                    y: enemy.y + enemy.height * 0.54,
-                    radius: 4,
-                    vx: -(world.speed + 4.1)
-                });
-            }
         });
 
         state.bullets.forEach((bullet) => {
@@ -735,8 +743,7 @@ if (arcadeCanvas) {
         state.enemyBullets.forEach((bullet) => { bullet.x += bullet.vx; });
 
         state.lifePickups.forEach((pickup) => { pickup.x -= world.speed + 0.45; });
-
-        let escapedEnemies = 0;
+            maxHp: 4
         state.enemies.forEach((enemy) => {
             if (enemy.x + enemy.width < -140) escapedEnemies += 1;
         });
@@ -933,12 +940,6 @@ if (arcadeCanvas) {
             }
         }
 
-        for (const bullet of state.enemyBullets) {
-            if (intersectsCircleRect(bullet.x, bullet.y, bullet.radius, player.x, player.y, player.width, player.height)) {
-                loseLife(1, "Enemy projectile.");
-                return;
-            }
-        }
     }
 
     function updateLevelProgress() {
@@ -1019,19 +1020,23 @@ if (arcadeCanvas) {
     }
 
     function drawChallengeOverlay() {
+        const scale = getReadabilityScale();
+        const targetFont = Math.round(21 * scale);
+        const tipFont = Math.round(20 * scale);
+
         ctx.fillStyle = "rgba(0,0,0,0.48)";
         ctx.fillRect(16, 12, 500, 92);
         ctx.strokeStyle = "rgba(255,255,255,0.25)";
         ctx.strokeRect(16, 12, 500, 92);
 
         ctx.fillStyle = "#ffffff";
-        ctx.font = "bold 21px Arial";
+        ctx.font = `bold ${targetFont}px Arial`;
         ctx.textAlign = "left";
         ctx.textBaseline = "middle";
         ctx.fillText(`TARGET: ${state.challenge.text}`, 30, 40);
 
         ctx.fillStyle = "#8dffbf";
-        ctx.font = "bold 20px Arial";
+        ctx.font = `bold ${tipFont}px Arial`;
         ctx.fillText("Collect exact apples to solve it", 30, 68);
 
         if (hasPowerShot()) {
@@ -1100,6 +1105,7 @@ if (arcadeCanvas) {
     }
 
     function drawApples() {
+        const scale = getReadabilityScale();
         state.apples.forEach((apple) => {
             ctx.beginPath();
             ctx.fillStyle = appleColorByValue(apple.value);
@@ -1107,7 +1113,8 @@ if (arcadeCanvas) {
             ctx.fill();
 
             ctx.fillStyle = "#fff";
-            ctx.font = "bold 15px Arial";
+            const fontSize = Math.round(Math.max(15, Math.min(24, 15 * scale)));
+            ctx.font = `bold ${fontSize}px Arial`;
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             ctx.fillText(String(apple.value), apple.x, apple.y + 1);
