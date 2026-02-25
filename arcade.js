@@ -18,15 +18,6 @@ if (arcadeCanvas) {
     const arcadeShootBtn = document.getElementById("arcade-shoot-btn");
     const arcadeRulesEl = document.getElementById("arcade-rules");
     const arcadeStartBtn = document.getElementById("arcade-start-btn");
-    const arcadeShopEl = document.getElementById("arcade-shop");
-    const arcadeShopPointsEl = document.getElementById("arcade-shop-points");
-    const shopWeaponBtn = document.getElementById("shop-weapon-btn");
-    const shopFurBrownBtn = document.getElementById("shop-fur-brown-btn");
-    const shopFurPinkBtn = document.getElementById("shop-fur-pink-btn");
-    const shopEyesSparkBtn = document.getElementById("shop-eyes-spark-btn");
-    const shopEarsRoundBtn = document.getElementById("shop-ears-round-btn");
-    const shopSmileBigBtn = document.getElementById("shop-smile-big-btn");
-    const shopContinueBtn = document.getElementById("shop-continue-btn");
     const openRunnerBtn = document.getElementById("open-runner-btn");
 
     const ctx = arcadeCanvas.getContext("2d");
@@ -44,6 +35,8 @@ if (arcadeCanvas) {
         medium: { speed: 3.0, jumpPower: -15.3, gravity: 0.82, appleTick: 56, hazardTick: 86, enemyTick: 96 },
         hard: { speed: 3.5, jumpPower: -14.8, gravity: 0.92, appleTick: 50, hazardTick: 78, enemyTick: 88 }
     };
+
+    const MAX_CHALLENGE_FAILS = 5;
 
     const world = {
         width: arcadeCanvas.width,
@@ -100,6 +93,8 @@ if (arcadeCanvas) {
         levelDistance: 0,
         levelGoal: 1350,
         basket: 0,
+        solvedThisLevel: 0,
+        failThisChallenge: 0,
         awaitingStart: true,
         awaitingNextField: false,
         challenge: null,
@@ -186,19 +181,23 @@ if (arcadeCanvas) {
     }
 
     function newChallenge() {
+        const lvl = Math.max(1, state.level);
         const pick = Math.random();
         if (pick < 0.34) {
-            const a = randInt(2, 9);
-            const b = randInt(1, 8);
+            const maxA = Math.min(24, 9 + lvl * 2);
+            const maxB = Math.min(22, 8 + lvl * 2);
+            const a = randInt(2, maxA);
+            const b = randInt(1, maxB);
             return { text: `${a} + ${b}`, target: a + b };
         }
         if (pick < 0.67) {
-            const a = randInt(2, 9);
-            const b = randInt(2, 7);
+            const maxMul = Math.min(12, 7 + Math.floor(lvl / 2));
+            const a = randInt(2, maxMul);
+            const b = randInt(2, maxMul);
             return { text: `${a} × ${b}`, target: a * b };
         }
-        const a = randInt(10, 20);
-        const b = randInt(2, 8);
+        const a = randInt(10 + lvl * 2, Math.min(40, 20 + lvl * 4));
+        const b = randInt(2, Math.min(12, 8 + Math.floor(lvl / 2)));
         return { text: `${a} - ${b}`, target: a - b };
     }
 
@@ -254,6 +253,8 @@ if (arcadeCanvas) {
         state.phaseIndex = 0;
         state.phaseTick = 0;
         state.basket = 0;
+        state.failThisChallenge = 0;
+        state.solvedThisLevel = 0;
         state.challenge = newChallenge();
         resetWaveObjects();
         applyDifficulty();
@@ -270,6 +271,8 @@ if (arcadeCanvas) {
         state.bestCombo = 0;
         state.nextCheckpoint = 5;
         state.level = 1;
+        state.solvedThisLevel = 0;
+        state.failThisChallenge = 0;
         state.powerShotUntil = 0;
         state.invincibleUntil = 0;
         state.awaitingNextField = false;
@@ -288,7 +291,43 @@ if (arcadeCanvas) {
         if (arcadePointsEl) arcadePointsEl.innerText = `Points: ${profile.coins}`;
         if (arcadeLivesEl) arcadeLivesEl.innerText = `Lives: ${formatHeartLives()} (${formatLives()}/10)`;
         if (arcadeComboEl) arcadeComboEl.innerText = `Combo: x${state.combo}`;
-        if (arcadeCheckpointEl) arcadeCheckpointEl.innerText = `Field ${state.level} • Finish ${progress}%`;
+        if (arcadeCheckpointEl) arcadeCheckpointEl.innerText = `Field ${state.level} • Solved ${state.solvedThisLevel}/5`;
+    }
+
+    function spawnRecoveryApples() {
+        state.apples = [];
+        state.bullets = [];
+        state.enemyBullets = [];
+
+        spawnApple(true);
+        spawnApple(false);
+        spawnApple(false);
+        spawnApple(false);
+    }
+
+    function handleWrongMath(reasonText) {
+        state.failThisChallenge += 1;
+        state.basket = 0;
+        loseLife(2, reasonText);
+
+        if (!world.running) {
+            return;
+        }
+
+        if (state.failThisChallenge < MAX_CHALLENGE_FAILS) {
+            spawnRecoveryApples();
+            const remaining = MAX_CHALLENGE_FAILS - state.failThisChallenge;
+            showMessage(`Wrong! New apples incoming • ${remaining} mistakes left`, 1200);
+            updateHud();
+            return;
+        }
+
+        world.running = false;
+        if (arcadeOverlay) {
+            arcadeOverlay.classList.remove("hidden");
+            arcadeOverlayTitle.innerText = "Game Over";
+            arcadeOverlayText.innerText = `${reasonText} • You used all ${MAX_CHALLENGE_FAILS} mistakes on this challenge.`;
+        }
     }
 
     function neededValue() {
@@ -500,6 +539,8 @@ if (arcadeCanvas) {
         addScore(3);
         addCoins(1);
         addHalfLife();
+        state.failThisChallenge = 0;
+        state.solvedThisLevel += 1;
         state.combo += 1;
         state.bestCombo = Math.max(state.bestCombo, state.combo);
 
@@ -737,10 +778,8 @@ if (arcadeCanvas) {
             if (state.basket > state.challenge.target) {
                 addScore(-1);
                 addCoins(-1);
-                loseLife(0.5, "Too much collected.");
-                state.basket = 0;
-                showMessage("Wrong total! Try again.", 900);
-                updateHud();
+                playWrongPickSound();
+                handleWrongMath("Wrong total");
                 return;
             }
             updateHud();
@@ -820,8 +859,7 @@ if (arcadeCanvas) {
                     addScore(-1);
                     addCoins(-1);
                     playWrongPickSound();
-                    loseLife(0.5, "Wrong number shot.");
-                    showMessage("Wrong number shot", 900);
+                    handleWrongMath("Wrong number shot");
                 }
                 break;
             }
@@ -911,15 +949,15 @@ if (arcadeCanvas) {
     }
 
     function updateLevelProgress() {
-        state.levelDistance += world.speed;
-        if (state.levelDistance < state.levelGoal) return;
+        if (state.solvedThisLevel < 5) return;
 
         if (!state.awaitingNextField) {
             state.awaitingNextField = true;
             world.running = false;
-            if (arcadeShopPointsEl) arcadeShopPointsEl.innerText = `Points: ${profile.coins}`;
-            arcadeShopEl?.classList.remove("hidden");
             showMessage(`NEW FIELD! ${state.level + 1}`, 1500);
+            startLevel(true);
+            state.awaitingNextField = false;
+            world.running = true;
         }
     }
 
@@ -1234,28 +1272,6 @@ if (arcadeCanvas) {
         drawBear();
     }
 
-    function tryBuy(cost, unlockKey, onSuccess) {
-        if (unlockKey && profile.unlocked[unlockKey]) {
-            onSuccess();
-            saveArcadeProfile();
-            updateHud();
-            if (arcadeShopPointsEl) arcadeShopPointsEl.innerText = `Points: ${profile.coins}`;
-            return;
-        }
-
-        if (profile.coins < cost) {
-            showMessage("Not enough points", 900);
-            return;
-        }
-
-        profile.coins -= cost;
-        if (unlockKey) profile.unlocked[unlockKey] = true;
-        onSuccess();
-        saveArcadeProfile();
-        updateHud();
-        if (arcadeShopPointsEl) arcadeShopPointsEl.innerText = `Points: ${profile.coins}`;
-    }
-
     function loop() {
         update();
         draw();
@@ -1312,7 +1328,6 @@ if (arcadeCanvas) {
             state.awaitingStart = true;
             world.running = false;
             arcadeRulesEl?.classList.remove("hidden");
-            arcadeShopEl?.classList.add("hidden");
         });
     }
 
@@ -1322,64 +1337,6 @@ if (arcadeCanvas) {
             arcadeRulesEl?.classList.add("hidden");
             world.running = true;
             resetGame();
-        });
-    }
-
-    if (shopWeaponBtn) {
-        shopWeaponBtn.addEventListener("click", () => {
-            tryBuy(20, null, () => {
-                profile.weaponLevel = Math.min(5, profile.weaponLevel + 1);
-                showMessage(`Weapon level ${profile.weaponLevel}`, 900);
-            });
-        });
-    }
-
-    if (shopFurBrownBtn) {
-        shopFurBrownBtn.addEventListener("click", () => {
-            tryBuy(0, null, () => {
-                profile.cosmetics.fur = "brown";
-            });
-        });
-    }
-
-    if (shopFurPinkBtn) {
-        shopFurPinkBtn.addEventListener("click", () => {
-            tryBuy(10, "furPink", () => {
-                profile.cosmetics.fur = "pink";
-            });
-        });
-    }
-
-    if (shopEyesSparkBtn) {
-        shopEyesSparkBtn.addEventListener("click", () => {
-            tryBuy(10, "eyesSpark", () => {
-                profile.cosmetics.eyes = "spark";
-            });
-        });
-    }
-
-    if (shopEarsRoundBtn) {
-        shopEarsRoundBtn.addEventListener("click", () => {
-            tryBuy(10, "earsRound", () => {
-                profile.cosmetics.ears = "round";
-            });
-        });
-    }
-
-    if (shopSmileBigBtn) {
-        shopSmileBigBtn.addEventListener("click", () => {
-            tryBuy(10, "smileBig", () => {
-                profile.cosmetics.smile = "big";
-            });
-        });
-    }
-
-    if (shopContinueBtn) {
-        shopContinueBtn.addEventListener("click", () => {
-            arcadeShopEl?.classList.add("hidden");
-            state.awaitingNextField = false;
-            world.running = true;
-            startLevel(true);
         });
     }
 
