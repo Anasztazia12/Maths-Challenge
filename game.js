@@ -33,6 +33,7 @@ const choiceButtons = document.querySelectorAll(".choice-btn");
 const okBtn = document.getElementById("ok-btn");
 const quizClearBtn = document.getElementById("quiz-clear-btn");
 const quizSubmitBtn = document.getElementById("quiz-submit-btn");
+const inGameBackBtn = document.getElementById("in-game-back-btn");
 const endScreen = document.getElementById("end-screen");
 const resultSummaryEl = document.getElementById("result-summary");
 const resultListEl = document.getElementById("result-list");
@@ -88,6 +89,16 @@ function getModeLabel(value) {
     if (value === "multiple") return "Multiple Choice";
     if (value === "timed") return "Timed (20s / question)";
     return "Type Answer";
+}
+
+function getInGameBackTarget() {
+    if (isWeekly) return "weekly.html";
+    if (op === "addition") return "addition.html";
+    if (op === "subtraction") return "subtraction.html";
+    if (op === "multiplication") return "multiplication.html";
+    if (op === "division") return "division.html";
+    if (op === "mixed") return "mixed.html";
+    return "game.html";
 }
 
 function stopQuestionTimer() {
@@ -558,6 +569,7 @@ function renderEndScreenFromData(data, playAgainTarget, backTarget) {
     if (questionEl) questionEl.style.display = "none";
     if (inputContainer) inputContainer.style.display = "none";
     if (multipleContainer) multipleContainer.style.display = "none";
+    if (inGameBackBtn) inGameBackBtn.style.display = "none";
 
     const endTitle = endScreen.querySelector("h2");
     const endText = endScreen.querySelector("p");
@@ -639,6 +651,7 @@ function showEndScreen() {
     if (questionEl) questionEl.style.display = "none";
     if (inputContainer) inputContainer.style.display = "none";
     if (multipleContainer) multipleContainer.style.display = "none";
+    if (inGameBackBtn) inGameBackBtn.style.display = "none";
 
     if (endScreen) {
         const correctCount = questionResults.filter((item) => item.isCorrect).length;
@@ -1122,4 +1135,23 @@ if (isWeekly && showWeeklyResult) {
     }
 } else {
     generateQuestion();
+}
+
+if (inGameBackBtn) {
+    inGameBackBtn.onclick = () => {
+        const hasProgress = currentQuestion > 0 || questionResults.length > 0;
+        if (hasProgress) {
+            const shouldLeave = window.confirm("Leave this game now? Your current progress will be lost.");
+            if (!shouldLeave) return;
+        }
+
+        stopQuestionTimer();
+
+        if (isWeekly) {
+            localStorage.removeItem("doingWeekly");
+            localStorage.removeItem("weeklyTaskDone");
+        }
+
+        location.href = getInGameBackTarget();
+    };
 }
