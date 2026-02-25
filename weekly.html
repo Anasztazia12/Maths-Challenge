@@ -50,23 +50,23 @@
         <!-- Difficulty selection -->
         <div class="section">
             <h2>Difficulty</h2>
-            <select id="weekly-difficulty">
-                <option value="easy">Easy</option>
-                <option value="medium">Medium</option>
-                <option value="hard">Hard</option>
-            </select>
+            <div id="weekly-difficulty-buttons" class="mode-buttons" data-selected="easy">
+                <button type="button" class="mode-btn selected" data-value="easy">Easy</button>
+                <button type="button" class="mode-btn" data-value="medium">Medium</button>
+                <button type="button" class="mode-btn" data-value="hard">Hard</button>
+            </div>
         </div>
 
         <!-- Operation selection -->
         <div class="section">
             <h2>Operation</h2>
-            <select id="weekly-operation">
-                <option value="addition">Addition</option>
-                <option value="subtraction">Subtraction</option>
-                <option value="multiplication">Multiplication</option>
-                <option value="division">Division</option>
-                <option value="mixed">Mixed</option>
-            </select>
+            <div id="weekly-operation-buttons" class="mode-buttons" data-selected="addition">
+                <button type="button" class="mode-btn selected" data-value="addition">Addition</button>
+                <button type="button" class="mode-btn" data-value="subtraction">Subtraction</button>
+                <button type="button" class="mode-btn" data-value="multiplication">Multiplication</button>
+                <button type="button" class="mode-btn" data-value="division">Division</button>
+                <button type="button" class="mode-btn" data-value="mixed">Mixed</button>
+            </div>
         </div>
 
         <button class="menu-btn special" onclick="startWeeklyTask()">
@@ -98,16 +98,22 @@
 
     <script src="weekly.js"></script>
     <script>
-        const weeklyModeButtonsWrap = document.getElementById("weekly-mode-buttons");
-        const weeklyModeButtons = weeklyModeButtonsWrap ? weeklyModeButtonsWrap.querySelectorAll(".mode-btn") : [];
+        function setupButtonGroup(groupId) {
+            const wrap = document.getElementById(groupId);
+            const buttons = wrap ? wrap.querySelectorAll(".mode-btn") : [];
 
-        weeklyModeButtons.forEach((button) => {
-            button.addEventListener("click", () => {
-                weeklyModeButtonsWrap.dataset.selected = button.dataset.value;
-                weeklyModeButtons.forEach((btn) => btn.classList.remove("selected"));
-                button.classList.add("selected");
+            buttons.forEach((button) => {
+                button.addEventListener("click", () => {
+                    wrap.dataset.selected = button.dataset.value;
+                    buttons.forEach((btn) => btn.classList.remove("selected"));
+                    button.classList.add("selected");
+                });
             });
-        });
+        }
+
+        setupButtonGroup("weekly-mode-buttons");
+        setupButtonGroup("weekly-difficulty-buttons");
+        setupButtonGroup("weekly-operation-buttons");
     </script>
     <script src="sw-register.js"></script>
 </body>

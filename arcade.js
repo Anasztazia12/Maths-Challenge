@@ -13,7 +13,7 @@ if (arcadeCanvas) {
     const arcadeOverlayTitle = document.getElementById("arcade-overlay-title");
     const arcadeOverlayText = document.getElementById("arcade-overlay-text");
     const arcadeRestartBtn = document.getElementById("arcade-restart-btn");
-    const arcadeDifficultyEl = document.getElementById("arcade-difficulty");
+    const arcadeDifficultyButtonsWrap = document.getElementById("arcade-difficulty-buttons");
     const arcadeJumpBtn = document.getElementById("arcade-jump-btn");
     const arcadeShootBtn = document.getElementById("arcade-shoot-btn");
     const arcadeRulesEl = document.getElementById("arcade-rules");
@@ -113,7 +113,7 @@ if (arcadeCanvas) {
         spawnLifeTick: 0
     };
 
-    let difficulty = arcadeDifficultyEl?.value || "easy";
+    let difficulty = arcadeDifficultyButtonsWrap?.dataset.selected || "easy";
 
     function playTone(freq, duration, type = "sine", volume = 0.05) {
         if (!audioCtx) return;
@@ -222,6 +222,10 @@ if (arcadeCanvas) {
         player.jumpPower = cfg.jumpPower;
         world.gravity = cfg.gravity;
         world.speed = cfg.speed + (state.level - 1) * 0.25;
+    }
+
+    function syncArcadeDifficultyFromButtons() {
+        difficulty = arcadeDifficultyButtonsWrap?.dataset.selected || "easy";
     }
 
     function resetWaveObjects() {
@@ -1309,17 +1313,20 @@ if (arcadeCanvas) {
 
     if (arcadeRestartBtn) {
         arcadeRestartBtn.addEventListener("click", () => {
-            difficulty = arcadeDifficultyEl?.value || "easy";
+            syncArcadeDifficultyFromButtons();
             state.awaitingStart = false;
             resetGame();
         });
     }
 
-    if (arcadeDifficultyEl) {
-        arcadeDifficultyEl.addEventListener("change", () => {
-            difficulty = arcadeDifficultyEl.value || "easy";
-            state.awaitingStart = false;
-            resetGame();
+    if (arcadeDifficultyButtonsWrap) {
+        const difficultyButtons = arcadeDifficultyButtonsWrap.querySelectorAll(".mode-btn");
+        difficultyButtons.forEach((button) => {
+            button.addEventListener("click", () => {
+                syncArcadeDifficultyFromButtons();
+                state.awaitingStart = false;
+                resetGame();
+            });
         });
     }
 

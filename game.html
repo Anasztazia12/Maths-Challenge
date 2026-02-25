@@ -32,22 +32,22 @@
 
             <div class="section">
                 <h2>Operation</h2>
-                <select id="operation">
-                    <option value="addition">Addition</option>
-                    <option value="subtraction">Subtraction</option>
-                    <option value="multiplication">Multiplication</option>
-                    <option value="division">Division</option>
-                    <option value="mixed">Mixed</option>
-                </select>
+                <div id="operation-buttons" class="mode-buttons" data-selected="addition">
+                    <button type="button" class="mode-btn selected" data-value="addition">Addition</button>
+                    <button type="button" class="mode-btn" data-value="subtraction">Subtraction</button>
+                    <button type="button" class="mode-btn" data-value="multiplication">Multiplication</button>
+                    <button type="button" class="mode-btn" data-value="division">Division</button>
+                    <button type="button" class="mode-btn" data-value="mixed">Mixed</button>
+                </div>
             </div>
 
             <div class="section">
                 <h2>Difficulty</h2>
-                <select id="quiz-difficulty">
-                    <option value="easy">Easy</option>
-                    <option value="medium">Medium</option>
-                    <option value="hard">Hard</option>
-                </select>
+                <div id="quiz-difficulty-buttons" class="mode-buttons" data-selected="easy">
+                    <button type="button" class="mode-btn selected" data-value="easy">Easy</button>
+                    <button type="button" class="mode-btn" data-value="medium">Medium</button>
+                    <button type="button" class="mode-btn" data-value="hard">Hard</button>
+                </div>
             </div>
 
             <button class="menu-btn special" id="start-quiz-btn">Start Quiz ▶</button>
@@ -60,11 +60,11 @@
 
             <div class="section">
                 <h2>Difficulty</h2>
-                <select id="arcade-difficulty">
-                    <option value="easy" selected>Easy</option>
-                    <option value="medium">Medium</option>
-                    <option value="hard">Hard</option>
-                </select>
+                <div id="arcade-difficulty-buttons" class="mode-buttons" data-selected="easy">
+                    <button type="button" class="mode-btn selected" data-value="easy">Easy</button>
+                    <button type="button" class="mode-btn" data-value="medium">Medium</button>
+                    <button type="button" class="mode-btn" data-value="hard">Hard</button>
+                </div>
             </div>
 
             <div class="arcade-stats">
@@ -120,16 +120,26 @@
         const startQuizBtn = document.getElementById("start-quiz-btn");
         const quizBackBtn = document.getElementById("quiz-back-btn");
         const runnerBackBtn = document.getElementById("runner-back-btn");
-        const gameModeButtonsWrap = document.getElementById("game-mode-buttons");
-        const gameModeButtons = gameModeButtonsWrap ? gameModeButtonsWrap.querySelectorAll(".mode-btn") : [];
 
-        gameModeButtons.forEach((button) => {
-            button.addEventListener("click", () => {
-                gameModeButtonsWrap.dataset.selected = button.dataset.value;
-                gameModeButtons.forEach((btn) => btn.classList.remove("selected"));
-                button.classList.add("selected");
+        function setupButtonGroup(groupId) {
+            const wrap = document.getElementById(groupId);
+            const buttons = wrap ? wrap.querySelectorAll(".mode-btn") : [];
+
+            buttons.forEach((button) => {
+                button.addEventListener("click", () => {
+                    wrap.dataset.selected = button.dataset.value;
+                    buttons.forEach((btn) => btn.classList.remove("selected"));
+                    button.classList.add("selected");
+                });
             });
-        });
+
+            return wrap;
+        }
+
+        const gameModeButtonsWrap = setupButtonGroup("game-mode-buttons");
+        const operationButtonsWrap = setupButtonGroup("operation-buttons");
+        const quizDifficultyButtonsWrap = setupButtonGroup("quiz-difficulty-buttons");
+        setupButtonGroup("arcade-difficulty-buttons");
 
         function openMenu() {
             playChoicePanel.classList.remove("hidden");
@@ -155,8 +165,8 @@
 
         startQuizBtn.addEventListener("click", () => {
             const mode = gameModeButtonsWrap?.dataset.selected || "input";
-            const op = document.getElementById("operation").value;
-            const diff = document.getElementById("quiz-difficulty").value;
+            const op = operationButtonsWrap?.dataset.selected || "addition";
+            const diff = quizDifficultyButtonsWrap?.dataset.selected || "easy";
             location.href = `play.html?mode=${mode}&op=${op}&diff=${diff}`;
         });
     </script>

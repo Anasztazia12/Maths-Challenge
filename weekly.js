@@ -254,8 +254,10 @@ function startWeeklyTask() {
 
     const modeButtonsWrap = document.getElementById("weekly-mode-buttons");
     const mode = modeButtonsWrap?.dataset.selected || "input";
-    const diff = document.getElementById("weekly-difficulty").value;
-    const op = document.getElementById("weekly-operation").value;
+    const difficultyButtonsWrap = document.getElementById("weekly-difficulty-buttons");
+    const operationButtonsWrap = document.getElementById("weekly-operation-buttons");
+    const diff = difficultyButtonsWrap?.dataset.selected || "easy";
+    const op = operationButtonsWrap?.dataset.selected || "addition";
 
     localStorage.setItem("doingWeekly","1");
     localStorage.removeItem("weeklyTaskDone");
