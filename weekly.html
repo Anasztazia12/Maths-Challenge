@@ -75,11 +75,21 @@
             ⬅ Back to Home
         </button>
 
+        <div id="weekly-modal-backdrop" class="hidden" aria-hidden="true"></div>
+
         <!-- Trophy popup -->
         <div id="trophy-popup" class="hidden">
             <h2>Congratulations!</h2>
             <p>You completed all 5 weekly tasks!</p>
             <div id="trophy">🏆</div>
+            <button class="menu-btn special" id="weekly-done-btn" type="button">Done!!</button>
+            <button class="menu-btn" id="weekly-close-win-btn" type="button">Close</button>
+        </div>
+
+        <div id="weekly-result-panel" class="hidden">
+            <h2>Weekly Result</h2>
+            <p id="weekly-result-text">You finished all 5 tasks this week.</p>
+            <button class="menu-btn special" id="weekly-result-ok-btn" type="button">Awesome!</button>
         </div>
 
     </div>

@@ -1,10 +1,11 @@
 // URL parameters
 const urlParams = new URLSearchParams(window.location.search);
-const mode = urlParams.get("mode");        // input or multiple
-const op = urlParams.get("op");            // addition, subtraction, multiplication, division, mixed
-const diff = urlParams.get("diff");        // easy, medium, hard
+const mode = urlParams.get("mode") || "input";        // input or multiple
+const op = urlParams.get("op") || "mixed";            // addition, subtraction, multiplication, division, mixed
+const diff = urlParams.get("diff") || "easy";        // easy, medium, hard
 const tablesParam = urlParams.get("tables") || "";
 const isWeekly = urlParams.get("weekly") === "1";
+const showWeeklyResult = urlParams.get("showWeeklyResult") === "1";
 
 const selectedTables = tablesParam
     .split(",")
@@ -43,9 +44,14 @@ const printCertificateBtn = document.getElementById("print-certificate-btn");
 const exportPdfBtn = document.getElementById("export-pdf-btn");
 const certificatePreviewEl = document.getElementById("certificate-preview");
 const certificateNameEl = document.getElementById("certificate-name");
+const certificateHighlightEl = document.getElementById("certificate-highlight");
 const certificateDateEl = document.getElementById("certificate-date");
 const certificateResultEl = document.getElementById("certificate-result");
 const certificateBadgeEl = document.getElementById("certificate-badge");
+const certificateOperationEl = document.getElementById("certificate-operation");
+const certificateDifficultyEl = document.getElementById("certificate-difficulty");
+const certificateModeEl = document.getElementById("certificate-mode");
+const certificateTableInfoEl = document.getElementById("certificate-table-info");
 
 const badgeGoldChip = document.getElementById("badge-gold-chip");
 const badgeSilverChip = document.getElementById("badge-silver-chip");
@@ -56,6 +62,46 @@ let lastResultData = null;
 
 function getCurrentDateLabel() {
     return new Date().toLocaleDateString();
+}
+
+function getOperationLabel(value) {
+    if (value === "addition") return "Addition";
+    if (value === "subtraction") return "Subtraction";
+    if (value === "multiplication") return "Multiplication";
+    if (value === "division") return "Division";
+    return "Mixed (Addition / Subtraction / Multiplication / Division)";
+}
+
+function getDifficultyLabel(value) {
+    if (value === "easy") return "Easy";
+    if (value === "medium") return "Medium";
+    if (value === "hard") return "Hard";
+    return "Easy";
+}
+
+function getModeLabel(value) {
+    if (value === "multiple") return "Multiple Choice";
+    return "Type Answer";
+}
+
+function getTableInfoLabel() {
+    if (op !== "multiplication" && op !== "division") {
+        return "Table: Mix operations";
+    }
+
+    if (selectedTables.length === 0) return "Table: 1x-12x";
+
+    const sorted = [...selectedTables].sort((a, b) => a - b);
+    if (sorted.length === 1) return `Table: ${sorted[0]}x`;
+    if (sorted.length === 12) return "Table: 1x-12x";
+    return `Tables: ${sorted.map((num) => `${num}x`).join(", ")}`;
+}
+
+function getCertificateHeadline(correctCount, totalCount, rating) {
+    if (correctCount === totalCount && totalCount > 0) {
+        return `Great result: ${correctCount}/${totalCount}`;
+    }
+    return `${rating} Result: ${correctCount}/${totalCount}`;
 }
 
 // Sounds
@@ -135,9 +181,14 @@ function refreshCertificatePreview() {
     const dateLabel = getCurrentDateLabel();
 
     if (certificateNameEl) certificateNameEl.innerText = studentName;
+    if (certificateHighlightEl) certificateHighlightEl.innerText = lastResultData.resultHeadline;
     if (certificateDateEl) certificateDateEl.innerText = dateLabel;
     if (certificateResultEl) certificateResultEl.innerText = `${lastResultData.correctCount}/${lastResultData.total}`;
     if (certificateBadgeEl) certificateBadgeEl.innerText = lastResultData.badge.label;
+    if (certificateOperationEl) certificateOperationEl.innerText = lastResultData.operationLabel;
+    if (certificateDifficultyEl) certificateDifficultyEl.innerText = lastResultData.difficultyLabel;
+    if (certificateModeEl) certificateModeEl.innerText = lastResultData.modeLabel;
+    if (certificateTableInfoEl) certificateTableInfoEl.innerText = lastResultData.tableInfoLabel;
 
     lastResultData.studentName = studentName;
     lastResultData.dateLabel = dateLabel;
@@ -185,15 +236,34 @@ function buildCertificateHtml(data) {
             <title>Certificate</title>
         </head>
         <body style="font-family:Arial,sans-serif;padding:20px;background:#f8fafc;">
-            <div style="max-width:720px;margin:0 auto;border-radius:18px;padding:24px;background:linear-gradient(160deg,#ffffff,#eef2ff);border:4px solid #6366f1;box-shadow:0 10px 30px rgba(15,23,42,0.15);color:#0f172a;">
-                <div style="font-size:28px;font-weight:900;text-align:center;color:#312e81;margin-bottom:18px;">Math Game Challenge Website Badge / Certificate</div>
-                <p style="font-size:18px;margin:8px 0;"><strong>Name:</strong> ${sanitizeHtml(data.studentName)}</p>
-                <p style="font-size:18px;margin:8px 0;"><strong>Date:</strong> ${sanitizeHtml(data.dateLabel)}</p>
-                <p style="font-size:18px;margin:8px 0;"><strong>Result:</strong> ${data.correctCount}/${data.total}</p>
-                <p style="font-size:18px;margin:8px 0;"><strong>Badge:</strong>
-                    <span style="display:inline-block;padding:6px 12px;border-radius:999px;font-weight:800;border:1px solid rgba(15,23,42,0.15);background:${badgeStyle.background};color:${badgeStyle.color};">${sanitizeHtml(data.badge.label)}</span>
-                </p>
-                <p style="margin-top:22px;font-size:13px;color:#334155;text-align:center;">© Anasztázia Karalyos-Kecskés 2026 • All rights reserved</p>
+            <div style="position:relative;overflow:hidden;max-width:760px;margin:0 auto;border-radius:20px;padding:18px 16px 20px;background:linear-gradient(160deg,#ffffff,#eef2ff);border:4px solid #6366f1;box-shadow:0 10px 30px rgba(15,23,42,0.15);color:#0f172a;">
+                <div style="position:absolute;left:14px;top:20px;width:14px;height:14px;border-radius:50%;background:#ec4899;opacity:.45;"></div>
+                <div style="position:absolute;right:18px;top:60px;width:14px;height:14px;border-radius:50%;background:#06b6d4;opacity:.45;"></div>
+                <div style="position:absolute;right:22px;bottom:22px;width:14px;height:14px;border-radius:3px;transform:rotate(18deg);background:#f97316;opacity:.45;"></div>
+                <div style="position:absolute;left:22px;bottom:32px;width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;border-bottom:14px solid #8b5cf6;opacity:.45;"></div>
+                <div style="position:absolute;left:24px;top:92px;font-size:18px;font-weight:900;color:#f43f5e;opacity:.55;">7</div>
+                <div style="position:absolute;right:32px;top:118px;font-size:18px;font-weight:900;color:#0ea5e9;opacity:.55;">3</div>
+                <div style="position:absolute;left:50%;top:8px;transform:translateX(-50%);font-size:18px;font-weight:900;color:#f59e0b;opacity:.55;">9</div>
+                <div style="position:absolute;left:12px;bottom:62px;font-size:18px;font-weight:900;color:#10b981;opacity:.55;">12</div>
+                <div style="position:absolute;right:42px;bottom:62px;font-size:18px;font-weight:900;color:#6366f1;opacity:.55;">5</div>
+
+                <div style="font-size:16px;font-weight:800;text-align:center;color:#3730a3;margin-bottom:10px;">Math Game Challenge Website Badge / Certificate</div>
+                <div style="font-size:36px;font-weight:900;text-align:center;color:#1d4ed8;line-height:1.1;">${sanitizeHtml(data.studentName)}</div>
+                <div style="font-size:12px;letter-spacing:1px;text-transform:uppercase;text-align:center;color:#64748b;margin-top:2px;">Name</div>
+
+                <div style="margin:10px auto 12px;width:fit-content;max-width:100%;padding:7px 12px;border-radius:999px;font-size:14px;font-weight:800;color:#0f172a;background:linear-gradient(90deg,#fef08a,#facc15);border:1px solid rgba(161,98,7,0.35);">${sanitizeHtml(data.resultHeadline)}</div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;position:relative;z-index:1;">
+                    <div style="font-size:15px;padding:8px 10px;border-radius:10px;background:rgba(241,245,249,.8);border:1px solid rgba(148,163,184,.32);"><strong>Date:</strong> ${sanitizeHtml(data.dateLabel)}</div>
+                    <div style="font-size:15px;padding:8px 10px;border-radius:10px;background:rgba(241,245,249,.8);border:1px solid rgba(148,163,184,.32);"><strong>Result:</strong> ${data.correctCount}/${data.total}</div>
+                    <div style="font-size:15px;padding:8px 10px;border-radius:10px;background:rgba(241,245,249,.8);border:1px solid rgba(148,163,184,.32);"><strong>Badge:</strong> <span style="display:inline-block;padding:4px 10px;border-radius:999px;font-weight:800;border:1px solid rgba(15,23,42,0.15);background:${badgeStyle.background};color:${badgeStyle.color};">${sanitizeHtml(data.badge.label)}</span></div>
+                    <div style="font-size:15px;padding:8px 10px;border-radius:10px;background:rgba(241,245,249,.8);border:1px solid rgba(148,163,184,.32);"><strong>Operation:</strong> ${sanitizeHtml(data.operationLabel)}</div>
+                    <div style="font-size:15px;padding:8px 10px;border-radius:10px;background:rgba(241,245,249,.8);border:1px solid rgba(148,163,184,.32);"><strong>Level:</strong> ${sanitizeHtml(data.difficultyLabel)}</div>
+                    <div style="font-size:15px;padding:8px 10px;border-radius:10px;background:rgba(241,245,249,.8);border:1px solid rgba(148,163,184,.32);"><strong>Mode:</strong> ${sanitizeHtml(data.modeLabel)}</div>
+                </div>
+
+                <div style="margin-top:10px;font-size:13px;font-weight:700;text-align:center;color:#475569;">${sanitizeHtml(data.tableInfoLabel)}</div>
+                <p style="margin-top:16px;font-size:12px;color:#334155;text-align:center;">© Anasztázia Karalyos-Kecskés 2026 • All rights reserved</p>
             </div>
         </body>
         </html>
@@ -265,10 +335,14 @@ function generateQuestion() {
                 currentExpression = `${a} - ${b}`;
             }
             if (pick === "×") {
+                a = randomFromTables();
+                b = rand(12);
                 correctAnswer = a * b;
                 currentExpression = `${a} × ${b}`;
             }
             if (pick === "÷") {
+                b = randomFromTables();
+                a = rand(12);
                 correctAnswer = a;
                 let product2 = a * b;
                 currentExpression = `${product2} ÷ ${b}`;
@@ -325,6 +399,72 @@ function checkAnswer(value) {
     }
 }
 
+function renderEndScreenFromData(data, playAgainTarget, backTarget) {
+    if (!data || !endScreen) return;
+
+    if (counterEl) counterEl.style.display = "none";
+    if (questionEl) questionEl.style.display = "none";
+    if (inputContainer) inputContainer.style.display = "none";
+    if (multipleContainer) multipleContainer.style.display = "none";
+
+    const endTitle = endScreen.querySelector("h2");
+    const endText = endScreen.querySelector("p");
+    const correctCount = Number(data.correctCount) || 0;
+    const total = Number(data.total) || 0;
+    const rating = data.rating || getResultRating(correctCount, total);
+    const badge = data.badge || getBadgeLevel(correctCount, total);
+    const rows = Array.isArray(data.results) ? data.results : [];
+
+    if (endTitle) endTitle.innerText = "Done!";
+    if (endText) endText.innerText = `You finished all ${total} questions. Done ${correctCount}/${total}.`;
+    if (resultSummaryEl) {
+        resultSummaryEl.innerText = `Your result: ${correctCount}/${total} • Correct answers: ${correctCount}/${total} • ${rating}`;
+    }
+    if (resultBadgeEl) {
+        resultBadgeEl.innerText = badge.label || "Practice Badge";
+        resultBadgeEl.className = `result-badge ${badge.className || "badge-practice"}`;
+    }
+
+    updateBadgeShelf(badge.className || "badge-practice");
+    refreshCertificatePreview();
+
+    if (resultListEl) {
+        const resultRows = rows.map((item) => {
+            const line = `${item.index}. ${item.expression} = ${item.correctAnswer}`;
+            const answerText = item.isCorrect
+                ? "✓ Correct"
+                : `✗ Your answer: ${item.userAnswerLabel}`;
+
+            return `<div class="result-row ${item.isCorrect ? "result-correct" : "result-wrong"}">
+                <span>${line}</span>
+                <strong>${answerText}</strong>
+            </div>`;
+        });
+
+        resultListEl.innerHTML = resultRows.join("");
+    }
+
+    if (playAgainBtn) playAgainBtn.setAttribute("onclick", `location.href='${playAgainTarget}'`);
+    if (backHomeBtn) {
+        backHomeBtn.setAttribute("onclick", `location.href='${backTarget}'`);
+        backHomeBtn.innerText = isWeekly ? "Back to Weekly" : "Back to Home";
+    }
+
+    endScreen.classList.remove("hidden");
+}
+
+function loadSavedWeeklyResultData() {
+    try {
+        const raw = localStorage.getItem("weeklyLastResultData");
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed || !Array.isArray(parsed.results)) return null;
+        return parsed;
+    } catch {
+        return null;
+    }
+}
+
 // End screen
 function showEndScreen() {
     if (isWeekly) {
@@ -342,8 +482,6 @@ function showEndScreen() {
     if (multipleContainer) multipleContainer.style.display = "none";
 
     if (endScreen) {
-        const endTitle = endScreen.querySelector("h2");
-        const endText = endScreen.querySelector("p");
         const correctCount = questionResults.filter((item) => item.isCorrect).length;
         const total = questionResults.length;
         const rating = getResultRating(correctCount, total);
@@ -356,46 +494,22 @@ function showEndScreen() {
             total,
             rating,
             badge,
+            resultHeadline: getCertificateHeadline(correctCount, total, rating),
+            operationLabel: getOperationLabel(op),
+            difficultyLabel: getDifficultyLabel(diff),
+            modeLabel: getModeLabel(mode),
+            tableInfoLabel: getTableInfoLabel(),
             dateLabel: getCurrentDateLabel(),
             results: [...questionResults]
         };
 
-        if (endTitle) endTitle.innerText = "Done!";
-        if (endText) endText.innerText = `You finished all ${total} questions. Done ${total}/${correctCount}.`;
-        if (resultSummaryEl) {
-            resultSummaryEl.innerText = `Your result: ${total}/${correctCount} • Correct answers: ${correctCount}/${total} • ${rating}`;
-        }
-        if (resultBadgeEl) {
-            resultBadgeEl.innerText = badge.label;
-            resultBadgeEl.className = `result-badge ${badge.className}`;
+        if (isWeekly) {
+            const weeklyResultUrl = `play.html?${replayQuery}&weekly=1&showWeeklyResult=1`;
+            localStorage.setItem("weeklyLastResultData", JSON.stringify(lastResultData));
+            localStorage.setItem("weeklyLastResultUrl", weeklyResultUrl);
         }
 
-        updateBadgeShelf(badge.className);
-        refreshCertificatePreview();
-
-        if (resultListEl) {
-            const resultRows = questionResults.map((item) => {
-                const line = `${item.index}. ${item.expression} = ${item.correctAnswer}`;
-                const answerText = item.isCorrect
-                    ? "✓ Correct"
-                    : `✗ Your answer: ${item.userAnswerLabel}`;
-
-                return `<div class="result-row ${item.isCorrect ? "result-correct" : "result-wrong"}">
-                    <span>${line}</span>
-                    <strong>${answerText}</strong>
-                </div>`;
-            });
-
-            resultListEl.innerHTML = resultRows.join("");
-        }
-
-        if (playAgainBtn) playAgainBtn.setAttribute("onclick", `location.href='${playAgainTarget}'`);
-        if (backHomeBtn) {
-            backHomeBtn.setAttribute("onclick", `location.href='${backTarget}'`);
-            backHomeBtn.innerText = isWeekly ? "Back to Weekly" : "Back to Home";
-        }
-
-        endScreen.classList.remove("hidden");
+        renderEndScreenFromData(lastResultData, playAgainTarget, backTarget);
     }
 }
 
@@ -403,7 +517,11 @@ function buildResultText(data) {
     const lines = [
         `Name: ${data.studentName}`,
         `Date: ${data.dateLabel}`,
-        `Result: ${data.total}/${data.correctCount}`,
+        `Result: ${data.correctCount}/${data.total}`,
+        `Operation: ${data.operationLabel}`,
+        `Level: ${data.difficultyLabel}`,
+        `Mode: ${data.modeLabel}`,
+        `${data.tableInfoLabel}`,
         `Rating: ${data.rating}`,
         `Badge: ${data.badge.label}`,
         "",
@@ -507,7 +625,7 @@ function printResultSheet() {
         <body style="font-family:Arial,sans-serif;padding:24px;background:#f8fafc;color:#0f172a;">
             <p style="margin:0 0 8px;"><strong>Name:</strong> ${sanitizeHtml(data.studentName)}</p>
             <p style="margin:0 0 8px;"><strong>Date:</strong> ${sanitizeHtml(data.dateLabel)}</p>
-            <p style="margin:0 0 8px;"><strong>Done:</strong> ${data.total}/${data.correctCount}</p>
+            <p style="margin:0 0 8px;"><strong>Done:</strong> ${data.correctCount}/${data.total}</p>
             <p style="margin:0 0 8px;"><strong>Your result:</strong> ${data.correctCount}/${data.total} (${sanitizeHtml(data.rating)})</p>
             <p style="margin:0 0 18px;"><strong>Badge:</strong> ${sanitizeHtml(data.badge.label)}</p>
             <h2 style="margin:12px 0 10px;">Question Results</h2>
@@ -547,7 +665,7 @@ function buildCertificatePdfDoc(data) {
     const cardX = margin;
     const cardY = 46;
     const cardW = pageWidth - margin * 2;
-    const cardH = 620;
+    const cardH = 650;
 
     const badgeStyle = getBadgeStyle(data.badge.className);
 
@@ -558,42 +676,92 @@ function buildCertificatePdfDoc(data) {
     doc.setLineWidth(4);
     doc.roundedRect(cardX, cardY, cardW, cardH, 18, 18, "S");
 
-    doc.setTextColor(49, 46, 129);
+    const canUseGState = typeof doc.setGState === "function" && typeof doc.GState === "function";
+
+    doc.setFillColor(236, 72, 153);
+    if (canUseGState) doc.setGState(new doc.GState({ opacity: 0.45 }));
+    doc.circle(cardX + 18, cardY + 24, 7, "F");
+    doc.setFillColor(6, 182, 212);
+    doc.circle(cardX + cardW - 18, cardY + 68, 7, "F");
+    doc.setFillColor(249, 115, 22);
+    doc.roundedRect(cardX + cardW - 28, cardY + cardH - 30, 12, 12, 2, 2, "F");
+    doc.setFillColor(139, 92, 246);
+    doc.triangle(cardX + 24, cardY + cardH - 24, cardX + 16, cardY + cardH - 10, cardX + 32, cardY + cardH - 10, "F");
+    doc.setTextColor(244, 63, 94);
+    doc.setFontSize(18);
+    doc.text("7", cardX + 24, cardY + 96);
+    doc.setTextColor(14, 165, 233);
+    doc.text("3", cardX + cardW - 30, cardY + 122);
+    doc.setTextColor(245, 158, 11);
+    doc.text("9", pageWidth / 2, cardY + 18, { align: "center" });
+    doc.setTextColor(16, 185, 129);
+    doc.text("12", cardX + 10, cardY + cardH - 62);
+    doc.setTextColor(99, 102, 241);
+    doc.text("5", cardX + cardW - 44, cardY + cardH - 62);
+    if (canUseGState) doc.setGState(new doc.GState({ opacity: 1 }));
+
+    doc.setTextColor(55, 48, 163);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(26);
-    doc.text("Math Game Challenge Website Badge / Certificate", pageWidth / 2, 112, { align: "center", maxWidth: cardW - 80 });
+    doc.setFontSize(14);
+    doc.text("Math Game Challenge Website Badge / Certificate", pageWidth / 2, 84, { align: "center", maxWidth: cardW - 80 });
+
+    doc.setTextColor(29, 78, 216);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(32);
+    doc.text(String(data.studentName), pageWidth / 2, 126, { align: "center", maxWidth: cardW - 80 });
+
+    doc.setTextColor(100, 116, 139);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    doc.text("NAME", pageWidth / 2, 140, { align: "center" });
+
+    doc.setFillColor(254, 240, 138);
+    doc.roundedRect(cardX + 170, 152, cardW - 340, 24, 10, 10, "F");
+    doc.setDrawColor(161, 98, 7);
+    doc.setLineWidth(1);
+    doc.roundedRect(cardX + 170, 152, cardW - 340, 24, 10, 10, "S");
+    doc.setTextColor(15, 23, 42);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text(String(data.resultHeadline), pageWidth / 2, 168, { align: "center", maxWidth: cardW - 350 });
 
     doc.setTextColor(15, 23, 42);
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(17);
+    doc.setFontSize(14);
 
-    let rowY = 190;
-    const rowGap = 44;
+    const colGap = 14;
+    const rowGap = 12;
+    const cellW = (cardW - 72 - colGap) / 2;
+    const cellH = 38;
+    const gridX = cardX + 36;
+    const gridY = 194;
 
-    doc.setFont("helvetica", "bold");
-    doc.text("Name:", cardX + 36, rowY);
-    doc.setFont("helvetica", "normal");
-    doc.text(String(data.studentName), cardX + 96, rowY);
+    function drawCell(col, row, label, value) {
+        const x = gridX + col * (cellW + colGap);
+        const y = gridY + row * (cellH + rowGap);
+        doc.setFillColor(241, 245, 249);
+        doc.setDrawColor(148, 163, 184);
+        doc.setLineWidth(0.7);
+        doc.roundedRect(x, y, cellW, cellH, 8, 8, "FD");
+        doc.setTextColor(15, 23, 42);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
+        doc.text(`${label}:`, x + 8, y + 14);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(11);
+        doc.text(String(value), x + 8, y + 28, { maxWidth: cellW - 16 });
+    }
 
-    rowY += rowGap;
-    doc.setFont("helvetica", "bold");
-    doc.text("Date:", cardX + 36, rowY);
-    doc.setFont("helvetica", "normal");
-    doc.text(String(data.dateLabel), cardX + 96, rowY);
+    drawCell(0, 0, "Date", data.dateLabel);
+    drawCell(1, 0, "Result", `${data.correctCount}/${data.total}`);
+    drawCell(0, 1, "Operation", data.operationLabel);
+    drawCell(1, 1, "Level", data.difficultyLabel);
+    drawCell(0, 2, "Mode", data.modeLabel);
+    drawCell(1, 2, "Table", data.tableInfoLabel.replace(/^Tables?:\s*/i, ""));
 
-    rowY += rowGap;
-    doc.setFont("helvetica", "bold");
-    doc.text("Result:", cardX + 36, rowY);
-    doc.setFont("helvetica", "normal");
-    doc.text(`${data.correctCount}/${data.total}`, cardX + 96, rowY);
-
-    rowY += rowGap;
-    doc.setFont("helvetica", "bold");
-    doc.text("Badge:", cardX + 36, rowY);
-
-    const badgeX = cardX + 96;
-    const badgeY = rowY - 22;
-    const badgeW = 170;
+    const badgeX = gridX;
+    const badgeY = gridY + 3 * (cellH + rowGap) + 4;
+    const badgeW = cardW - 72;
     const badgeH = 30;
 
     if (badgeStyle.background.includes("#facc15")) {
@@ -613,7 +781,7 @@ function buildCertificatePdfDoc(data) {
     doc.roundedRect(badgeX, badgeY, badgeW, badgeH, 14, 14, "F");
     doc.setFont("helvetica", "bold");
     doc.setFontSize(13);
-    doc.text(String(data.badge.label), badgeX + badgeW / 2, rowY - 2, { align: "center" });
+    doc.text(`Badge: ${String(data.badge.label)}`, badgeX + badgeW / 2, badgeY + 19, { align: "center" });
 
     doc.setTextColor(51, 65, 85);
     doc.setFont("helvetica", "normal");
@@ -778,4 +946,14 @@ if (mode === "multiple") {
 }
 
 // First question
-generateQuestion();
+if (isWeekly && showWeeklyResult) {
+    const savedWeeklyResult = loadSavedWeeklyResultData();
+    if (savedWeeklyResult) {
+        lastResultData = savedWeeklyResult;
+        renderEndScreenFromData(lastResultData, "weekly.html", "weekly.html");
+    } else {
+        generateQuestion();
+    }
+} else {
+    generateQuestion();
+}

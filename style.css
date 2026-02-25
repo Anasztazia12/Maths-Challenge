@@ -36,6 +36,10 @@ body {
     color: white;
 }
 
+body.modal-open {
+    overflow: hidden;
+}
+
 /* Dark overlay */
 body::after {
     content: "";
@@ -228,14 +232,29 @@ select:focus {
 }
 
 /* Trophy popup (hidden by default) */
+#weekly-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(2, 6, 23, 0.68);
+    z-index: 55;
+}
+
 #trophy-popup {
     display: none;
-    margin-top: 20px;
-    padding: 15px;
-    background: rgba(255,255,255,0.2);
-    border-radius: 15px;
-    box-shadow: 0 0 15px gold;
-    border: 2px solid rgba(255, 215, 0, 0.8);
+    position: fixed;
+    inset: 50% auto auto 50%;
+    transform: translate(-50%, -50%);
+    width: min(86vw, 420px);
+    padding: 18px 16px;
+    background: rgba(12, 12, 28, 0.92);
+    border-radius: 18px;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.65);
+    border: 2px solid rgba(255, 215, 0, 0.9);
+    z-index: 60;
+    text-align: center;
+    max-height: calc(100vh - 24px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
     animation: trophyPop 0.45s ease;
 }
 
@@ -248,10 +267,39 @@ select:focus {
 }
 
 #trophy {
-    font-size: 50px;
-    margin-top: 10px;
+    font-size: 56px;
+    margin: 10px 0;
     filter: drop-shadow(0 0 10px #ffd700);
     animation: trophyPulse 1.2s ease-in-out infinite;
+}
+
+#weekly-done-btn {
+    margin-top: 8px;
+    font-size: 18px;
+    font-weight: 900;
+}
+
+#weekly-result-panel {
+    position: fixed;
+    inset: 50% auto auto 50%;
+    transform: translate(-50%, -50%);
+    width: min(88vw, 440px);
+    padding: 18px 16px;
+    border-radius: 18px;
+    border: 2px solid rgba(148, 163, 184, 0.6);
+    background: rgba(15, 23, 42, 0.95);
+    box-shadow: 0 0 24px rgba(59, 130, 246, 0.35);
+    z-index: 65;
+    text-align: center;
+    max-height: calc(100vh - 24px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+#weekly-result-text {
+    margin: 10px 0 14px;
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.92);
 }
 
 /* ============================
@@ -266,7 +314,7 @@ select:focus {
     opacity: 1;
     border-radius: 2px;
     pointer-events: none;
-    z-index: 20;
+    z-index: 80;
     animation: confettiBurst linear forwards;
 }
 
@@ -419,29 +467,168 @@ button.result-badge {
 }
 
 .certificate-card {
+    position: relative;
     max-width: 640px;
     margin: 0 auto;
-    padding: 18px 16px;
-    border-radius: 18px;
-    border: 3px solid rgba(129, 140, 248, 0.8);
-    background: linear-gradient(160deg, rgba(255, 255, 255, 0.98), rgba(224, 231, 255, 0.9));
-    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+    padding: 16px 14px 18px;
+    border-radius: 20px;
+    border: 3px solid rgba(129, 140, 248, 0.85);
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.99), rgba(238, 242, 255, 0.95));
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25), inset 0 0 0 1px rgba(255, 255, 255, 0.55);
     color: #0f172a;
-    text-align: left;
+    text-align: center;
     overflow-wrap: anywhere;
+    overflow: hidden;
 }
 
 .certificate-title {
-    font-size: 24px;
-    font-weight: 900;
+    font-size: 16px;
+    font-weight: 800;
     text-align: center;
-    margin-bottom: 14px;
-    color: #312e81;
+    margin-bottom: 10px;
+    color: #3730a3;
+    letter-spacing: 0.3px;
+}
+
+.certificate-name {
+    font-size: 34px;
+    font-weight: 900;
+    color: #1d4ed8;
+    line-height: 1.1;
+    text-shadow: 0 2px 0 rgba(59, 130, 246, 0.18);
+}
+
+.certificate-name-label {
+    margin-top: 2px;
+    font-size: 12px;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.certificate-highlight {
+    margin: 10px auto 12px;
+    width: fit-content;
+    max-width: 100%;
+    padding: 7px 12px;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 800;
+    color: #0f172a;
+    background: linear-gradient(90deg, #fef08a, #facc15);
+    border: 1px solid rgba(161, 98, 7, 0.35);
+}
+
+.certificate-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    text-align: left;
+    position: relative;
+    z-index: 1;
 }
 
 .certificate-row {
-    font-size: 17px;
-    margin: 8px 0;
+    font-size: 15px;
+    margin: 0;
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: rgba(241, 245, 249, 0.8);
+    border: 1px solid rgba(148, 163, 184, 0.32);
+}
+
+.certificate-table-info {
+    margin-top: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #475569;
+    position: relative;
+    z-index: 1;
+}
+
+.certificate-decor {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.decor-shape,
+.decor-num {
+    position: absolute;
+    opacity: 0.5;
+}
+
+.decor-shape {
+    width: 14px;
+    height: 14px;
+}
+
+.decor-circle-1 {
+    left: 14px;
+    top: 22px;
+    border-radius: 50%;
+    background: #ec4899;
+}
+
+.decor-circle-2 {
+    right: 16px;
+    top: 66px;
+    border-radius: 50%;
+    background: #06b6d4;
+}
+
+.decor-square-1 {
+    right: 22px;
+    bottom: 22px;
+    background: #f97316;
+    border-radius: 3px;
+    transform: rotate(18deg);
+}
+
+.decor-triangle-1 {
+    left: 22px;
+    bottom: 32px;
+    width: 0;
+    height: 0;
+    border-left: 9px solid transparent;
+    border-right: 9px solid transparent;
+    border-bottom: 14px solid #8b5cf6;
+}
+
+.decor-num {
+    font-weight: 900;
+    font-size: 18px;
+}
+
+.decor-num-1 {
+    left: 24px;
+    top: 96px;
+    color: #f43f5e;
+}
+
+.decor-num-2 {
+    right: 32px;
+    top: 122px;
+    color: #0ea5e9;
+}
+
+.decor-num-3 {
+    left: 50%;
+    top: 8px;
+    transform: translateX(-50%);
+    color: #f59e0b;
+}
+
+.decor-num-4 {
+    left: 12px;
+    bottom: 62px;
+    color: #10b981;
+}
+
+.decor-num-5 {
+    right: 42px;
+    bottom: 62px;
+    color: #6366f1;
 }
 
 .certificate-footer {
@@ -611,6 +798,47 @@ body.bg-home #end-screen {
     margin: 10px auto 0;
 }
 
+@media (max-width: 520px) {
+    body.bg-home #end-screen {
+        margin-top: 6px;
+    }
+
+    #result-summary {
+        font-size: 13px;
+        line-height: 1.35;
+    }
+
+    .result-tools {
+        margin-bottom: 8px;
+    }
+
+    .result-tool-buttons {
+        gap: 8px;
+    }
+
+    .result-tool-buttons .menu-btn,
+    #play-again-btn,
+    #back-home-btn {
+        width: 100%;
+        max-width: none;
+        margin-top: 8px;
+    }
+
+    #certificate-preview {
+        max-height: 58vh;
+        overflow-y: auto;
+        padding-right: 2px;
+    }
+
+    #result-list {
+        max-height: 34vh;
+    }
+
+    .certificate-highlight {
+        font-size: 13px;
+    }
+}
+
 @media (max-width: 860px) {
     body {
         align-items: flex-start;
@@ -652,15 +880,23 @@ body.bg-home #end-screen {
     }
 
     .certificate-title {
-        font-size: 20px;
+        font-size: 14px;
     }
 
     .certificate-row {
-        font-size: 16px;
+        font-size: 14px;
     }
 
     .certificate-card {
-        padding: 14px 12px;
+        padding: 14px 10px 16px;
+    }
+
+    .certificate-name {
+        font-size: 28px;
+    }
+
+    .certificate-grid {
+        grid-template-columns: 1fr;
     }
 
     #certificate-preview .result-tool-buttons .menu-btn {
@@ -669,6 +905,21 @@ body.bg-home #end-screen {
 
     #certificate-preview .result-tool-buttons {
         gap: 8px;
+    }
+
+    #trophy-popup,
+    #weekly-result-panel {
+        width: min(92vw, 420px);
+        padding: 14px 12px;
+        max-height: calc(100vh - 16px);
+    }
+
+    #weekly-done-btn {
+        font-size: 16px;
+    }
+
+    #trophy {
+        font-size: 50px;
     }
 }
 

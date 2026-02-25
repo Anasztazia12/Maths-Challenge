@@ -38,6 +38,8 @@ function applyWeeklyResetIfNeeded() {
         localStorage.removeItem("weeklyCelebrated");
         localStorage.removeItem("weeklyTaskDone");
         localStorage.removeItem("doingWeekly");
+        localStorage.removeItem("weeklyLastResultData");
+        localStorage.removeItem("weeklyLastResultUrl");
     }
 }
 
@@ -57,6 +59,40 @@ const progressText = document.getElementById("weekly-progress");
 const pentagonProgress = document.getElementById("pentagon-progress");
 const trophyPopup = document.getElementById("trophy-popup");
 const trophy = document.getElementById("trophy");
+const weeklyDoneBtn = document.getElementById("weekly-done-btn");
+const weeklyCloseWinBtn = document.getElementById("weekly-close-win-btn");
+const weeklyModalBackdrop = document.getElementById("weekly-modal-backdrop");
+const weeklyResultPanel = document.getElementById("weekly-result-panel");
+const weeklyResultText = document.getElementById("weekly-result-text");
+const weeklyResultOkBtn = document.getElementById("weekly-result-ok-btn");
+
+function isVisible(el) {
+    return Boolean(el) && !el.classList.contains("hidden");
+}
+
+function syncWeeklyModalState() {
+    const modalVisible = isVisible(trophyPopup) || isVisible(weeklyResultPanel);
+    if (weeklyModalBackdrop) {
+        weeklyModalBackdrop.classList.toggle("hidden", !modalVisible);
+    }
+    document.body.classList.toggle("modal-open", modalVisible);
+}
+
+function buildWeeklyResultText() {
+    const weekKey = localStorage.getItem("weeklyWeekKey") || getCurrentWeekKey();
+    return `Done!! You completed ${weeklyProgress.completed}/5 tasks in ${weekKey}. You can start new practice anytime, and next week the challenge resets automatically.`;
+}
+
+function openWeeklyResultPanel() {
+    if (weeklyResultText) weeklyResultText.innerText = buildWeeklyResultText();
+    if (weeklyResultPanel) weeklyResultPanel.classList.remove("hidden");
+    syncWeeklyModalState();
+}
+
+function closeWeeklyResultPanel() {
+    if (weeklyResultPanel) weeklyResultPanel.classList.add("hidden");
+    syncWeeklyModalState();
+}
 
 // Update UI: weekly progress and trophy separately
 function updateProgressUI() {
@@ -88,6 +124,9 @@ function updateProgressUI() {
             trophyPopup.classList.add("hidden");
             trophyPopup.classList.remove("show");
         }
+
+        closeWeeklyResultPanel();
+        syncWeeklyModalState();
     }
 }
 
@@ -97,12 +136,54 @@ function showTrophy(withConfetti) {
         trophyPopup.classList.remove("hidden");
         trophyPopup.classList.add("show");
     }
+    syncWeeklyModalState();
 
     if(withConfetti) {
         burstConfetti();
         setTimeout(burstConfetti, 250);
         setTimeout(burstConfetti, 500);
     }
+}
+
+if (weeklyDoneBtn) {
+    weeklyDoneBtn.addEventListener("click", () => {
+        const latestResultUrl = localStorage.getItem("weeklyLastResultUrl");
+        if (latestResultUrl) {
+            location.href = latestResultUrl;
+            return;
+        }
+        openWeeklyResultPanel();
+    });
+}
+
+if (weeklyCloseWinBtn) {
+    weeklyCloseWinBtn.addEventListener("click", () => {
+        if(trophyPopup) {
+            trophyPopup.classList.add("hidden");
+            trophyPopup.classList.remove("show");
+        }
+        syncWeeklyModalState();
+    });
+}
+
+if (weeklyResultOkBtn) {
+    weeklyResultOkBtn.addEventListener("click", () => {
+        closeWeeklyResultPanel();
+    });
+}
+
+if (weeklyModalBackdrop) {
+    weeklyModalBackdrop.addEventListener("click", () => {
+        if (isVisible(weeklyResultPanel)) {
+            closeWeeklyResultPanel();
+            return;
+        }
+        if (isVisible(trophyPopup)) {
+            trophyPopup.classList.add("hidden");
+            trophyPopup.classList.remove("show");
+            syncWeeklyModalState();
+        }
+    });
 }
 
 // Confetti burst from trophy position
@@ -179,3 +260,4 @@ window.addEventListener("load", () => {
 applyWeeklyResetIfNeeded();
 updateProgressUI();
 startLiveWeeklyResetWatcher();
+syncWeeklyModalState();

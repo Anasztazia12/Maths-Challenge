@@ -3,6 +3,7 @@ const arcadeCanvas = document.getElementById("arcade-canvas");
 if (arcadeCanvas) {
     const arcadeTargetEl = document.getElementById("arcade-target");
     const arcadeBasketEl = document.getElementById("arcade-basket");
+    const arcadeNeedEl = document.getElementById("arcade-need");
     const arcadeScoreEl = document.getElementById("arcade-score");
     const arcadeLivesEl = document.getElementById("arcade-lives");
     const arcadeComboEl = document.getElementById("arcade-combo");
@@ -77,7 +78,8 @@ if (arcadeCanvas) {
         phaseTick: 0,
         spawnAppleTick: 0,
         spawnHazardTick: 0,
-        spawnEnemyTick: 0
+        spawnEnemyTick: 0,
+        spawnRouteTick: 0
     };
 
     let difficulty = arcadeDifficultyEl?.value || "easy";
@@ -193,6 +195,7 @@ if (arcadeCanvas) {
         state.spawnAppleTick = 0;
         state.spawnHazardTick = 0;
         state.spawnEnemyTick = 0;
+        state.spawnRouteTick = 0;
     }
 
     function startLevel(isNext = false) {
@@ -231,8 +234,10 @@ if (arcadeCanvas) {
 
     function updateHud() {
         const progress = Math.min(100, Math.floor((state.levelDistance / state.levelGoal) * 100));
+        const needNow = neededValue();
         if (arcadeTargetEl) arcadeTargetEl.innerText = `Target: ${state.challenge.text} = ${state.challenge.target}`;
         if (arcadeBasketEl) arcadeBasketEl.innerText = `Basket: ${state.basket}`;
+        if (arcadeNeedEl) arcadeNeedEl.innerText = `Need: ${needNow}`;
         if (arcadeScoreEl) arcadeScoreEl.innerText = `Score: ${state.score}`;
         if (arcadeLivesEl) arcadeLivesEl.innerText = `Lives: ${formatHeartLives()} (${formatLives()}/5)`;
         if (arcadeComboEl) arcadeComboEl.innerText = `Combo: x${state.combo}`;
@@ -243,12 +248,28 @@ if (arcadeCanvas) {
         return Math.max(1, state.challenge.target - state.basket);
     }
 
-    function spawnApple() {
-        const x = world.width + randInt(80, 160);
-        const laneTop = Math.random() < 0.5;
-        const y = laneTop ? world.groundY - randInt(130, 165) : world.groundY - randInt(34, 54);
+    function hasNeededAppleOnField() {
         const need = neededValue();
-        const useAnswer = need > 0 && Math.random() < 0.3;
+        return state.apples.some((apple) => apple.value === need && apple.x > -40 && apple.x < world.width + 120);
+    }
+
+    function spawnApple(forceAnswer = false) {
+        const x = world.width + randInt(80, 160);
+        const hasUpperRoute = state.platforms.some((platform) => platform.y < world.groundY - 100 && platform.x > player.x - 160 && platform.x < world.width + 220);
+
+        let y;
+        if (hasUpperRoute) {
+            const lanePick = Math.random();
+            if (lanePick < 0.34) y = world.groundY - randInt(32, 52);
+            else if (lanePick < 0.78) y = world.groundY - randInt(138, 166);
+            else y = world.groundY - randInt(186, 214);
+        } else {
+            const laneTop = Math.random() < 0.5;
+            y = laneTop ? world.groundY - randInt(130, 165) : world.groundY - randInt(34, 54);
+        }
+
+        const need = neededValue();
+        const useAnswer = forceAnswer || (need > 0 && Math.random() < 0.3);
         let value = useAnswer ? need : randInt(1, Math.min(12, state.challenge.target + 1));
         if (!useAnswer && value === need) {
             value = Math.max(1, Math.min(12, value + (Math.random() < 0.5 ? -1 : 1)));
@@ -261,6 +282,50 @@ if (arcadeCanvas) {
             value,
             isAnswer: value === need
         });
+    }
+
+    function spawnStairRoute() {
+        const startX = world.width + randInt(70, 140);
+        const stepWidth = randInt(52, 64);
+        const stepRise = randInt(22, 28);
+        const stepHeight = 16;
+        const stepCount = 3;
+
+        for (let i = 0; i < stepCount; i++) {
+            state.platforms.push({
+                x: startX + i * stepWidth,
+                y: world.groundY - (i + 1) * stepRise,
+                width: stepWidth + 10,
+                height: stepHeight
+            });
+        }
+
+        const upperY = world.groundY - (stepCount + 1) * stepRise;
+        let cursorX = startX + stepCount * stepWidth + 10;
+        const segmentCount = randInt(3, 5);
+
+        for (let i = 0; i < segmentCount; i++) {
+            const segmentWidth = randInt(110, 170);
+            state.platforms.push({
+                x: cursorX,
+                y: upperY,
+                width: segmentWidth,
+                height: 18
+            });
+
+            const gapWidth = randInt(46, 92);
+            cursorX += segmentWidth + gapWidth;
+        }
+
+        const downStart = cursorX + 8;
+        for (let i = 0; i < stepCount; i++) {
+            state.platforms.push({
+                x: downStart + i * stepWidth,
+                y: upperY + i * stepRise,
+                width: stepWidth + 8,
+                height: stepHeight
+            });
+        }
     }
 
     function spawnHazard() {
@@ -300,7 +365,11 @@ if (arcadeCanvas) {
 
     function spawnEnemy() {
         const x = world.width + randInt(130, 220);
-        const y = world.groundY - randInt(70, 150);
+        const upperPlatform = state.platforms.find((platform) => platform.y < world.groundY - 100 && platform.x > player.x - 80 && platform.x < world.width + 220);
+        const spawnOnUpper = Boolean(upperPlatform) && Math.random() < 0.7;
+        const y = spawnOnUpper
+            ? upperPlatform.y - randInt(56, 66)
+            : world.groundY - randInt(70, 150);
         state.enemies.push({
             x,
             y,
@@ -445,6 +514,13 @@ if (arcadeCanvas) {
         const cfg = DIFFICULTY[difficulty] || DIFFICULTY.easy;
         const phase = getCurrentPhase();
 
+        state.spawnRouteTick += 1;
+        if (state.spawnRouteTick > Math.max(240, 340 - state.level * 10)) {
+            state.spawnRouteTick = 0;
+            spawnStairRoute();
+            showMessage("Stairs ahead", 700);
+        }
+
         state.phaseTick += 1;
         if (state.phaseTick > phaseDuration()) {
             nextPhase();
@@ -452,9 +528,14 @@ if (arcadeCanvas) {
 
         if (phase === "apples") {
             state.spawnAppleTick += 1;
-            if (state.spawnAppleTick > Math.max(38, cfg.appleTick - state.level * 2)) {
+            const noExactNeededVisible = !hasNeededAppleOnField();
+            const spawnThreshold = noExactNeededVisible
+                ? Math.max(20, cfg.appleTick - state.level * 3)
+                : Math.max(38, cfg.appleTick - state.level * 2);
+
+            if (state.spawnAppleTick > spawnThreshold) {
                 state.spawnAppleTick = 0;
-                spawnApple();
+                spawnApple(noExactNeededVisible);
             }
         }
 
@@ -523,8 +604,14 @@ if (arcadeCanvas) {
             }
             if (state.basket > state.challenge.target) {
                 loseLife(1, "Too much collected.");
+                state.basket = 0;
+                showMessage(`Need exact: ${state.challenge.target}`, 900);
+                updateHud();
                 return;
             }
+
+            showMessage(`Need now: ${neededValue()}`, 700);
+            updateHud();
         }
     }
 
@@ -551,7 +638,7 @@ if (arcadeCanvas) {
                 } else {
                     playWrongPickSound();
                     loseLife(0.5, "Wrong number shot.");
-                    showMessage("Wrong number", 750);
+                    showMessage(`Wrong number • Need: ${need}`, 900);
                 }
                 break;
             }
@@ -706,24 +793,28 @@ if (arcadeCanvas) {
 
     function drawChallengeOverlay() {
         ctx.fillStyle = "rgba(0,0,0,0.48)";
-        ctx.fillRect(16, 12, 460, 82);
+        ctx.fillRect(16, 12, 500, 92);
         ctx.strokeStyle = "rgba(255,255,255,0.25)";
-        ctx.strokeRect(16, 12, 460, 82);
+        ctx.strokeRect(16, 12, 500, 92);
 
         ctx.fillStyle = "#ffffff";
-        ctx.font = "bold 22px Arial";
+        ctx.font = "bold 21px Arial";
         ctx.textAlign = "left";
         ctx.textBaseline = "middle";
         ctx.fillText(`TARGET: ${state.challenge.text} = ${state.challenge.target}`, 30, 40);
 
         ctx.fillStyle = "#8dffbf";
-        ctx.font = "bold 26px Arial";
+        ctx.font = "bold 24px Arial";
         ctx.fillText(`BASKET: ${state.basket}`, 30, 68);
+
+        ctx.fillStyle = "#ffd36b";
+        ctx.font = "bold 22px Arial";
+        ctx.fillText(`NEED NOW: ${neededValue()}`, 290, 66);
 
         if (performance.now() < state.messageUntil) {
             ctx.fillStyle = "#ffd36b";
             ctx.font = "bold 22px Arial";
-            ctx.fillText(state.messageText, 500, 56);
+            ctx.fillText(state.messageText, 530, 60);
         }
     }
 
