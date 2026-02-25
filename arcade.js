@@ -45,8 +45,8 @@ if (arcadeCanvas) {
     const player = {
         x: 120,
         y: 0,
-        width: 56,
-        height: 60,
+        width: 68,
+        height: 74,
         vy: 0,
         jumpPower: -15.3,
         onGround: false
@@ -67,9 +67,11 @@ if (arcadeCanvas) {
         platforms: [],
         obstacles: [],
         enemies: [],
+        lifePickups: [],
         bullets: [],
         enemyBullets: [],
         shootCooldown: 0,
+        powerShotUntil: 0,
         invincibleUntil: 0,
         messageUntil: 0,
         messageText: "",
@@ -79,7 +81,8 @@ if (arcadeCanvas) {
         spawnAppleTick: 0,
         spawnHazardTick: 0,
         spawnEnemyTick: 0,
-        spawnRouteTick: 0
+        spawnRouteTick: 0,
+        spawnLifeTick: 0
     };
 
     let difficulty = arcadeDifficultyEl?.value || "easy";
@@ -190,18 +193,20 @@ if (arcadeCanvas) {
         state.platforms = [];
         state.obstacles = [];
         state.enemies = [];
+        state.lifePickups = [];
         state.bullets = [];
         state.enemyBullets = [];
         state.spawnAppleTick = 0;
         state.spawnHazardTick = 0;
         state.spawnEnemyTick = 0;
         state.spawnRouteTick = 0;
+        state.spawnLifeTick = 0;
     }
 
     function startLevel(isNext = false) {
         if (isNext) {
             state.level += 1;
-            showMessage(`Level ${state.level}`, 1100);
+            showMessage(`NEW FIELD! ${state.level}`, 1400);
         }
 
         state.levelDistance = 0;
@@ -225,6 +230,7 @@ if (arcadeCanvas) {
         state.bestCombo = 0;
         state.nextCheckpoint = 5;
         state.level = 1;
+        state.powerShotUntil = 0;
         state.invincibleUntil = 0;
         world.running = true;
         if (arcadeOverlay) arcadeOverlay.classList.add("hidden");
@@ -234,18 +240,25 @@ if (arcadeCanvas) {
 
     function updateHud() {
         const progress = Math.min(100, Math.floor((state.levelDistance / state.levelGoal) * 100));
-        const needNow = neededValue();
-        if (arcadeTargetEl) arcadeTargetEl.innerText = `Target: ${state.challenge.text} = ${state.challenge.target}`;
-        if (arcadeBasketEl) arcadeBasketEl.innerText = `Basket: ${state.basket}`;
-        if (arcadeNeedEl) arcadeNeedEl.innerText = `Need: ${needNow}`;
+        if (arcadeTargetEl) arcadeTargetEl.innerText = `Target: ${state.challenge.text}`;
+        if (arcadeBasketEl) arcadeBasketEl.style.display = "none";
+        if (arcadeNeedEl) arcadeNeedEl.style.display = "none";
         if (arcadeScoreEl) arcadeScoreEl.innerText = `Score: ${state.score}`;
         if (arcadeLivesEl) arcadeLivesEl.innerText = `Lives: ${formatHeartLives()} (${formatLives()}/5)`;
         if (arcadeComboEl) arcadeComboEl.innerText = `Combo: x${state.combo}`;
-        if (arcadeCheckpointEl) arcadeCheckpointEl.innerText = `Level ${state.level} • Finish ${progress}%`;
+        if (arcadeCheckpointEl) arcadeCheckpointEl.innerText = `Field ${state.level} • Finish ${progress}%`;
     }
 
     function neededValue() {
         return Math.max(1, state.challenge.target - state.basket);
+    }
+
+    function hasPowerShot() {
+        return performance.now() < state.powerShotUntil;
+    }
+
+    function addScore(delta) {
+        state.score = Math.max(0, state.score + delta);
     }
 
     function hasNeededAppleOnField() {
@@ -347,7 +360,8 @@ if (arcadeCanvas) {
         const roll = Math.random();
         let type = "spike";
         if (roll < 0.4) type = "crate";
-        else if (roll < 0.82) type = "block";
+        else if (roll < 0.74) type = "block";
+        else type = "brick";
 
         const h = type === "spike" ? randInt(22, 42) : randInt(30, 68);
         const w = type === "spike" ? randInt(28, 46) : randInt(32, 68);
@@ -359,6 +373,7 @@ if (arcadeCanvas) {
             height: h,
             type,
             breakable: type === "crate",
+            breakByHead: type === "brick",
             standable: type !== "spike"
         });
     }
@@ -378,6 +393,18 @@ if (arcadeCanvas) {
             hp: randInt(3, 4),
             maxHp: 4,
             shootTick: randInt(70, 130)
+        });
+    }
+
+    function spawnLifePickup() {
+        const x = world.width + randInt(120, 220);
+        const highLane = Math.random() < 0.55;
+        const y = highLane ? world.groundY - randInt(130, 190) : world.groundY - randInt(48, 78);
+        state.lifePickups.push({
+            x,
+            y,
+            radius: 14,
+            type: Math.random() < 0.22 ? "power" : "life"
         });
     }
 
@@ -418,7 +445,7 @@ if (arcadeCanvas) {
     }
 
     function completeMathGoal(source) {
-        state.score += 1;
+        addScore(3);
         state.combo += 1;
         state.bestCombo = Math.max(state.bestCombo, state.combo);
 
@@ -450,12 +477,15 @@ if (arcadeCanvas) {
         }
 
         state.shootCooldown = 12;
+        const powered = hasPowerShot();
         state.bullets.push({
             x: player.x + player.width - 2,
             y: player.y + player.height * 0.45,
-            radius: 7,
-            vx: 9.2,
-            vy: 0
+            radius: powered ? 11 : 7,
+            vx: powered ? 11.2 : 9.2,
+            vy: 0,
+            power: powered,
+            piercing: powered
         });
         playShootSound();
     }
@@ -508,6 +538,34 @@ if (arcadeCanvas) {
                 player.onGround = true;
             }
         }
+
+        for (let obstacleIndex = state.obstacles.length - 1; obstacleIndex >= 0; obstacleIndex--) {
+            const obstacle = state.obstacles[obstacleIndex];
+            if (!obstacle.breakByHead) continue;
+
+            const hitFromBelow = player.vy < 0
+                && player.y <= obstacle.y + obstacle.height
+                && player.y >= obstacle.y + obstacle.height - 16
+                && player.x + player.width > obstacle.x + 4
+                && player.x < obstacle.x + obstacle.width - 4;
+
+            if (!hitFromBelow) continue;
+
+            player.vy = 1.2;
+            state.obstacles.splice(obstacleIndex, 1);
+
+            if (Math.random() < 0.52) {
+                addHalfLife();
+                showMessage("Brick bonus: +0.5 life", 900);
+            } else {
+                state.powerShotUntil = performance.now() + 9000;
+                showMessage("Power shot unlocked!", 1000);
+            }
+
+            playCollectSound();
+            updateHud();
+            break;
+        }
     }
 
     function updateSpawns() {
@@ -554,6 +612,12 @@ if (arcadeCanvas) {
                 spawnEnemy();
             }
         }
+
+        state.spawnLifeTick += 1;
+        if (state.spawnLifeTick > Math.max(290, 360 - state.level * 10)) {
+            state.spawnLifeTick = 0;
+            spawnLifePickup();
+        }
     }
 
     function updateMovement() {
@@ -581,10 +645,23 @@ if (arcadeCanvas) {
 
         state.enemyBullets.forEach((bullet) => { bullet.x += bullet.vx; });
 
+        state.lifePickups.forEach((pickup) => { pickup.x -= world.speed + 0.45; });
+
+        let escapedEnemies = 0;
+        state.enemies.forEach((enemy) => {
+            if (enemy.x + enemy.width < -140) escapedEnemies += 1;
+        });
+        if (escapedEnemies > 0) {
+            loseLife(1, "Enemy escaped.");
+            addScore(-2);
+            showMessage("Enemy escaped! -1 life", 900);
+        }
+
         state.apples = state.apples.filter((apple) => apple.x > -90);
         state.platforms = state.platforms.filter((platform) => platform.x + platform.width > -100);
         state.obstacles = state.obstacles.filter((obstacle) => obstacle.x + obstacle.width > -100);
         state.enemies = state.enemies.filter((enemy) => enemy.x + enemy.width > -140);
+        state.lifePickups = state.lifePickups.filter((pickup) => pickup.x + pickup.radius > -90);
         state.bullets = state.bullets.filter((bullet) => bullet.x < world.width + 80 && bullet.y > -80 && bullet.y < world.height + 80);
         state.enemyBullets = state.enemyBullets.filter((bullet) => bullet.x > -80);
     }
@@ -603,14 +680,54 @@ if (arcadeCanvas) {
                 return;
             }
             if (state.basket > state.challenge.target) {
+                addScore(-1);
                 loseLife(1, "Too much collected.");
                 state.basket = 0;
-                showMessage(`Need exact: ${state.challenge.target}`, 900);
+                showMessage("Wrong total! Try again.", 900);
                 updateHud();
                 return;
             }
+            updateHud();
+        }
+    }
 
-            showMessage(`Need now: ${neededValue()}`, 700);
+    function handleLifePickupCollection() {
+        for (let i = state.lifePickups.length - 1; i >= 0; i--) {
+            const pickup = state.lifePickups[i];
+            if (!intersectsCircleRect(pickup.x, pickup.y, pickup.radius, player.x, player.y, player.width, player.height)) continue;
+
+            state.lifePickups.splice(i, 1);
+            playCollectSound();
+
+            if (pickup.type === "power") {
+                state.powerShotUntil = performance.now() + 9000;
+                showMessage("Power shot ready!", 900);
+            } else {
+                addHalfLife();
+                showMessage("Life pickup +0.5", 900);
+            }
+
+            updateHud();
+        }
+    }
+
+    function handleEnemyStomp() {
+        for (let i = state.enemies.length - 1; i >= 0; i--) {
+            const enemy = state.enemies[i];
+            const touching = intersectsRect(player.x, player.y, player.width, player.height, enemy.x, enemy.y, enemy.width, enemy.height);
+            if (!touching) continue;
+
+            const stompHit = player.vy > 1.1 && (player.y + player.height) <= (enemy.y + 18);
+            if (!stompHit) continue;
+
+            state.enemies.splice(i, 1);
+            player.vy = player.jumpPower * 0.62;
+            player.onGround = false;
+            addScore(2);
+            state.combo += 1;
+            state.bestCombo = Math.max(state.bestCombo, state.combo);
+            showMessage("Enemy stomped!", 760);
+            playCollectSound();
             updateHud();
         }
     }
@@ -627,18 +744,25 @@ if (arcadeCanvas) {
                 const r = bullet.radius + apple.radius + 3;
                 if (dx * dx + dy * dy > r * r) continue;
 
+                if (apple.isAnswer) {
+                    continue;
+                }
+
                 state.apples.splice(appleIndex, 1);
-                state.bullets.splice(bulletIndex, 1);
-                consumed = true;
+                if (!bullet.piercing) {
+                    state.bullets.splice(bulletIndex, 1);
+                    consumed = true;
+                }
 
                 const need = neededValue();
                 if (apple.value === need) {
                     state.basket += apple.value;
                     completeMathGoal("shot");
                 } else {
+                    addScore(-1);
                     playWrongPickSound();
                     loseLife(0.5, "Wrong number shot.");
-                    showMessage(`Wrong number • Need: ${need}`, 900);
+                    showMessage("Wrong number shot", 900);
                 }
                 break;
             }
@@ -650,12 +774,15 @@ if (arcadeCanvas) {
                 if (!intersectsCircleRect(bullet.x, bullet.y, bullet.radius, enemy.x, enemy.y, enemy.width, enemy.height)) continue;
 
                 enemy.hp -= 1;
-                state.bullets.splice(bulletIndex, 1);
-                consumed = true;
+                if (!bullet.piercing) {
+                    state.bullets.splice(bulletIndex, 1);
+                    consumed = true;
+                }
                 playCollectSound();
 
                 if (enemy.hp <= 0) {
                     state.enemies.splice(enemyIndex, 1);
+                    addScore(1);
                     showMessage("Enemy defeated", 650);
                 } else {
                     showMessage(`Enemy hit (${enemy.hp} left)`, 520);
@@ -669,8 +796,10 @@ if (arcadeCanvas) {
                 const obstacle = state.obstacles[obstacleIndex];
                 if (!intersectsCircleRect(bullet.x, bullet.y, bullet.radius, obstacle.x, obstacle.y, obstacle.width, obstacle.height)) continue;
 
-                state.bullets.splice(bulletIndex, 1);
-                consumed = true;
+                if (!bullet.piercing) {
+                    state.bullets.splice(bulletIndex, 1);
+                    consumed = true;
+                }
                 if (obstacle.breakable) {
                     state.obstacles.splice(obstacleIndex, 1);
                     playCollectSound();
@@ -725,7 +854,7 @@ if (arcadeCanvas) {
         state.levelDistance += world.speed;
         if (state.levelDistance < state.levelGoal) return;
 
-        showMessage("Finish reached!", 950);
+        showMessage(`NEW FIELD! ${state.level + 1}`, 1500);
         startLevel(true);
     }
 
@@ -739,7 +868,9 @@ if (arcadeCanvas) {
         updatePlayerPhysics();
         updateSpawns();
         updateMovement();
+        handleEnemyStomp();
         handlePlayerApplePickup();
+        handleLifePickupCollection();
         handleBulletHits();
         handleDamageCollisions();
         updateLevelProgress();
@@ -801,19 +932,21 @@ if (arcadeCanvas) {
         ctx.font = "bold 21px Arial";
         ctx.textAlign = "left";
         ctx.textBaseline = "middle";
-        ctx.fillText(`TARGET: ${state.challenge.text} = ${state.challenge.target}`, 30, 40);
+        ctx.fillText(`TARGET: ${state.challenge.text}`, 30, 40);
 
         ctx.fillStyle = "#8dffbf";
-        ctx.font = "bold 24px Arial";
-        ctx.fillText(`BASKET: ${state.basket}`, 30, 68);
+        ctx.font = "bold 20px Arial";
+        ctx.fillText("Collect exact apples to solve it", 30, 68);
 
-        ctx.fillStyle = "#ffd36b";
-        ctx.font = "bold 22px Arial";
-        ctx.fillText(`NEED NOW: ${neededValue()}`, 290, 66);
+        if (hasPowerShot()) {
+            ctx.fillStyle = "#9fddff";
+            ctx.font = "bold 18px Arial";
+            ctx.fillText("POWER SHOT ACTIVE", 320, 88);
+        }
 
         if (performance.now() < state.messageUntil) {
             ctx.fillStyle = "#ffd36b";
-            ctx.font = "bold 22px Arial";
+            ctx.font = "bold 24px Arial";
             ctx.fillText(state.messageText, 530, 60);
         }
     }
@@ -823,28 +956,36 @@ if (arcadeCanvas) {
         if (blink) return;
 
         const cx = player.x + player.width * 0.5;
-        ctx.fillStyle = "#8f6641";
-        ctx.fillRect(player.x + 8, player.y + 24, 40, 36);
+        ctx.fillStyle = "#9b6b42";
+        ctx.fillRect(player.x + 10, player.y + 26, 48, 42);
+
+        ctx.fillStyle = "#7a5233";
+        ctx.fillRect(player.x + 4, player.y + 30, 10, 26);
+        ctx.fillRect(player.x + player.width - 14, player.y + 30, 10, 26);
+
+        ctx.fillStyle = "#74482b";
+        ctx.fillRect(player.x + 18, player.y + 64, 10, 10);
+        ctx.fillRect(player.x + 40, player.y + 64, 10, 10);
 
         ctx.beginPath();
-        ctx.arc(cx, player.y + 21, 18, 0, Math.PI * 2);
+        ctx.arc(cx, player.y + 22, 20, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.beginPath();
-        ctx.arc(cx - 11, player.y + 8, 7, 0, Math.PI * 2);
-        ctx.arc(cx + 11, player.y + 8, 7, 0, Math.PI * 2);
+        ctx.arc(cx - 12, player.y + 8, 8, 0, Math.PI * 2);
+        ctx.arc(cx + 12, player.y + 8, 8, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.fillStyle = "#f6dfc3";
         ctx.beginPath();
-        ctx.arc(cx, player.y + 24, 8, 0, Math.PI * 2);
+        ctx.arc(cx, player.y + 26, 9, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.fillStyle = "#1f1f1f";
         ctx.beginPath();
-        ctx.arc(cx - 5, player.y + 18, 2, 0, Math.PI * 2);
-        ctx.arc(cx + 5, player.y + 18, 2, 0, Math.PI * 2);
-        ctx.arc(cx, player.y + 24, 2, 0, Math.PI * 2);
+        ctx.arc(cx - 5, player.y + 19, 2, 0, Math.PI * 2);
+        ctx.arc(cx + 5, player.y + 19, 2, 0, Math.PI * 2);
+        ctx.arc(cx, player.y + 26, 2, 0, Math.PI * 2);
         ctx.fill();
     }
 
@@ -898,6 +1039,25 @@ if (arcadeCanvas) {
                 return;
             }
 
+            if (obstacle.type === "brick") {
+                ctx.fillStyle = "#b35a3c";
+                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+                ctx.strokeStyle = "#e9b49a";
+                ctx.lineWidth = 1.2;
+                const step = 14;
+                for (let x = obstacle.x + step; x < obstacle.x + obstacle.width; x += step) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, obstacle.y);
+                    ctx.lineTo(x, obstacle.y + obstacle.height);
+                    ctx.stroke();
+                }
+                ctx.beginPath();
+                ctx.moveTo(obstacle.x, obstacle.y + obstacle.height * 0.5);
+                ctx.lineTo(obstacle.x + obstacle.width, obstacle.y + obstacle.height * 0.5);
+                ctx.stroke();
+                return;
+            }
+
             ctx.fillStyle = "#3f4f8f";
             ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
             ctx.fillStyle = "#7f98d1";
@@ -906,8 +1066,11 @@ if (arcadeCanvas) {
     }
 
     function drawEnemies() {
+        const styleIndex = (state.level - 1) % 3;
+        const bodyColors = ["#57ffd0", "#ff8fb1", "#7ee2ff"];
+
         state.enemies.forEach((enemy) => {
-            ctx.fillStyle = "#57ffd0";
+            ctx.fillStyle = bodyColors[styleIndex];
             ctx.beginPath();
             ctx.ellipse(enemy.x + enemy.width * 0.5, enemy.y + enemy.height * 0.5, enemy.width * 0.5, enemy.height * 0.48, 0, 0, Math.PI * 2);
             ctx.fill();
@@ -929,16 +1092,53 @@ if (arcadeCanvas) {
 
     function drawBullets() {
         state.bullets.forEach((bullet) => {
-            ctx.fillStyle = "#ffe45e";
+            ctx.fillStyle = bullet.power ? "#95f0ff" : "#ffe45e";
             ctx.beginPath();
             ctx.arc(bullet.x, bullet.y, bullet.radius, 0, Math.PI * 2);
             ctx.fill();
+
+            if (bullet.power) {
+                ctx.strokeStyle = "rgba(149,240,255,0.6)";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(bullet.x, bullet.y, bullet.radius + 5, 0, Math.PI * 2);
+                ctx.stroke();
+            }
         });
 
         state.enemyBullets.forEach((bullet) => {
             ctx.fillStyle = "#ff8a8a";
             ctx.beginPath();
             ctx.arc(bullet.x, bullet.y, bullet.radius, 0, Math.PI * 2);
+            ctx.fill();
+        });
+    }
+
+    function drawLifePickups() {
+        state.lifePickups.forEach((pickup) => {
+            if (pickup.type === "power") {
+                ctx.fillStyle = "#7dd3fc";
+                ctx.beginPath();
+                ctx.arc(pickup.x, pickup.y, pickup.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = "#082f49";
+                ctx.font = "bold 15px Arial";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText("⚡", pickup.x, pickup.y + 1);
+                return;
+            }
+
+            ctx.fillStyle = "#ff5f8a";
+            ctx.beginPath();
+            ctx.arc(pickup.x - 5, pickup.y - 2, 6, 0, Math.PI * 2);
+            ctx.arc(pickup.x + 5, pickup.y - 2, 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(pickup.x - 12, pickup.y);
+            ctx.lineTo(pickup.x + 12, pickup.y);
+            ctx.lineTo(pickup.x, pickup.y + 12);
+            ctx.closePath();
             ctx.fill();
         });
     }
@@ -950,6 +1150,7 @@ if (arcadeCanvas) {
         drawPlatformsAndObstacles();
         drawEnemies();
         drawApples();
+        drawLifePickups();
         drawBullets();
         drawBear();
     }
