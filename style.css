@@ -3,7 +3,7 @@
    ============================ */
 
 body.bg-home {
-    background: url("pophunters.webp") no-repeat 24% center;
+    background: url("pophunters.webp") no-repeat 36% center;
     background-size: cover;
 }
 
@@ -219,6 +219,42 @@ select:focus {
     font-size: 14px;
     margin-bottom: 10px;
     opacity: 0.9;
+}
+
+#timer-wrap {
+    margin: 0 auto 10px;
+    width: min(94%, 520px);
+}
+
+#timer-label {
+    font-size: 13px;
+    text-align: left;
+    margin-bottom: 4px;
+    color: rgba(255, 255, 255, 0.92);
+}
+
+#timer-track {
+    width: 100%;
+    height: 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.2);
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+#timer-bar {
+    width: 100%;
+    height: 100%;
+    background: #22c55e;
+    transition: width 0.1s linear, background-color 0.2s ease;
+}
+
+#timer-bar.warn {
+    background: #facc15;
+}
+
+#timer-bar.danger {
+    background: #ef4444;
 }
 
 #answer-input {
@@ -956,7 +992,7 @@ body.bg-home #end-screen {
 
 @media (max-width: 520px) {
     body.bg-home {
-        background-position: 24% center;
+        background-position: 34% center;
     }
 
     .home-container {
@@ -1031,7 +1067,7 @@ body.bg-home #end-screen {
     }
 
     body.bg-home {
-        background-position: 24% center;
+        background-position: 34% center;
     }
 
     body.bg-game,

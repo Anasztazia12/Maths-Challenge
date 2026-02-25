@@ -6,6 +6,8 @@ const diff = urlParams.get("diff") || "easy";        // easy, medium, hard
 const tablesParam = urlParams.get("tables") || "";
 const isWeekly = urlParams.get("weekly") === "1";
 const showWeeklyResult = urlParams.get("showWeeklyResult") === "1";
+const isTimedMode = mode === "timed";
+const QUESTION_TIME_SECONDS = 20;
 
 const selectedTables = tablesParam
     .split(",")
@@ -21,6 +23,9 @@ function randomFromTables() {
 // DOM elements
 const questionEl = document.getElementById("question");
 const counterEl = document.getElementById("counter");
+const timerWrapEl = document.getElementById("timer-wrap");
+const timerLabelEl = document.getElementById("timer-label");
+const timerBarEl = document.getElementById("timer-bar");
 const inputContainer = document.getElementById("input-container");
 const multipleContainer = document.getElementById("multiple-container");
 const answerInput = document.getElementById("answer-input");
@@ -81,7 +86,88 @@ function getDifficultyLabel(value) {
 
 function getModeLabel(value) {
     if (value === "multiple") return "Multiple Choice";
+    if (value === "timed") return "Timed (20s / question)";
     return "Type Answer";
+}
+
+function stopQuestionTimer() {
+    if (questionTimerId) {
+        clearInterval(questionTimerId);
+        questionTimerId = null;
+    }
+    timedTickLastSecond = null;
+}
+
+function updateTimerUi(msLeft) {
+    if (!timerWrapEl || !timerLabelEl || !timerBarEl) return;
+
+    const full = QUESTION_TIME_SECONDS * 1000;
+    const clamped = Math.max(0, Math.min(full, msLeft));
+    const ratio = clamped / full;
+    const secondsLeft = Math.ceil(clamped / 1000);
+
+    timerLabelEl.innerText = `Time left: ${secondsLeft}s`;
+    timerBarEl.style.width = `${Math.max(0, ratio * 100)}%`;
+    timerBarEl.classList.remove("warn", "danger");
+
+    if (ratio <= 0.25) {
+        timerBarEl.classList.add("danger");
+    } else if (ratio <= 0.55) {
+        timerBarEl.classList.add("warn");
+    }
+}
+
+function handleTimedOutQuestion() {
+    stopQuestionTimer();
+
+    questionResults.push({
+        index: currentQuestion,
+        expression: currentExpression,
+        correctAnswer,
+        userAnswerLabel: "Time's up",
+        isCorrect: false
+    });
+
+    if (wrongSound) {
+        wrongSound.currentTime = 0;
+        wrongSound.play();
+    }
+
+    if (answerInput) answerInput.value = "";
+
+    if (currentQuestion < 20) {
+        generateQuestion();
+    } else {
+        showEndScreen();
+    }
+}
+
+function startQuestionTimer() {
+    if (!isTimedMode) return;
+
+    stopQuestionTimer();
+    timedTickLastSecond = null;
+    questionTimeRemainingMs = QUESTION_TIME_SECONDS * 1000;
+    questionTimerExpectedEnd = Date.now() + questionTimeRemainingMs;
+    updateTimerUi(questionTimeRemainingMs);
+
+    questionTimerId = setInterval(() => {
+        questionTimeRemainingMs = questionTimerExpectedEnd - Date.now();
+        const secondsLeft = Math.ceil(questionTimeRemainingMs / 1000);
+
+        if (secondsLeft <= 5 && secondsLeft >= 1 && timedTickLastSecond !== secondsLeft) {
+            timedTickLastSecond = secondsLeft;
+            playTimedTickSound();
+        }
+
+        if (questionTimeRemainingMs <= 0) {
+            updateTimerUi(0);
+            handleTimedOutQuestion();
+            return;
+        }
+
+        updateTimerUi(questionTimeRemainingMs);
+    }, 100);
 }
 
 function getTableInfoLabel() {
@@ -113,6 +199,7 @@ function addArcadeCoinsFromQuiz(correctCount) {
 // Sounds
 const correctSound = document.getElementById("correct-sound");
 const wrongSound = document.getElementById("wrong-sound");
+const timedTickAudioCtx = window.AudioContext ? new AudioContext() : null;
 
 let quizAudioUnlocked = false;
 
@@ -138,6 +225,31 @@ function unlockQuizAudio() {
             sound.volume = 1;
         }
     });
+
+    if (timedTickAudioCtx && timedTickAudioCtx.state === "suspended") {
+        timedTickAudioCtx.resume();
+    }
+}
+
+function playTimedTickSound() {
+    if (!timedTickAudioCtx) return;
+    if (timedTickAudioCtx.state === "suspended") {
+        timedTickAudioCtx.resume();
+    }
+
+    const oscillator = timedTickAudioCtx.createOscillator();
+    const gain = timedTickAudioCtx.createGain();
+    oscillator.type = "square";
+    oscillator.frequency.value = 920;
+    gain.gain.value = 0.035;
+    oscillator.connect(gain);
+    gain.connect(timedTickAudioCtx.destination);
+
+    const now = timedTickAudioCtx.currentTime;
+    gain.gain.setValueAtTime(0.035, now);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.09);
+    oscillator.start(now);
+    oscillator.stop(now + 0.09);
 }
 
 // State
@@ -145,6 +257,10 @@ let currentQuestion = 0;  // Starting question
 let correctAnswer = 0;
 let currentExpression = "";
 const questionResults = [];
+let questionTimerId = null;
+let questionTimeRemainingMs = 0;
+let questionTimerExpectedEnd = 0;
+let timedTickLastSecond = null;
 
 function getResultRating(correctCount, totalCount) {
     if (correctCount === totalCount && totalCount > 0) return "Excellent!";
@@ -383,6 +499,7 @@ function generateQuestion() {
     }
 
     if (mode === "multiple") setupMultipleChoice();
+    if (isTimedMode) startQuestionTimer();
 }
 
 // Multiple choice setup
@@ -402,9 +519,12 @@ function setupMultipleChoice() {
 
 // Check answer
 function checkAnswer(value) {
-    const rawInput = mode === "input" ? answerInput.value.trim() : String(value);
-    if (mode === "input" && rawInput === "") return;
-    if (mode === "input") value = Number(rawInput);
+    const usesInputMode = mode === "input" || isTimedMode;
+    const rawInput = usesInputMode ? answerInput.value.trim() : String(value);
+    if (usesInputMode && rawInput === "") return;
+    if (usesInputMode) value = Number(rawInput);
+
+    stopQuestionTimer();
 
     const isCorrect = value === correctAnswer;
     const answerLabel = rawInput === "" ? "(no answer)" : rawInput;
@@ -446,8 +566,12 @@ function renderEndScreenFromData(data, playAgainTarget, backTarget) {
     const badge = data.badge || getBadgeLevel(correctCount, total);
     const rows = Array.isArray(data.results) ? data.results : [];
 
-    if (endTitle) endTitle.innerText = "Done!";
-    if (endText) endText.innerText = `You finished all ${total} questions. Done ${correctCount}/${total}.`;
+    if (endTitle) endTitle.innerText = isTimedMode ? "Time's up!" : "Done!";
+    if (endText) {
+        endText.innerText = isTimedMode
+            ? `Time's up! You finished ${total}/20 questions. Result: ${correctCount}/${total}.`
+            : `You finished all ${total} questions. Done ${correctCount}/${total}.`;
+    }
     if (resultSummaryEl) {
         resultSummaryEl.innerText = `Your result: ${correctCount}/${total} • Correct answers: ${correctCount}/${total} • ${rating}`;
     }
@@ -498,6 +622,8 @@ function loadSavedWeeklyResultData() {
 
 // End screen
 function showEndScreen() {
+    stopQuestionTimer();
+
     if (isWeekly) {
         localStorage.setItem("weeklyTaskDone", "1");
     }
@@ -904,7 +1030,7 @@ async function exportCertificatePdf() {
 
 // OK button for input mode
 okBtn.onclick = () => {
-    if (mode === "input") checkAnswer(Number(answerInput.value));
+    if (mode === "input" || isTimedMode) checkAnswer(Number(answerInput.value));
 };
 
 if (quizSubmitBtn) {
@@ -969,6 +1095,11 @@ if (studentNameInput) {
 
 // Initial display setup
 if (endScreen) endScreen.classList.add("hidden");
+
+if (timerWrapEl) {
+    if (isTimedMode) timerWrapEl.classList.remove("hidden");
+    else timerWrapEl.classList.add("hidden");
+}
 
 if (mode === "multiple") {
     inputContainer.style.display = "none";
