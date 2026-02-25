@@ -747,7 +747,8 @@ if (arcadeCanvas) {
         state.enemyBullets.forEach((bullet) => { bullet.x += bullet.vx; });
 
         state.lifePickups.forEach((pickup) => { pickup.x -= world.speed + 0.45; });
-            maxHp: 4
+
+        let escapedEnemies = 0;
         state.enemies.forEach((enemy) => {
             if (enemy.x + enemy.width < -140) escapedEnemies += 1;
         });
