@@ -3,22 +3,22 @@
    ============================ */
 
 body.bg-home {
-    background: url("pophunters.png") no-repeat center center fixed;
+    background: url("pophunters.webp") no-repeat center center;
     background-size: cover;
 }
 
 body.bg-game {
-    background: url("background_game.png") no-repeat center center fixed;
+    background: url("background_game.webp") no-repeat center center;
     background-size: cover;
 }
 
 body.bg-weekly {
-    background: url("background_weekly.png") no-repeat center center fixed;
+    background: url("background_weekly.webp") no-repeat center center;
     background-size: cover;
 }
 
 body.bg-operations {
-    background: url("background_operations.png") no-repeat center center fixed;
+    background: url("background_operations.webp") no-repeat center center;
     background-size: cover;
 }
 
