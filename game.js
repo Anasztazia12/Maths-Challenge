@@ -13,6 +13,7 @@ const multipleContainer = document.getElementById("multiple-container");
 const answerInput = document.getElementById("answer-input");
 const choiceButtons = document.querySelectorAll(".choice-btn");
 const okBtn = document.getElementById("ok-btn");
+const endScreen = document.getElementById("end-screen");
 
 // Hangok
 const correctSound = document.getElementById("correct-sound");
@@ -102,9 +103,6 @@ function checkAnswer(value) {
 
     answerInput.value = "";
 
-    // Weekly progress növelése
-    if (isWeekly) incrementWeeklyProgress();
-
     // Következő kérdés vagy vége
     if (currentQuestion < 20) {
         generateQuestion();
@@ -113,64 +111,36 @@ function checkAnswer(value) {
     }
 }
 
-// Weekly progress funkciók
-function incrementWeeklyProgress() {
-    let weeklyCount = Number(localStorage.getItem("weeklyCurrent") || 0);
-    if (weeklyCount < 5) {
-        weeklyCount++;
-        localStorage.setItem("weeklyCurrent", weeklyCount);
-        updateWeeklyPentagon(weeklyCount);
-    }
-    if (weeklyCount === 5) {
-        showWeeklyTrophy();
-    }
-}
-
-function updateWeeklyPentagon(count) {
-    const pentagonProgress = document.getElementById("pentagon-progress");
-    const pentagonPoints = [
-        [100, 20],
-        [180, 75],
-        [150, 160],
-        [50, 160],
-        [20, 75],
-        [100, 20]
-    ];
-    let points = "";
-    for (let i = 0; i <= count; i++) points += `${pentagonPoints[i][0]},${pentagonPoints[i][1]} `;
-    if (pentagonProgress) pentagonProgress.setAttribute("points", points.trim());
-
-    const progressText = document.getElementById("weekly-progress");
-    if (progressText) progressText.innerText = `Heti haladás: ${count}/5`;
-}
-
-function showWeeklyTrophy() {
-    const trophyPopup = document.getElementById("trophy-popup");
-    if (trophyPopup) trophyPopup.classList.remove("hidden");
-    for (let i = 0; i < 50; i++) createConfetti();
-}
-
-// Konfetti
-function createConfetti() {
-    const confetti = document.createElement("div");
-    confetti.classList.add("confetti");
-    document.body.appendChild(confetti);
-    const size = Math.random() * 8 + 4;
-    confetti.style.width = size + "px";
-    confetti.style.height = size + "px";
-    confetti.style.left = Math.random() * window.innerWidth + "px";
-    confetti.style.backgroundColor = ["#ff00cc","#00ff7f","#ffd700","#6a00ff"][Math.floor(Math.random()*4)];
-    confetti.style.animationDuration = (Math.random()*2+2)+"s";
-    setTimeout(()=>confetti.remove(),4000);
-}
-
 // End screen
 function showEndScreen() {
-    document.querySelector(".game-container").innerHTML = `
-        <h2>You finished all 20 questions!</h2>
-        <button class="menu-btn" onclick="location.href='game.html'">Play Again</button>
-        <button class="menu-btn" onclick="location.href='index.html'">Back to Home</button>
-    `;
+    if (isWeekly) {
+        localStorage.setItem("weeklyTaskDone", "1");
+    }
+
+    const playAgainTarget = isWeekly ? "weekly.html" : "game.html";
+    const backTarget = isWeekly ? "weekly.html" : "index.html";
+
+    if (counterEl) counterEl.style.display = "none";
+    if (questionEl) questionEl.style.display = "none";
+    if (inputContainer) inputContainer.style.display = "none";
+    if (multipleContainer) multipleContainer.style.display = "none";
+
+    if (endScreen) {
+        const endTitle = endScreen.querySelector("h2");
+        const endText = endScreen.querySelector("p");
+        const endButtons = endScreen.querySelectorAll("button");
+
+        if (endTitle) endTitle.innerText = "Done!";
+        if (endText) endText.innerText = "You finished all 20 questions!";
+
+        if (endButtons[0]) endButtons[0].setAttribute("onclick", `location.href='${playAgainTarget}'`);
+        if (endButtons[1]) {
+            endButtons[1].setAttribute("onclick", `location.href='${backTarget}'`);
+            endButtons[1].innerText = isWeekly ? "Back to Weekly" : "Back to Home";
+        }
+
+        endScreen.classList.remove("hidden");
+    }
 }
 
 // OK gomb input módhoz
@@ -179,6 +149,8 @@ okBtn.onclick = () => {
 };
 
 // Kezdeti megjelenítés
+if (endScreen) endScreen.classList.add("hidden");
+
 if (mode === "multiple") {
     inputContainer.style.display = "none";
     multipleContainer.style.display = "block";

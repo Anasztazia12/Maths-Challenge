@@ -185,6 +185,17 @@ select:focus {
     font-weight: bold;
 }
 
+#pentagon-outline {
+    opacity: 0.45;
+}
+
+#pentagon-progress {
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    filter: drop-shadow(0 0 8px #00ff7f);
+    transition: stroke-dasharray 0.7s ease;
+}
+
 /* Trophy popup (hidden by default) */
 #trophy-popup {
     display: none;
@@ -193,16 +204,23 @@ select:focus {
     background: rgba(255,255,255,0.2);
     border-radius: 15px;
     box-shadow: 0 0 15px gold;
+    border: 2px solid rgba(255, 215, 0, 0.8);
+    animation: trophyPop 0.45s ease;
 }
 
-#trophy-popup.show,
-#trophy-popup.hidden:not([style*="display: none"]) {
+#trophy-popup.show {
     display: block;
+}
+
+.hidden {
+    display: none !important;
 }
 
 #trophy {
     font-size: 50px;
     margin-top: 10px;
+    filter: drop-shadow(0 0 10px #ffd700);
+    animation: trophyPulse 1.2s ease-in-out infinite;
 }
 
 /* ============================
@@ -211,21 +229,47 @@ select:focus {
 
 .confetti {
     position: fixed;
-    top: -10px;
+    top: 0;
     width: 8px;
     height: 8px;
-    opacity: 0.9;
+    opacity: 1;
     border-radius: 2px;
-    animation: fall linear forwards;
+    pointer-events: none;
+    z-index: 20;
+    animation: confettiBurst linear forwards;
 }
 
-@keyframes fall {
+@keyframes confettiBurst {
     0% {
-        transform: translateY(0) rotate(0deg);
+        transform: translate(0, 0) rotate(0deg) scale(1);
+        opacity: 1;
+    }
+    70% {
+        opacity: 1;
     }
     100% {
-        transform: translateY(120vh) rotate(360deg);
+        transform: translate(var(--dx), calc(var(--dy) + 220px)) rotate(760deg) scale(0.7);
         opacity: 0;
+    }
+}
+
+@keyframes trophyPop {
+    0% {
+        transform: scale(0.85);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes trophyPulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.08);
     }
 }
 
