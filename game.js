@@ -283,6 +283,22 @@ const ranges = {
     hard: 150
 };
 
+const mixedRanges = {
+    easy: 100,
+    medium: 500,
+    hard: 10000
+};
+
+const mixedTableSets = {
+    easy: [1, 2, 3],
+    medium: [1, 2, 3, 5, 10, 11],
+    hard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+};
+
+function randomFromSet(list) {
+    return list[Math.floor(Math.random() * list.length)];
+}
+
 // Random number generator
 function rand(max) {
     return Math.floor(Math.random() * max) + 1;
@@ -329,6 +345,10 @@ function generateQuestion() {
             questionEl.innerText = `${currentExpression} = ?`;
             break;
         case "mixed":
+            const mixedLimit = mixedRanges[diff] || mixedRanges.easy;
+            const mixedTables = mixedTableSets[diff] || mixedTableSets.easy;
+            a = rand(mixedLimit);
+            b = rand(mixedLimit);
             const ops = ["+", "-", "×", "÷"];
             const pick = ops[Math.floor(Math.random() * 4)];
             if (pick === "+") {
@@ -341,16 +361,16 @@ function generateQuestion() {
                 currentExpression = `${a} - ${b}`;
             }
             if (pick === "×") {
-                a = randomFromTables();
-                b = rand(12);
+                a = randomFromSet(mixedTables);
+                b = randomFromSet(mixedTables);
                 correctAnswer = a * b;
                 currentExpression = `${a} × ${b}`;
             }
             if (pick === "÷") {
-                b = randomFromTables();
-                a = rand(12);
-                correctAnswer = a;
-                let product2 = a * b;
+                b = randomFromSet(mixedTables);
+                const result = randomFromSet(mixedTables);
+                correctAnswer = result;
+                const product2 = result * b;
                 currentExpression = `${product2} ÷ ${b}`;
             }
             questionEl.innerText = `${currentExpression} = ?`;

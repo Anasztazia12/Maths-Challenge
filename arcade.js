@@ -695,8 +695,8 @@ if (arcadeCanvas) {
             state.spawnAppleTick += 1;
             const noExactNeededVisible = !hasNeededAppleOnField();
             const spawnThreshold = noExactNeededVisible
-                ? Math.max(52, cfg.appleTick + 12 - state.level)
-                : Math.max(74, cfg.appleTick + 24 - state.level);
+                ? Math.max(34, cfg.appleTick + 4 - state.level * 2)
+                : Math.max(50, cfg.appleTick + 14 - state.level * 2);
 
             if (state.spawnAppleTick > spawnThreshold && state.apples.length < maxApplesOnField()) {
                 state.spawnAppleTick = 0;

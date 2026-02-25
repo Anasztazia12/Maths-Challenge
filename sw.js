@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-02-25ak";
+const CACHE_VERSION = "2026-02-25al";
 const CACHE_NAME = `maths-challenge-${CACHE_VERSION}`;
 
 const CORE_ASSETS = [
