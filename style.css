@@ -116,6 +116,57 @@ h1 {
     box-shadow: 0 0 15px #ffd700;
 }
 
+.home-container {
+    width: min(600px, 94vw);
+    padding: 34px 30px;
+}
+
+.home-daily-note {
+    font-size: 16px;
+    font-weight: 700;
+    margin-top: -8px;
+    margin-bottom: 16px;
+    color: #ffeaa7;
+}
+
+.home-menu-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.home-menu-btn {
+    width: 100%;
+    min-height: 54px;
+    font-size: 17px;
+    border-radius: 16px;
+    margin-top: 0;
+}
+
+.home-menu-buttons .home-menu-btn:first-child,
+.home-menu-buttons .home-menu-btn:last-child {
+    grid-column: 1 / -1;
+}
+
+.home-weekly-btn {
+    min-height: 58px;
+    font-size: 18px;
+    box-shadow: 0 0 18px rgba(250, 204, 21, 0.9), 0 0 34px rgba(245, 158, 11, 0.45);
+    animation: weeklyGlowPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes weeklyGlowPulse {
+    0%,
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 14px rgba(250, 204, 21, 0.8), 0 0 28px rgba(245, 158, 11, 0.35);
+    }
+    50% {
+        transform: scale(1.03);
+        box-shadow: 0 0 22px rgba(250, 204, 21, 1), 0 0 42px rgba(245, 158, 11, 0.55);
+    }
+}
+
 /* ============================
    SELECT BOXES
    ============================ */
@@ -209,7 +260,7 @@ select:focus {
    WEEKLY CHALLENGE
    ============================ */
 
-#pentagon-container {
+#star-container {
     margin: 10px auto 20px;
     text-align: center;
 }
@@ -220,14 +271,15 @@ select:focus {
     font-weight: bold;
 }
 
-#pentagon-outline {
-    opacity: 0.45;
+#star-outline {
+    opacity: 0.9;
+    filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.45));
 }
 
-#pentagon-progress {
+#star-progress {
     stroke-linecap: round;
     stroke-linejoin: round;
-    filter: drop-shadow(0 0 8px #00ff7f);
+    filter: drop-shadow(0 0 10px rgba(250, 204, 21, 0.95));
     transition: stroke-dasharray 0.7s ease;
 }
 
@@ -879,6 +931,30 @@ body.bg-home #end-screen {
 }
 
 @media (max-width: 520px) {
+    .home-container {
+        width: min(96vw, 560px);
+        padding: 24px 14px;
+    }
+
+    .home-daily-note {
+        font-size: 14px;
+        margin-bottom: 12px;
+    }
+
+    .home-menu-buttons {
+        grid-template-columns: 1fr;
+    }
+
+    .home-menu-btn {
+        font-size: 16px;
+        min-height: 50px;
+    }
+
+    .home-weekly-btn {
+        min-height: 54px;
+        font-size: 17px;
+    }
+
     body.bg-home #end-screen {
         margin-top: 6px;
     }

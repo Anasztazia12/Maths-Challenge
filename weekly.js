@@ -1,12 +1,28 @@
 // Load saved weekly progress (with safe fallback)
+const WEEKLY_TOTAL_TASKS = 10;
+const DAILY_LIMIT = 2;
+
 const savedWeeklyProgress = JSON.parse(localStorage.getItem("weeklyProgress") || "null");
 const legacyWeeklyCurrent = Number(localStorage.getItem("weeklyCurrent") || 0);
 const initialCompleted = Number.isFinite(savedWeeklyProgress?.completed)
     ? savedWeeklyProgress.completed
     : legacyWeeklyCurrent;
 
+function getCurrentDayKey() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+}
+
+const initialByDay = savedWeeklyProgress && typeof savedWeeklyProgress.byDay === "object" && savedWeeklyProgress.byDay
+    ? savedWeeklyProgress.byDay
+    : {};
+
 let weeklyProgress = {
-    completed: Math.max(0, Math.min(5, Number(initialCompleted) || 0))
+    completed: Math.max(0, Math.min(WEEKLY_TOTAL_TASKS, Number(initialCompleted) || 0)),
+    byDay: initialByDay
 };
 
 let weeklyCelebrated = localStorage.getItem("weeklyCelebrated") === "1";
@@ -29,6 +45,7 @@ function applyWeeklyResetIfNeeded() {
 
     if (storedWeekKey !== currentWeekKey) {
         weeklyProgress.completed = 0;
+        weeklyProgress.byDay = {};
         weeklyCelebrated = false;
 
         localStorage.setItem("weeklyWeekKey", currentWeekKey);
@@ -56,7 +73,7 @@ function startLiveWeeklyResetWatcher() {
 
 // DOM
 const progressText = document.getElementById("weekly-progress");
-const pentagonProgress = document.getElementById("pentagon-progress");
+const starProgress = document.getElementById("star-progress");
 const trophyPopup = document.getElementById("trophy-popup");
 const trophy = document.getElementById("trophy");
 const weeklyDoneBtn = document.getElementById("weekly-done-btn");
@@ -80,7 +97,7 @@ function syncWeeklyModalState() {
 
 function buildWeeklyResultText() {
     const weekKey = localStorage.getItem("weeklyWeekKey") || getCurrentWeekKey();
-    return `Done!! You completed ${weeklyProgress.completed}/5 tasks in ${weekKey}. You can start new practice anytime, and next week the challenge resets automatically.`;
+    return `Done!! You completed ${weeklyProgress.completed}/${WEEKLY_TOTAL_TASKS} tasks in ${weekKey}. Daily limit is ${DAILY_LIMIT} tasks, and next week the challenge resets automatically.`;
 }
 
 function openWeeklyResultPanel() {
@@ -97,18 +114,20 @@ function closeWeeklyResultPanel() {
 // Update UI: weekly progress and trophy separately
 function updateProgressUI() {
     const completed = weeklyProgress.completed;
+    const dayKey = getCurrentDayKey();
+    const todayCount = Math.max(0, Math.min(DAILY_LIMIT, Number(weeklyProgress.byDay?.[dayKey] || 0)));
     
     // Weekly progress text
-    if(progressText) progressText.innerText = `Weekly progress: ${completed}/5`;
+    if(progressText) progressText.innerText = `Weekly progress: ${completed}/${WEEKLY_TOTAL_TASKS} • Today: ${todayCount}/${DAILY_LIMIT}`;
     
-    // Pentagon progress (1 task = 1 side = 20%)
-    if(pentagonProgress) {
-        const progressPercent = Math.max(0, Math.min(100, completed * 20));
-        pentagonProgress.setAttribute("stroke-dasharray", `${progressPercent} 100`);
+    // Star progress (10 tasks = full 100%)
+    if(starProgress) {
+        const progressPercent = Math.max(0, Math.min(100, (completed / WEEKLY_TOTAL_TASKS) * 100));
+        starProgress.setAttribute("stroke-dasharray", `${progressPercent} 100`);
     }
 
-    // Trophy only when completed = 5
-    if(completed === 5) {
+    // Trophy only when completed = 10
+    if(completed === WEEKLY_TOTAL_TASKS) {
         if(!weeklyCelebrated) {
             showTrophy(true);
             weeklyCelebrated = true;
@@ -220,8 +239,16 @@ function createConfetti(originX, originY) {
 
 // Start daily challenge
 function startWeeklyTask() {
-    if(weeklyProgress.completed >= 5){
-        alert("You already completed all 5 tasks this week!");
+    const dayKey = getCurrentDayKey();
+    const todayCount = Math.max(0, Math.min(DAILY_LIMIT, Number(weeklyProgress.byDay?.[dayKey] || 0)));
+
+    if(weeklyProgress.completed >= WEEKLY_TOTAL_TASKS){
+        alert("You already completed all 10 tasks this week!");
+        return;
+    }
+
+    if(todayCount >= DAILY_LIMIT) {
+        alert("You already completed 2 tasks today. Come back tomorrow for the next ones!");
         return;
     }
 
@@ -242,7 +269,14 @@ window.addEventListener("load", () => {
     const cameFromWeeklySession = localStorage.getItem("doingWeekly") === "1";
 
     if(finishedWeeklyTask && cameFromWeeklySession){
-        if(weeklyProgress.completed < 5) weeklyProgress.completed++;
+        const dayKey = getCurrentDayKey();
+        const todayCount = Math.max(0, Math.min(DAILY_LIMIT, Number(weeklyProgress.byDay?.[dayKey] || 0)));
+
+        if(weeklyProgress.completed < WEEKLY_TOTAL_TASKS && todayCount < DAILY_LIMIT) {
+            weeklyProgress.completed++;
+            weeklyProgress.byDay[dayKey] = todayCount + 1;
+        }
+
         localStorage.setItem("weeklyWeekKey", getCurrentWeekKey());
         localStorage.setItem("weeklyProgress", JSON.stringify(weeklyProgress));
         localStorage.setItem("weeklyCurrent", String(weeklyProgress.completed));

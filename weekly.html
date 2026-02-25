@@ -12,25 +12,27 @@
     <div class="game-container">
 
         <h1>Weekly Challenge</h1>
-        <p class="subtitle">Complete 5 daily tasks to earn the trophy!</p>
+        <p class="subtitle">Complete 2 tasks per day, 10 total this week, to earn the trophy!</p>
 
         <!-- Weekly progress -->
-        <p id="weekly-progress" class="subtitle">Weekly progress: 0/5</p>
+        <p id="weekly-progress" class="subtitle">Weekly progress: 0/10 • Today: 0/2</p>
 
-        <div id="pentagon-container">
-            <svg id="pentagon" width="200" height="200" viewBox="0 0 200 200">
-                <polygon id="pentagon-outline"
-                    points="100,20 180,75 150,160 50,160 20,75"
+        <div id="star-container">
+            <svg id="weekly-star" width="220" height="220" viewBox="0 0 220 220" aria-hidden="true">
+                <polygon id="star-outline"
+                    points="110,18 135,82 204,82 148,123 169,192 110,150 51,192 72,123 16,82 85,82"
                     stroke="#ffffff"
-                    stroke-width="4"
+                    stroke-width="8"
                     fill="none"
+                    stroke-linejoin="round"
                 />
-                <polygon id="pentagon-progress"
-                    points="100,20 180,75 150,160 50,160 20,75"
+                <polygon id="star-progress"
+                    points="110,18 135,82 204,82 148,123 169,192 110,150 51,192 72,123 16,82 85,82"
                     pathLength="100"
-                    stroke="#00ff00"
-                    stroke-width="6"
+                    stroke="#facc15"
+                    stroke-width="5"
                     fill="none"
+                    stroke-linejoin="round"
                     stroke-dasharray="0 100"
                 />
             </svg>
@@ -80,7 +82,7 @@
         <!-- Trophy popup -->
         <div id="trophy-popup" class="hidden">
             <h2>Congratulations!</h2>
-            <p>You completed all 5 weekly tasks!</p>
+            <p>You completed all 10 weekly tasks!</p>
             <div id="trophy">🏆</div>
             <button class="menu-btn special" id="weekly-done-btn" type="button">Done!!</button>
             <button class="menu-btn" id="weekly-close-win-btn" type="button">Close</button>
@@ -88,7 +90,7 @@
 
         <div id="weekly-result-panel" class="hidden">
             <h2>Weekly Result</h2>
-            <p id="weekly-result-text">You finished all 5 tasks this week.</p>
+            <p id="weekly-result-text">You finished all 10 tasks this week.</p>
             <button class="menu-btn special" id="weekly-result-ok-btn" type="button">Awesome!</button>
         </div>
 
