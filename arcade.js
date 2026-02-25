@@ -68,13 +68,6 @@ if (arcadeCanvas) {
             eyes: savedArcadeProfile?.cosmetics?.eyes || "normal",
             ears: savedArcadeProfile?.cosmetics?.ears || "normal",
             smile: savedArcadeProfile?.cosmetics?.smile || "normal"
-        },
-        unlocked: {
-            furBrown: true,
-            furPink: Boolean(savedArcadeProfile?.unlocked?.furPink),
-            eyesSpark: Boolean(savedArcadeProfile?.unlocked?.eyesSpark),
-            earsRound: Boolean(savedArcadeProfile?.unlocked?.earsRound),
-            smileBig: Boolean(savedArcadeProfile?.unlocked?.smileBig)
         }
     };
 
@@ -1342,7 +1335,6 @@ if (arcadeCanvas) {
 
     player.y = world.groundY - player.height;
     arcadeRulesEl?.classList.remove("hidden");
-    arcadeShopEl?.classList.add("hidden");
     resetGame();
     loop();
 }
