@@ -3,22 +3,26 @@
    ============================ */
 
 body.bg-home {
-    background: url("pophunters.webp") no-repeat center center;
+    background: url("pophunters.webp") no-repeat 24% center;
     background-size: cover;
 }
 
+body.bg-home::after {
+    background: rgba(0, 0, 0, 0.44);
+}
+
 body.bg-game {
-    background: url("background_game.webp") no-repeat center center;
+    background: url("background_game.webp") no-repeat 62% center;
     background-size: cover;
 }
 
 body.bg-weekly {
-    background: url("background_weekly.webp") no-repeat center center;
+    background: url("background_weekly.webp") no-repeat 62% center;
     background-size: cover;
 }
 
 body.bg-operations {
-    background: url("background_operations.webp") no-repeat center center;
+    background: url("background_operations.webp") no-repeat 62% center;
     background-size: cover;
 }
 
@@ -31,8 +35,10 @@ body {
     min-height: 100vh;
     font-family: Arial, sans-serif;
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
+    padding-left: 4vw;
+    box-sizing: border-box;
     color: white;
 }
 
@@ -119,6 +125,8 @@ h1 {
 .home-container {
     width: min(600px, 94vw);
     padding: 34px 30px;
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 18px rgba(126, 58, 242, 0.3);
 }
 
 .home-daily-note {
@@ -141,6 +149,13 @@ h1 {
     font-size: 17px;
     border-radius: 16px;
     margin-top: 0;
+    background: linear-gradient(90deg, #b91c9c, #5b21b6);
+    box-shadow: 0 0 8px rgba(217, 70, 239, 0.45);
+}
+
+.home-menu-btn:hover {
+    transform: scale(1.02);
+    box-shadow: 0 0 12px rgba(217, 70, 239, 0.5), 0 0 18px rgba(91, 33, 182, 0.35);
 }
 
 .home-menu-buttons .home-menu-btn:first-child,
@@ -151,19 +166,19 @@ h1 {
 .home-weekly-btn {
     min-height: 58px;
     font-size: 18px;
-    box-shadow: 0 0 18px rgba(250, 204, 21, 0.9), 0 0 34px rgba(245, 158, 11, 0.45);
-    animation: weeklyGlowPulse 1.6s ease-in-out infinite;
+    box-shadow: 0 0 12px rgba(250, 204, 21, 0.72), 0 0 20px rgba(245, 158, 11, 0.32);
+    animation: weeklyGlowPulse 2.2s ease-in-out infinite;
 }
 
 @keyframes weeklyGlowPulse {
     0%,
     100% {
         transform: scale(1);
-        box-shadow: 0 0 14px rgba(250, 204, 21, 0.8), 0 0 28px rgba(245, 158, 11, 0.35);
+        box-shadow: 0 0 10px rgba(250, 204, 21, 0.62), 0 0 18px rgba(245, 158, 11, 0.28);
     }
     50% {
-        transform: scale(1.03);
-        box-shadow: 0 0 22px rgba(250, 204, 21, 1), 0 0 42px rgba(245, 158, 11, 0.55);
+        transform: scale(1.015);
+        box-shadow: 0 0 14px rgba(250, 204, 21, 0.78), 0 0 24px rgba(245, 158, 11, 0.38);
     }
 }
 
@@ -277,9 +292,10 @@ select:focus {
 }
 
 #star-progress {
+    stroke-width: 9;
     stroke-linecap: round;
     stroke-linejoin: round;
-    filter: drop-shadow(0 0 10px rgba(250, 204, 21, 0.95));
+    filter: drop-shadow(0 0 14px rgba(250, 204, 21, 1));
     transition: stroke-dasharray 0.7s ease;
 }
 
@@ -816,10 +832,10 @@ button.result-badge {
 }
 
 .table-btn {
-    border: 2px solid rgba(255, 255, 255, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.45);
     border-radius: 12px;
-    background: rgba(0, 0, 0, 0.35);
-    color: #fff;
+    background: transparent;
+    color: #f8fafc;
     font-size: 20px;
     font-weight: bold;
     padding: 14px 0;
@@ -828,8 +844,16 @@ button.result-badge {
 
 .table-btn.selected {
     border-color: #00ff7f;
-    background: rgba(0, 255, 127, 0.22);
-    box-shadow: 0 0 12px rgba(0, 255, 127, 0.45);
+    background: rgba(0, 255, 127, 0.36);
+    color: #052e16;
+    box-shadow: 0 0 14px rgba(0, 255, 127, 0.5);
+}
+
+body.bg-operations .table-btn.selected {
+    border-color: #86efac;
+    background: #22c55e;
+    color: #052e16;
+    box-shadow: 0 0 16px rgba(34, 197, 94, 0.55);
 }
 
 .table-actions {
@@ -931,6 +955,10 @@ body.bg-home #end-screen {
 }
 
 @media (max-width: 520px) {
+    body.bg-home {
+        background-position: 24% center;
+    }
+
     .home-container {
         width: min(96vw, 560px);
         padding: 24px 14px;
@@ -998,7 +1026,18 @@ body.bg-home #end-screen {
 @media (max-width: 860px) {
     body {
         align-items: flex-start;
-        padding: 14px 8px 20px;
+        justify-content: flex-start;
+        padding: 14px 8px 20px 3vw;
+    }
+
+    body.bg-home {
+        background-position: 24% center;
+    }
+
+    body.bg-game,
+    body.bg-weekly,
+    body.bg-operations {
+        background-position: 62% center;
     }
 
     .game-container {

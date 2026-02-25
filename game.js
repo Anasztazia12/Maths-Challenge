@@ -299,6 +299,10 @@ function randomFromSet(list) {
     return list[Math.floor(Math.random() * list.length)];
 }
 
+function randBetween(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
 // Random number generator
 function rand(max) {
     return Math.floor(Math.random() * max) + 1;
@@ -347,8 +351,9 @@ function generateQuestion() {
         case "mixed":
             const mixedLimit = mixedRanges[diff] || mixedRanges.easy;
             const mixedTables = mixedTableSets[diff] || mixedTableSets.easy;
-            a = rand(mixedLimit);
-            b = rand(mixedLimit);
+            const mixedMin = 0;
+            a = randBetween(mixedMin, mixedLimit);
+            b = randBetween(mixedMin, mixedLimit);
             const ops = ["+", "-", "×", "÷"];
             const pick = ops[Math.floor(Math.random() * 4)];
             if (pick === "+") {
