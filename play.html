@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Maths Challenge - Play</title>
-    <link rel="preload" as="image" href="background_operations.webp">
-    <link rel="preload" as="image" href="background_weekly.webp">
     <link rel="preload" as="image" href="pophunters.webp">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -43,19 +41,44 @@
             <h2>Done!</h2>
             <p>You finished all 20 questions!</p>
             <p id="result-summary" class="subtitle"></p>
-            <div id="result-badge" class="result-badge">Great</div>
+            <button id="result-badge" class="result-badge" type="button">Great</button>
+
+            <div id="badge-shelf" class="badge-shelf">
+                <span id="badge-gold-chip" class="result-badge badge-gold badge-chip">Gold Badge</span>
+                <span id="badge-silver-chip" class="result-badge badge-silver badge-chip">Silver Badge</span>
+                <span id="badge-bronze-chip" class="result-badge badge-bronze badge-chip">Bronze Badge</span>
+                <span id="badge-practice-chip" class="result-badge badge-practice badge-chip">Practice Badge</span>
+            </div>
 
             <div class="result-tools">
                 <input type="text" id="student-name" placeholder="Type your name for certificate">
                 <div class="result-tool-buttons">
-                    <button class="menu-btn" id="save-result-btn" type="button">Save Result</button>
-                    <button class="menu-btn special" id="print-result-btn" type="button">Print</button>
+                    <button class="menu-btn" id="view-certificate-btn" type="button">View Certificate</button>
+                    <button class="menu-btn" id="save-result-btn" type="button">Save As...</button>
+                    <button class="menu-btn special" id="print-result-btn" type="button">Print Result</button>
+                </div>
+                <p id="save-status" class="save-status"></p>
+            </div>
+
+            <div id="certificate-preview" class="hidden">
+                <div class="certificate-card">
+                    <div class="certificate-title">Math Game Challenge Website Badge / Certificate</div>
+                    <div class="certificate-row"><strong>Name:</strong> <span id="certificate-name">Player</span></div>
+                    <div class="certificate-row"><strong>Date:</strong> <span id="certificate-date">-</span></div>
+                    <div class="certificate-row"><strong>Result:</strong> <span id="certificate-result">0/20</span></div>
+                    <div class="certificate-row"><strong>Badge:</strong> <span id="certificate-badge">Practice Badge</span></div>
+                    <div class="certificate-footer">© Anasztázia Karalyos-Kecskés 2026 • All rights reserved</div>
+                </div>
+                <div class="result-tool-buttons">
+                    <button class="menu-btn" id="close-certificate-btn" type="button">Close</button>
+                    <button class="menu-btn" id="export-pdf-btn" type="button">Export PDF</button>
+                    <button class="menu-btn special" id="print-certificate-btn" type="button">Print Certificate</button>
                 </div>
             </div>
 
             <div id="result-list"></div>
-            <button class="menu-btn" onclick="location.href='game.html'">Play Again</button>
-            <button class="menu-btn" onclick="location.href='index.html'">Back to Home</button>
+            <button class="menu-btn" id="play-again-btn" onclick="location.href='game.html'">Play Again</button>
+            <button class="menu-btn" id="back-home-btn" onclick="location.href='index.html'">Back to Home</button>
         </div>
 
     </div>
@@ -64,6 +87,7 @@
     <audio id="correct-sound" src="correct.mp3"></audio>
     <audio id="wrong-sound" src="wrong.mp3"></audio>
 
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <script src="game.js"></script>
     <script src="sw-register.js"></script>
 </body>

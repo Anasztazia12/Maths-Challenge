@@ -331,6 +331,32 @@ select:focus {
     border: 1px solid rgba(255, 255, 255, 0.25);
 }
 
+button.result-badge {
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.badge-shelf {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 0 0 10px;
+}
+
+.badge-chip {
+    margin-bottom: 0;
+    opacity: 0.45;
+    transform: scale(0.95);
+    transition: opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.badge-chip.badge-active {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.35);
+}
+
 .badge-gold {
     background: linear-gradient(90deg, #facc15, #f59e0b);
     color: #111827;
@@ -375,6 +401,54 @@ select:focus {
     gap: 10px;
     flex-wrap: wrap;
     margin-top: 8px;
+}
+
+.save-status {
+    margin: 8px 0 0;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.85);
+    min-height: 16px;
+}
+
+.save-status-error {
+    color: #fecaca;
+}
+
+#certificate-preview {
+    margin: 10px 0 12px;
+}
+
+.certificate-card {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 18px 16px;
+    border-radius: 18px;
+    border: 3px solid rgba(129, 140, 248, 0.8);
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.98), rgba(224, 231, 255, 0.9));
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+    color: #0f172a;
+    text-align: left;
+    overflow-wrap: anywhere;
+}
+
+.certificate-title {
+    font-size: 24px;
+    font-weight: 900;
+    text-align: center;
+    margin-bottom: 14px;
+    color: #312e81;
+}
+
+.certificate-row {
+    font-size: 17px;
+    margin: 8px 0;
+}
+
+.certificate-footer {
+    margin-top: 16px;
+    font-size: 12px;
+    text-align: center;
+    color: #334155;
 }
 
 #result-list {
@@ -576,6 +650,26 @@ body.bg-home #end-screen {
         width: 100%;
         box-sizing: border-box;
     }
+
+    .certificate-title {
+        font-size: 20px;
+    }
+
+    .certificate-row {
+        font-size: 16px;
+    }
+
+    .certificate-card {
+        padding: 14px 12px;
+    }
+
+    #certificate-preview .result-tool-buttons .menu-btn {
+        flex: 1 1 180px;
+    }
+
+    #certificate-preview .result-tool-buttons {
+        gap: 8px;
+    }
 }
 
 @media (hover: none) and (pointer: coarse) {
@@ -614,5 +708,10 @@ body.bg-home #end-screen {
 
     .tables-grid {
         grid-template-columns: repeat(3, minmax(72px, 1fr));
+    }
+
+    #certificate-preview .result-tool-buttons .menu-btn {
+        min-width: 150px;
+        flex: 1 1 44%;
     }
 }
