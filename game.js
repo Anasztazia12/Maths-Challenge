@@ -13,6 +13,8 @@ const multipleContainer = document.getElementById("multiple-container");
 const answerInput = document.getElementById("answer-input");
 const choiceButtons = document.querySelectorAll(".choice-btn");
 const okBtn = document.getElementById("ok-btn");
+const quizClearBtn = document.getElementById("quiz-clear-btn");
+const quizSubmitBtn = document.getElementById("quiz-submit-btn");
 const endScreen = document.getElementById("end-screen");
 const resultSummaryEl = document.getElementById("result-summary");
 const resultListEl = document.getElementById("result-list");
@@ -26,6 +28,14 @@ let currentQuestion = 0;  // Kezdő kérdés
 let correctAnswer = 0;
 let currentExpression = "";
 const questionResults = [];
+
+function getResultRating(correctCount, totalCount) {
+    if (correctCount === totalCount && totalCount > 0) return "Excellent!";
+    if (correctCount >= 18) return "Great!";
+    if (correctCount >= 14) return "Well done!";
+    if (correctCount >= 10) return "Not bad!";
+    return "Keep practicing!";
+}
 
 // Nehézségi szintek
 const ranges = {
@@ -119,6 +129,7 @@ function setupMultipleChoice() {
 // Ellenőrzés
 function checkAnswer(value) {
     const rawInput = mode === "input" ? answerInput.value.trim() : String(value);
+    if (mode === "input" && rawInput === "") return;
     if (mode === "input") value = Number(rawInput);
 
     const isCorrect = value === correctAnswer;
@@ -165,10 +176,14 @@ function showEndScreen() {
         const endText = endScreen.querySelector("p");
         const endButtons = endScreen.querySelectorAll("button");
         const correctCount = questionResults.filter((item) => item.isCorrect).length;
+        const total = questionResults.length;
+        const rating = getResultRating(correctCount, total);
 
         if (endTitle) endTitle.innerText = "Done!";
-        if (endText) endText.innerText = "You finished all 20 questions!";
-        if (resultSummaryEl) resultSummaryEl.innerText = `Correct answers: ${correctCount} / ${questionResults.length}`;
+        if (endText) endText.innerText = "You finished all 20 questions. Done!";
+        if (resultSummaryEl) {
+            resultSummaryEl.innerText = `Your result is ${total}/${correctCount} — ${rating}`;
+        }
 
         if (resultListEl) {
             const resultRows = questionResults.map((item) => {
@@ -200,6 +215,18 @@ function showEndScreen() {
 okBtn.onclick = () => {
     if (mode === "input") checkAnswer(Number(answerInput.value));
 };
+
+if (quizSubmitBtn) {
+    quizSubmitBtn.onclick = () => {
+        if (mode === "input") checkAnswer(Number(answerInput.value));
+    };
+}
+
+if (quizClearBtn) {
+    quizClearBtn.onclick = () => {
+        if (answerInput) answerInput.value = "";
+    };
+}
 
 // Kezdeti megjelenítés
 if (endScreen) endScreen.classList.add("hidden");

@@ -151,6 +151,24 @@ select:focus {
     display: block;
 }
 
+#answer-input::-webkit-outer-spin-button,
+#answer-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+#answer-input[type=number] {
+    appearance: textfield;
+    -moz-appearance: textfield;
+}
+
+#quiz-mobile-controls {
+    display: none;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 8px;
+}
+
 .choice-btn {
     padding: 10px;
     width: 90%;
@@ -369,6 +387,13 @@ select:focus {
     margin-bottom: 10px;
 }
 
+#arcade-mobile-controls {
+    display: none;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
 #arcade-overlay {
     margin: 12px auto 8px;
     padding: 14px;
@@ -381,4 +406,16 @@ select:focus {
 body.bg-home #end-screen {
     max-width: 780px;
     margin: 10px auto 0;
+}
+
+@media (hover: none) and (pointer: coarse) {
+    #quiz-mobile-controls,
+    #arcade-mobile-controls {
+        display: flex;
+    }
+
+    #quiz-mobile-controls .menu-btn,
+    #arcade-mobile-controls .menu-btn {
+        min-width: 120px;
+    }
 }
