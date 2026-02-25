@@ -472,8 +472,8 @@ button.result-badge {
     margin: 0 auto;
     padding: 16px 14px 18px;
     border-radius: 20px;
-    border: 3px solid rgba(129, 140, 248, 0.85);
-    background: linear-gradient(160deg, rgba(255, 255, 255, 0.99), rgba(238, 242, 255, 0.95));
+    border: 3px solid rgba(96, 165, 250, 0.72);
+    background: linear-gradient(165deg, rgba(239, 246, 255, 0.98), rgba(224, 242, 254, 0.96) 46%, rgba(240, 249, 255, 0.97));
     box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25), inset 0 0 0 1px rgba(255, 255, 255, 0.55);
     color: #0f172a;
     text-align: center;
@@ -553,9 +553,40 @@ button.result-badge {
 }
 
 .decor-shape,
+.decor-balloon,
 .decor-num {
     position: absolute;
     opacity: 0.5;
+}
+
+.decor-balloon {
+    width: 24px;
+    height: 30px;
+    border-radius: 50% 50% 46% 46%;
+    opacity: 0.42;
+}
+
+.decor-balloon::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: -16px;
+    width: 1.5px;
+    height: 16px;
+    transform: translateX(-50%);
+    background: rgba(71, 85, 105, 0.45);
+}
+
+.decor-balloon-1 {
+    left: 18px;
+    top: 140px;
+    background: radial-gradient(circle at 30% 30%, #ffffff 2px, #f472b6 16%, #ec4899 72%);
+}
+
+.decor-balloon-2 {
+    right: 20px;
+    top: 188px;
+    background: radial-gradient(circle at 30% 30%, #ffffff 2px, #67e8f9 18%, #06b6d4 75%);
 }
 
 .decor-shape {
@@ -575,6 +606,24 @@ button.result-badge {
     top: 66px;
     border-radius: 50%;
     background: #06b6d4;
+}
+
+.decor-circle-3 {
+    left: 56px;
+    bottom: 28px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #f59e0b;
+}
+
+.decor-circle-4 {
+    right: 62px;
+    bottom: 34px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #22c55e;
 }
 
 .decor-square-1 {
