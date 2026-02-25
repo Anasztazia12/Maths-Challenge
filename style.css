@@ -756,6 +756,7 @@ button.result-badge {
 }
 
 #arcade-canvas-wrap {
+    position: relative;
     width: 100%;
     max-width: 860px;
     margin: 0 auto 14px;
@@ -800,6 +801,17 @@ button.result-badge {
     max-width: 620px;
     background: rgba(0, 0, 0, 0.58);
     border: 1px solid rgba(255, 255, 255, 0.28);
+}
+
+.arcade-field-modal {
+    position: absolute;
+    left: 50%;
+    top: 55%;
+    transform: translate(-50%, -50%);
+    width: min(92%, 620px);
+    z-index: 35;
+    margin: 0;
+    box-shadow: 0 0 24px rgba(0, 0, 0, 0.45);
 }
 
 .arcade-modal-panel h2 {
@@ -943,6 +955,11 @@ body.bg-home #end-screen {
     .arcade-modal-panel {
         max-width: 100%;
         padding: 12px;
+    }
+
+    .arcade-field-modal {
+        width: min(94%, 560px);
+        top: 52%;
     }
 
     #trophy-popup,
