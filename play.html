@@ -7,7 +7,7 @@
     <link rel="preload" as="image" href="pophunters.webp">
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-home">
+<body class="bg-home play-screen">
 
     <div class="game-container">
 
@@ -17,23 +17,33 @@
         <p id="counter">Question 1 / 20</p>
 
         <div id="timer-wrap" class="hidden" aria-live="polite">
-            <div id="timer-label">Time left: 20s</div>
+            <div id="timer-label">Time left</div>
             <div id="timer-track">
                 <div id="timer-bar"></div>
             </div>
         </div>
 
         <!-- Question text -->
-        <p id="question">Loading...</p>
+        <p id="question" class="big-question">Loading...</p>
 
         <!-- INPUT MODE -->
         <div id="input-container">
-            <input type="number" id="answer-input" placeholder="Type your answer">
-            <button id="ok-btn">OK</button>
-            <div id="quiz-mobile-controls">
-                <button class="menu-btn" id="quiz-clear-btn" type="button">Clear</button>
-                <button class="menu-btn special" id="quiz-submit-btn" type="button">Submit</button>
+            <input type="text" id="answer-input" inputmode="numeric" pattern="[0-9]*" placeholder="Answer" readonly>
+            <div id="quiz-keypad" class="quiz-keypad" aria-label="Answer keypad">
+                <button type="button" class="keypad-btn" data-key="7">7</button>
+                <button type="button" class="keypad-btn" data-key="8">8</button>
+                <button type="button" class="keypad-btn" data-key="9">9</button>
+                <button type="button" class="keypad-btn" data-key="4">4</button>
+                <button type="button" class="keypad-btn" data-key="5">5</button>
+                <button type="button" class="keypad-btn" data-key="6">6</button>
+                <button type="button" class="keypad-btn" data-key="1">1</button>
+                <button type="button" class="keypad-btn" data-key="2">2</button>
+                <button type="button" class="keypad-btn" data-key="3">3</button>
+                <button type="button" class="keypad-btn keypad-btn-wide" data-key="clear">Clear</button>
+                <button type="button" class="keypad-btn" data-key="0">0</button>
+                <button type="button" class="keypad-btn keypad-btn-wide" data-key="backspace">Delete</button>
             </div>
+            <button id="ok-btn" class="menu-btn special" type="button">OK</button>
         </div>
 
         <!-- MULTIPLE CHOICE MODE -->
@@ -44,6 +54,16 @@
         </div>
 
         <button class="menu-btn" id="in-game-back-btn" type="button">⬅ Back</button>
+
+        <div id="leave-confirm-backdrop" class="hidden" aria-hidden="true"></div>
+        <div id="leave-confirm-panel" class="hidden" role="dialog" aria-modal="true" aria-labelledby="leave-confirm-title">
+            <h2 id="leave-confirm-title">Go Back?</h2>
+            <p id="leave-confirm-text">Current progress lost.</p>
+            <div class="leave-confirm-actions">
+                <button class="menu-btn" id="leave-confirm-stay-btn" type="button">Stay</button>
+                <button class="menu-btn special" id="leave-confirm-leave-btn" type="button">Go Back</button>
+            </div>
+        </div>
 
         <!-- End screen -->
         <div id="end-screen" class="hidden">

@@ -252,8 +252,7 @@ function startWeeklyTask() {
         return;
     }
 
-    const modeButtonsWrap = document.getElementById("weekly-mode-buttons");
-    const mode = modeButtonsWrap?.dataset.selected || "input";
+    const mode = "input";
     const difficultyButtonsWrap = document.getElementById("weekly-difficulty-buttons");
     const operationButtonsWrap = document.getElementById("weekly-operation-buttons");
     const diff = difficultyButtonsWrap?.dataset.selected || "easy";

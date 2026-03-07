@@ -1,13 +1,17 @@
 // URL parameters
 const urlParams = new URLSearchParams(window.location.search);
-const mode = urlParams.get("mode") || "input";        // input or multiple
+const source = urlParams.get("src") || "";
+const requestedMode = urlParams.get("mode") || "input";
+const multipleAllowed = source === "game";
+const normalizedMode = ["input", "multiple", "timed"].includes(requestedMode) ? requestedMode : "input";
+const mode = normalizedMode === "multiple" && !multipleAllowed ? "input" : normalizedMode;
 const op = urlParams.get("op") || "mixed";            // addition, subtraction, multiplication, division, mixed
 const diff = urlParams.get("diff") || "easy";        // easy, medium, hard
 const tablesParam = urlParams.get("tables") || "";
 const isWeekly = urlParams.get("weekly") === "1";
 const showWeeklyResult = urlParams.get("showWeeklyResult") === "1";
 const isTimedMode = mode === "timed";
-const QUESTION_TIME_SECONDS = 20;
+const QUESTION_TIME_SECONDS = isTimedMode && op === "multiplication" ? 6 : 20;
 
 const selectedTables = tablesParam
     .split(",")
@@ -31,9 +35,12 @@ const multipleContainer = document.getElementById("multiple-container");
 const answerInput = document.getElementById("answer-input");
 const choiceButtons = document.querySelectorAll(".choice-btn");
 const okBtn = document.getElementById("ok-btn");
-const quizClearBtn = document.getElementById("quiz-clear-btn");
-const quizSubmitBtn = document.getElementById("quiz-submit-btn");
+const quizKeypad = document.getElementById("quiz-keypad");
 const inGameBackBtn = document.getElementById("in-game-back-btn");
+const leaveConfirmBackdrop = document.getElementById("leave-confirm-backdrop");
+const leaveConfirmPanel = document.getElementById("leave-confirm-panel");
+const leaveConfirmStayBtn = document.getElementById("leave-confirm-stay-btn");
+const leaveConfirmLeaveBtn = document.getElementById("leave-confirm-leave-btn");
 const endScreen = document.getElementById("end-screen");
 const resultSummaryEl = document.getElementById("result-summary");
 const resultListEl = document.getElementById("result-list");
@@ -87,8 +94,37 @@ function getDifficultyLabel(value) {
 
 function getModeLabel(value) {
     if (value === "multiple") return "Multiple Choice";
-    if (value === "timed") return "Timed (20s / question)";
+    if (value === "timed") {
+        const seconds = op === "multiplication" ? 6 : 20;
+        return `Timed (${seconds}s / question)`;
+    }
     return "Type Answer";
+}
+
+function sanitizeAnswerInputValue() {
+    if (!answerInput) return;
+    answerInput.value = String(answerInput.value || "").replace(/\D/g, "");
+}
+
+function appendDigitToInput(digitText) {
+    if (!answerInput) return;
+    const digit = String(digitText).replace(/\D/g, "");
+    if (digit === "") return;
+    if (answerInput.value === "0") {
+        answerInput.value = digit;
+        return;
+    }
+    answerInput.value += digit;
+}
+
+function removeLastDigitFromInput() {
+    if (!answerInput) return;
+    answerInput.value = answerInput.value.slice(0, -1);
+}
+
+function clearAnswerInput() {
+    if (!answerInput) return;
+    answerInput.value = "";
 }
 
 function getInGameBackTarget() {
@@ -99,6 +135,38 @@ function getInGameBackTarget() {
     if (op === "division") return "division.html";
     if (op === "mixed") return "mixed.html";
     return "game.html";
+}
+
+function openLeaveConfirmDialog() {
+    return new Promise((resolve) => {
+        if (!leaveConfirmBackdrop || !leaveConfirmPanel || !leaveConfirmStayBtn || !leaveConfirmLeaveBtn) {
+            resolve(true);
+            return;
+        }
+
+        const closeDialog = (shouldLeave) => {
+            leaveConfirmBackdrop.classList.add("hidden");
+            leaveConfirmPanel.classList.add("hidden");
+            document.body.classList.remove("modal-open");
+
+            leaveConfirmStayBtn.removeEventListener("click", onStay);
+            leaveConfirmLeaveBtn.removeEventListener("click", onLeave);
+            leaveConfirmBackdrop.removeEventListener("click", onStay);
+
+            resolve(shouldLeave);
+        };
+
+        const onStay = () => closeDialog(false);
+        const onLeave = () => closeDialog(true);
+
+        leaveConfirmBackdrop.classList.remove("hidden");
+        leaveConfirmPanel.classList.remove("hidden");
+        document.body.classList.add("modal-open");
+
+        leaveConfirmStayBtn.addEventListener("click", onStay);
+        leaveConfirmLeaveBtn.addEventListener("click", onLeave);
+        leaveConfirmBackdrop.addEventListener("click", onStay);
+    });
 }
 
 function stopQuestionTimer() {
@@ -144,7 +212,7 @@ function handleTimedOutQuestion() {
         wrongSound.play();
     }
 
-    if (answerInput) answerInput.value = "";
+    clearAnswerInput();
 
     if (currentQuestion < 20) {
         generateQuestion();
@@ -531,6 +599,7 @@ function setupMultipleChoice() {
 // Check answer
 function checkAnswer(value) {
     const usesInputMode = mode === "input" || isTimedMode;
+    sanitizeAnswerInputValue();
     const rawInput = usesInputMode ? answerInput.value.trim() : String(value);
     if (usesInputMode && rawInput === "") return;
     if (usesInputMode) value = Number(rawInput);
@@ -551,7 +620,7 @@ function checkAnswer(value) {
     if (isCorrect) correctSound.play();
     else wrongSound.play();
 
-    answerInput.value = "";
+    clearAnswerInput();
 
     // Next question or end
     if (currentQuestion < 20) {
@@ -1048,17 +1117,31 @@ okBtn.onclick = () => {
     if (mode === "input" || isTimedMode) checkAnswer(Number(answerInput.value));
 };
 
-if (quizSubmitBtn) {
-    quizSubmitBtn.onclick = () => {
-        unlockQuizAudio();
-        if (mode === "input") checkAnswer(Number(answerInput.value));
-    };
+if (answerInput) {
+    answerInput.addEventListener("input", sanitizeAnswerInputValue);
 }
 
-if (quizClearBtn) {
-    quizClearBtn.onclick = () => {
-        if (answerInput) answerInput.value = "";
-    };
+if (quizKeypad) {
+    quizKeypad.addEventListener("click", (event) => {
+        unlockQuizAudio();
+        const button = event.target.closest("button[data-key]");
+        if (!button) return;
+
+        const key = button.dataset.key;
+        if (!key) return;
+
+        if (key === "clear") {
+            clearAnswerInput();
+            return;
+        }
+
+        if (key === "backspace") {
+            removeLastDigitFromInput();
+            return;
+        }
+
+        appendDigitToInput(key);
+    });
 }
 
 window.addEventListener("pointerdown", unlockQuizAudio, { once: true });
@@ -1138,10 +1221,10 @@ if (isWeekly && showWeeklyResult) {
 }
 
 if (inGameBackBtn) {
-    inGameBackBtn.onclick = () => {
+    inGameBackBtn.onclick = async () => {
         const hasProgress = currentQuestion > 0 || questionResults.length > 0;
         if (hasProgress) {
-            const shouldLeave = window.confirm("Leave this game now? Your current progress will be lost.");
+            const shouldLeave = await openLeaveConfirmDialog();
             if (!shouldLeave) return;
         }
 
