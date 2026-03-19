@@ -704,7 +704,12 @@ if (arcadeCanvas) {
 
             if (state.spawnAppleTick > spawnThreshold && state.apples.length < maxApplesOnField()) {
                 state.spawnAppleTick = 0;
-                spawnApple(noExactNeededVisible);
+                // Ha nincs helyes alma a pályán, mindig helyeset generáljunk
+                if (noExactNeededVisible) {
+                    spawnApple(true);
+                } else {
+                    spawnApple(false);
+                }
             }
         }
 
