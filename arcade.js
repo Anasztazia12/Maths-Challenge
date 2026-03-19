@@ -869,7 +869,8 @@ if (arcadeCanvas) {
                     addScore(-1);
                     addCoins(-1);
                     playWrongPickSound();
-                    handleWrongMath("Wrong number shot");
+                    // Ne veszítsen életet, csak pontot, ha rossz számot lő le
+                    // handleWrongMath("Wrong number shot");
                 }
                 break;
             }
