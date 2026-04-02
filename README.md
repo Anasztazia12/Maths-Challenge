@@ -1,5 +1,7 @@
 # Maths Challenge – Project Plan
 
+**Current Version:** v1.0.0
+
 ## 1. Scope
 
 Maths Challenge is a browser-based math learning and practice project for children, featuring multiple practice modes, a weekly progression system, and an arcade-style game mode. The main goal is to provide fun and effective practice for the four basic operations (addition, subtraction, multiplication, division), with both structured and game-based learning experiences.

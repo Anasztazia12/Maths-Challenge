@@ -89,7 +89,7 @@ body.play-screen .subtitle {
 }
 
 .game-container::after {
-    content: "© Developed by Anasztázia Karalyos-Kecskés 2026 • All rights reserved • Do not copy.";
+    content: "Maths Challenge v1.0.0 • © Developed by Anasztázia Karalyos-Kecskés 2026 • All rights reserved • Do not copy.";
     display: block;
     margin-top: 14px;
     padding: 0 4px;
