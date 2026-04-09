@@ -3,7 +3,7 @@
    ============================ */
 
 body.bg-home {
-    background: url("pophunters.webp") no-repeat 36% center;
+    background: url("../image/pophunters.webp") no-repeat 36% center;
     background-size: cover;
 }
 
@@ -12,17 +12,17 @@ body.bg-home::after {
 }
 
 body.bg-game {
-    background: url("background_game.webp") no-repeat 62% center;
+    background: url("../image/background_game.webp") no-repeat 62% center;
     background-size: cover;
 }
 
 body.bg-weekly {
-    background: url("background_weekly.webp") no-repeat 62% center;
+    background: url("../image/background_weekly.webp") no-repeat 62% center;
     background-size: cover;
 }
 
 body.bg-operations {
-    background: url("background_operations.webp") no-repeat 62% center;
+    background: url("../image/background_operations.webp") no-repeat 62% center;
     background-size: cover;
 }
 

@@ -38,9 +38,9 @@ Maths Challenge is a browser-based math learning and practice project for childr
 - **game.js** – Core quiz logic, result/certificate handling
 - **arcade.js** – Math Runner (arcade) gameplay logic
 - **weekly.js** – Weekly challenge flow and progression
-- **style.css** – Global styles
+- **assets/css/style.css** – Global styles
 - **sw.js, sw-register.js** – Service worker caching and registration
-- **Assets**: Images (e.g., pophunters.webp, background images), audio (correct.mp3, wrong.mp3)
+- **Assets**: Images in **assets/image/** (e.g., pophunters.webp, background images), audio (correct.mp3, wrong.mp3)
 
 ## 5. Usage
 

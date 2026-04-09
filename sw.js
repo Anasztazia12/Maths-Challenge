@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-03-07cf";
+const CACHE_VERSION = "2026-04-09-assets";
 const CACHE_NAME = `maths-challenge-${CACHE_VERSION}`;
 
 const CORE_ASSETS = [
@@ -12,14 +12,14 @@ const CORE_ASSETS = [
   "multiplication.html",
   "division.html",
   "mixed.html",
-  "style.css",
+  "assets/css/style.css",
   "game.js",
   "arcade.js",
   "weekly.js",
-  "pophunters.webp",
-  "background_game.webp",
-  "background_operations.webp",
-  "background_weekly.webp",
+  "assets/image/pophunters.webp",
+  "assets/image/background_game.webp",
+  "assets/image/background_operations.webp",
+  "assets/image/background_weekly.webp",
   "correct.mp3",
   "wrong.mp3"
 ];
