@@ -22,6 +22,7 @@ if (arcadeCanvas) {
 
     const ctx = arcadeCanvas.getContext("2d");
     const audioCtx = window.AudioContext ? new AudioContext() : null;
+    let arcadeAudioUnlocked = false;
 
     const THEMES = [
         { top: "#0f223c", bottom: "#281740", ground: "#2a1f4f" },
@@ -129,6 +130,15 @@ if (arcadeCanvas) {
         gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
         oscillator.start(now);
         oscillator.stop(now + duration);
+    }
+
+    function unlockArcadeAudio() {
+        if (!audioCtx) return;
+        if (arcadeAudioUnlocked && audioCtx.state !== "suspended") return;
+        arcadeAudioUnlocked = true;
+        if (audioCtx.state === "suspended") {
+            audioCtx.resume();
+        }
     }
 
     function playCollectSound() { playTone(560, 0.07, "triangle", 0.05); }
@@ -297,10 +307,10 @@ if (arcadeCanvas) {
     }
 
     function spawnRecoveryApples() {
-        state.apples = [];
-        state.bullets = [];
-        state.enemyBullets = [];
+        // Reset active hazards so the player can retry math without instant collisions.
+        resetWaveObjects();
 
+        spawnApple(true);
         spawnApple(true);
         spawnApple(false);
     }
@@ -316,6 +326,7 @@ if (arcadeCanvas) {
 
         if (state.failThisChallenge < MAX_CHALLENGE_FAILS) {
             spawnRecoveryApples();
+            state.invincibleUntil = performance.now() + 1800;
             const remaining = MAX_CHALLENGE_FAILS - state.failThisChallenge;
             showMessage(`Wrong! New apples incoming • ${remaining} mistakes left`, 1200);
             updateHud();
@@ -581,9 +592,7 @@ if (arcadeCanvas) {
 
     function shoot() {
         if (!world.running || state.shootCooldown > 0) return;
-        if (audioCtx && audioCtx.state === "suspended") {
-            audioCtx.resume();
-        }
+        unlockArcadeAudio();
 
         state.shootCooldown = 12;
         const powered = hasPowerShot();
@@ -602,9 +611,7 @@ if (arcadeCanvas) {
     }
 
     function jump() {
-        if (audioCtx && audioCtx.state === "suspended") {
-            audioCtx.resume();
-        }
+        unlockArcadeAudio();
         if (!world.running || !player.onGround) return;
         player.vy = player.jumpPower;
         player.onGround = false;
@@ -851,7 +858,9 @@ if (arcadeCanvas) {
                 const r = bullet.radius + apple.radius + 3;
                 if (dx * dx + dy * dy > r * r) continue;
 
-                if (apple.isAnswer) {
+                const need = neededValue();
+                // Keep the correct answer apple collectible only by touching it.
+                if (apple.value === need) {
                     continue;
                 }
 
@@ -861,17 +870,11 @@ if (arcadeCanvas) {
                     consumed = true;
                 }
 
-                const need = neededValue();
-                if (apple.value === need) {
-                    state.basket += apple.value;
-                    completeMathGoal("shot");
-                } else {
-                    addScore(-1);
-                    addCoins(-1);
-                    playWrongPickSound();
-                    // Ne veszítsen életet, csak pontot, ha rossz számot lő le
-                    // handleWrongMath("Wrong number shot");
-                }
+                addScore(-1);
+                addCoins(-1);
+                playWrongPickSound();
+                // Ne veszítsen életet, csak pontot, ha rossz számot lő le
+                // handleWrongMath("Wrong number shot");
                 break;
             }
 
@@ -1290,11 +1293,11 @@ if (arcadeCanvas) {
     }
 
     window.addEventListener("keydown", (event) => {
-        if (event.code === "Space" || event.code === "ArrowUp" || event.code === "KeyW") {
+        if (event.code === "ArrowUp" || event.code === "KeyW") {
             event.preventDefault();
             jump();
         }
-        if (event.code === "KeyF") {
+        if (event.code === "Space" || event.code === "KeyF") {
             event.preventDefault();
             shoot();
         }
@@ -1320,6 +1323,7 @@ if (arcadeCanvas) {
 
     if (arcadeRestartBtn) {
         arcadeRestartBtn.addEventListener("click", () => {
+            unlockArcadeAudio();
             syncArcadeDifficultyFromButtons();
             state.awaitingStart = false;
             resetGame();
@@ -1330,6 +1334,7 @@ if (arcadeCanvas) {
         const difficultyButtons = arcadeDifficultyButtonsWrap.querySelectorAll(".mode-btn");
         difficultyButtons.forEach((button) => {
             button.addEventListener("click", () => {
+                unlockArcadeAudio();
                 syncArcadeDifficultyFromButtons();
                 state.awaitingStart = false;
                 resetGame();
@@ -1347,6 +1352,7 @@ if (arcadeCanvas) {
 
     if (arcadeStartBtn) {
         arcadeStartBtn.addEventListener("click", () => {
+            unlockArcadeAudio();
             state.awaitingStart = false;
             arcadeRulesEl?.classList.add("hidden");
             world.running = true;
