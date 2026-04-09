@@ -127,6 +127,46 @@ function clearAnswerInput() {
     answerInput.value = "";
 }
 
+function setAnswerInputWrongState(isActive) {
+    if (!answerInput) return;
+    answerInput.classList.toggle("answer-input-wrong", Boolean(isActive));
+}
+
+function playWrongFeedback() {
+    setAnswerInputWrongState(true);
+
+    if (!wrongSound) {
+        setTimeout(() => setAnswerInputWrongState(false), 350);
+        return Promise.resolve();
+    }
+
+    wrongSound.currentTime = 0;
+
+    return new Promise((resolve) => {
+        let isDone = false;
+        let fallbackId = null;
+
+        const onEnded = () => finish();
+
+        function finish() {
+            if (isDone) return;
+            isDone = true;
+            wrongSound.removeEventListener("ended", onEnded);
+            if (fallbackId) clearTimeout(fallbackId);
+            setAnswerInputWrongState(false);
+            resolve();
+        }
+
+        wrongSound.addEventListener("ended", onEnded);
+        fallbackId = setTimeout(finish, 900);
+
+        const playPromise = wrongSound.play();
+        if (playPromise && typeof playPromise.then === "function") {
+            playPromise.catch(() => finish());
+        }
+    });
+}
+
 function getInGameBackTarget() {
     if (isWeekly) return "weekly.html";
     if (op === "addition") return "addition.html";
@@ -597,7 +637,7 @@ function setupMultipleChoice() {
 }
 
 // Check answer
-function checkAnswer(value) {
+async function checkAnswer(value) {
     const usesInputMode = mode === "input" || isTimedMode;
     sanitizeAnswerInputValue();
     const rawInput = usesInputMode ? answerInput.value.trim() : String(value);
@@ -617,8 +657,12 @@ function checkAnswer(value) {
         isCorrect
     });
 
-    if (isCorrect) correctSound.play();
-    else wrongSound.play();
+    if (isCorrect) {
+        setAnswerInputWrongState(false);
+        correctSound.play();
+    } else {
+        await playWrongFeedback();
+    }
 
     clearAnswerInput();
 
