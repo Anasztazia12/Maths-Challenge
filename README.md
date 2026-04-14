@@ -51,6 +51,34 @@ Maths Challenge is a browser-based math learning and practice project for childr
 
 > **Note:** If you do not see the latest changes immediately, perform a hard refresh (Ctrl+F5) because the service worker cache may still be active.
 
+## 6. Firebase Auth + Cloud Save Setup
+
+This project can register/login users and save quiz results per user (UID based).
+
+1. Open `firebase.js` and replace all `REPLACE_WITH_...` values with your Firebase project config.
+2. In Firebase Console -> Authentication -> Sign-in method, enable `Email/Password`.
+3. In Firebase Console -> Authentication -> Settings -> Authorized domains, add:
+    - your GitHub Pages domain (`yourname.github.io`)
+    - `localhost` for local testing
+4. In Firebase Console -> Firestore Database -> Rules, use:
+
+```text
+rules_version = '2';
+service cloud.firestore {
+    match /databases/{database}/documents {
+        match /users/{userId}/{document=**} {
+            allow read, write: if request.auth != null && request.auth.uid == userId;
+        }
+    }
+}
+```
+
+Data structure used by the app:
+
+- `users/{uid}/profile/main` for profile/login metadata
+- `users/{uid}/quizResults/{autoId}` for saved quiz summaries
+- `users/{uid}/stats/summary` for aggregated counters
+
 ---
 
 **Developer:** Anasztázia Karalyos-Kecskés

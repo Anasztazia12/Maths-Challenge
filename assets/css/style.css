@@ -167,6 +167,63 @@ h1 {
     color: #ffeaa7;
 }
 
+.auth-panel {
+    margin: 4px auto 18px;
+    padding: 12px;
+    border-radius: 14px;
+    background: rgba(2, 6, 23, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.auth-user-label {
+    margin: 0 0 10px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #c7f9ff;
+}
+
+.auth-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+}
+
+.auth-grid input {
+    width: 100%;
+    box-sizing: border-box;
+    border-radius: 10px;
+    border: 2px solid rgba(94, 234, 212, 0.62);
+    background: rgba(15, 23, 42, 0.8);
+    color: #ffffff;
+    padding: 10px 12px;
+    font-size: 14px;
+}
+
+.auth-grid input:focus {
+    outline: none;
+    box-shadow: 0 0 12px rgba(45, 212, 191, 0.6);
+}
+
+.auth-actions {
+    margin-top: 10px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.auth-actions .menu-btn {
+    margin-top: 0;
+    min-height: 42px;
+    font-size: 13px;
+}
+
+.auth-status {
+    margin: 10px 0 0;
+    min-height: 20px;
+    font-size: 12px;
+    color: #fde68a;
+}
+
 .home-menu-buttons {
     display: grid;
     grid-template-columns: 1fr 1fr;

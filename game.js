@@ -51,6 +51,7 @@ const studentNameInput = document.getElementById("student-name");
 const saveResultBtn = document.getElementById("save-result-btn");
 const printResultBtn = document.getElementById("print-result-btn");
 const saveStatusEl = document.getElementById("save-status");
+const cloudSaveStatusEl = document.getElementById("cloud-save-status");
 const viewCertificateBtn = document.getElementById("view-certificate-btn");
 const closeCertificateBtn = document.getElementById("close-certificate-btn");
 const printCertificateBtn = document.getElementById("print-certificate-btn");
@@ -441,6 +442,99 @@ function setSaveStatus(message, isError = false) {
     saveStatusEl.classList.toggle("save-status-error", Boolean(isError));
 }
 
+function setCloudSaveStatus(message, isError = false) {
+    if (!cloudSaveStatusEl) return;
+    cloudSaveStatusEl.innerText = message || "";
+    cloudSaveStatusEl.classList.toggle("save-status-error", Boolean(isError));
+}
+
+let cloudSaveSdk = null;
+
+async function getCloudSaveSdk() {
+    if (cloudSaveSdk) return cloudSaveSdk;
+
+    try {
+        const firebaseModule = await import("./firebase.js");
+        if (!firebaseModule?.firebaseReady || !firebaseModule?.auth || !firebaseModule?.db) {
+            return null;
+        }
+
+        const firestoreModule = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+        cloudSaveSdk = {
+            auth: firebaseModule.auth,
+            db: firebaseModule.db,
+            collection: firestoreModule.collection,
+            addDoc: firestoreModule.addDoc,
+            doc: firestoreModule.doc,
+            setDoc: firestoreModule.setDoc,
+            serverTimestamp: firestoreModule.serverTimestamp,
+            increment: firestoreModule.increment
+        };
+
+        return cloudSaveSdk;
+    } catch (error) {
+        console.error("Cloud save init failed", error);
+        return null;
+    }
+}
+
+async function saveResultToCloud(data) {
+    const sdk = await getCloudSaveSdk();
+    if (!sdk) {
+        setCloudSaveStatus("Cloud save unavailable: finish firebase.js setup.");
+        return;
+    }
+
+    const user = sdk.auth.currentUser;
+    if (!user) {
+        setCloudSaveStatus("Sign in to save results to cloud.");
+        return;
+    }
+
+    try {
+        const basePayload = {
+            uid: user.uid,
+            userEmail: user.email || "",
+            dateLabel: data.dateLabel,
+            studentName: data.studentName,
+            correctCount: data.correctCount,
+            total: data.total,
+            rating: data.rating,
+            badge: data.badge,
+            operationLabel: data.operationLabel,
+            difficultyLabel: data.difficultyLabel,
+            modeLabel: data.modeLabel,
+            tableInfoLabel: data.tableInfoLabel,
+            createdAt: sdk.serverTimestamp()
+        };
+
+        await sdk.addDoc(sdk.collection(sdk.db, "users", user.uid, "quizResults"), basePayload);
+
+        await sdk.setDoc(
+            sdk.doc(sdk.db, "users", user.uid, "stats", "summary"),
+            {
+                updatedAt: sdk.serverTimestamp(),
+                lastResult: {
+                    correctCount: data.correctCount,
+                    total: data.total,
+                    rating: data.rating,
+                    operationLabel: data.operationLabel,
+                    difficultyLabel: data.difficultyLabel,
+                    modeLabel: data.modeLabel
+                },
+                totalQuizzes: sdk.increment(1),
+                totalCorrectAnswers: sdk.increment(data.correctCount || 0)
+            },
+            { merge: true }
+        );
+
+        setCloudSaveStatus("Saved to cloud under your account.");
+    } catch (error) {
+        console.error("Cloud save failed", error);
+        setCloudSaveStatus("Cloud save failed. Check Firestore rules and authorized domain.", true);
+    }
+}
+
 function getBadgeStyle(badgeClassName) {
     if (badgeClassName === "badge-gold") {
         return {
@@ -789,6 +883,8 @@ function showEndScreen() {
             dateLabel: getCurrentDateLabel(),
             results: [...questionResults]
         };
+
+        saveResultToCloud(lastResultData);
 
         if (isWeekly) {
             const weeklyResultUrl = `play.html?${replayQuery}&weekly=1&showWeeklyResult=1`;
