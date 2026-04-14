@@ -8,10 +8,15 @@ const mode = normalizedMode === "multiple" && !multipleAllowed ? "input" : norma
 const op = urlParams.get("op") || "mixed";            // addition, subtraction, multiplication, division, mixed
 const diff = urlParams.get("diff") || "easy";        // easy, medium, hard
 const tablesParam = urlParams.get("tables") || "";
+const requestedTimeLimit = Number(urlParams.get("time") || 0);
 const isWeekly = urlParams.get("weekly") === "1";
 const showWeeklyResult = urlParams.get("showWeeklyResult") === "1";
 const isTimedMode = mode === "timed";
-const QUESTION_TIME_SECONDS = isTimedMode && op === "multiplication" ? 6 : 20;
+const QUESTION_TIME_SECONDS = isTimedMode
+    ? (op === "multiplication"
+        ? [6, 12].includes(requestedTimeLimit) ? requestedTimeLimit : 6
+        : requestedTimeLimit > 0 ? requestedTimeLimit : 20)
+    : 0;
 
 const selectedTables = tablesParam
     .split(",")
@@ -100,8 +105,7 @@ function getDifficultyLabel(value) {
 function getModeLabel(value) {
     if (value === "multiple") return "Multiple Choice";
     if (value === "timed") {
-        const seconds = op === "multiplication" ? 6 : 20;
-        return `Timed (${seconds}s / question)`;
+        return `Timed (${QUESTION_TIME_SECONDS}s / question)`;
     }
     return "Type Answer";
 }

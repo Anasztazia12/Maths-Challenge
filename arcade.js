@@ -711,7 +711,7 @@ if (arcadeCanvas) {
 
             if (state.spawnAppleTick > spawnThreshold && state.apples.length < maxApplesOnField()) {
                 state.spawnAppleTick = 0;
-                // Ha nincs helyes alma a pályán, mindig helyeset generáljunk
+                // If no correct apple is visible, always spawn a correct one.
                 if (noExactNeededVisible) {
                     spawnApple(true);
                 } else {
@@ -873,7 +873,7 @@ if (arcadeCanvas) {
                 addScore(-1);
                 addCoins(-1);
                 playWrongPickSound();
-                // Ne veszítsen életet, csak pontot, ha rossz számot lő le
+                // Do not remove life for wrong shots; only reduce points.
                 // handleWrongMath("Wrong number shot");
                 break;
             }

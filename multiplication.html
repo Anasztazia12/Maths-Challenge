@@ -28,6 +28,7 @@
             <div id="mode-buttons" class="mode-buttons" data-selected="input">
                 <button type="button" class="mode-btn selected" data-value="input">Type Answer</button>
                 <button type="button" class="mode-btn" data-value="timed">Timed (6s / question)</button>
+                <button type="button" class="mode-btn" data-value="timed-relaxed">Relaxed Timed (12s / question)</button>
             </div>
         </div>
 
@@ -84,15 +85,24 @@
             return modeButtonsWrap?.dataset.selected || "input";
         }
 
+        function getSelectedTimeLimit(mode) {
+            if (mode === "timed-relaxed") return 12;
+            if (mode === "timed") return 6;
+            return 0;
+        }
+
         renderTableButtons();
 
         function startMultiplication() {
             const diff = "easy";
             const mode = getSelectedMode();
+            const timeLimit = getSelectedTimeLimit(mode);
+            const actualMode = mode === "timed-relaxed" ? "timed" : mode;
             const picked = Array.from(selectedTables).sort((a,b)=>a-b);
             const tables = picked.join(",");
 
-            location.href = `play.html?mode=${mode}&op=multiplication&diff=${diff}&tables=${tables}`;
+            const timeQuery = timeLimit ? `&time=${timeLimit}` : "";
+            location.href = `play.html?mode=${actualMode}&op=multiplication&diff=${diff}&tables=${tables}${timeQuery}`;
         }
     </script>
     <script src="session-guard.js"></script>
