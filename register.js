@@ -21,6 +21,7 @@ const statusEl = document.getElementById("auth-status");
 const userLabelEl = document.getElementById("auth-user-label");
 const startPanelEl = document.getElementById("start-panel");
 const menuPanelEl = document.getElementById("menu-panel");
+const sessionBadgeId = "session-badge";
 
 function hasAuthUi() {
     return Boolean(emailInput && passwordInput && registerBtn && loginBtn && guestBtn && logoutBtn && statusEl && userLabelEl);
@@ -42,10 +43,30 @@ function setBusy(isBusy) {
 
 function setSessionMode(mode) {
     localStorage.setItem("mathsSessionMode", mode);
+    syncSessionBadge(mode);
 }
 
 function clearSessionMode() {
     localStorage.removeItem("mathsSessionMode");
+    syncSessionBadge("");
+}
+
+function syncSessionBadge(mode) {
+    let badge = document.getElementById(sessionBadgeId);
+    if (!mode) {
+        badge?.remove();
+        return;
+    }
+
+    if (!badge) {
+        badge = document.createElement("div");
+        badge.id = sessionBadgeId;
+        badge.className = "session-badge";
+        document.body.appendChild(badge);
+    }
+
+    badge.dataset.mode = mode;
+    badge.innerText = mode === "guest" ? "Guest mode" : "Signed in";
 }
 
 function showStartPanel() {
@@ -214,5 +235,7 @@ if (hasAuthUi()) {
         } else if (getSessionMode() !== "auth") {
             showStartPanel();
         }
+
+        syncSessionBadge(getSessionMode());
     }
 }

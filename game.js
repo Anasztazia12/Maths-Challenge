@@ -74,6 +74,10 @@ const badgePracticeChip = document.getElementById("badge-practice-chip");
 
 let lastResultData = null;
 
+function getSessionMode() {
+    return localStorage.getItem("mathsSessionMode") || "";
+}
+
 function getCurrentDateLabel() {
     return new Date().toLocaleDateString();
 }
@@ -479,6 +483,13 @@ async function getCloudSaveSdk() {
 }
 
 async function saveResultToCloud(data) {
+    const sessionMode = getSessionMode();
+
+    if (sessionMode === "guest") {
+        setCloudSaveStatus("Guest mode: cloud save is disabled.");
+        return;
+    }
+
     const sdk = await getCloudSaveSdk();
     if (!sdk) {
         setCloudSaveStatus("Cloud save unavailable: finish firebase.js setup.");
@@ -883,6 +894,13 @@ function showEndScreen() {
             dateLabel: getCurrentDateLabel(),
             results: [...questionResults]
         };
+
+        if (cloudSaveStatusEl) {
+            cloudSaveStatusEl.innerText = getSessionMode() === "guest"
+                ? "Guest mode: cloud save is disabled. Local save still works."
+                : "Cloud save will sync to your account if you are signed in.";
+            cloudSaveStatusEl.classList.remove("save-status-error");
+        }
 
         saveResultToCloud(lastResultData);
 
