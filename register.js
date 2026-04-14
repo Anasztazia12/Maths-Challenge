@@ -15,12 +15,15 @@ const emailInput = document.getElementById("auth-email");
 const passwordInput = document.getElementById("auth-password");
 const registerBtn = document.getElementById("auth-register-btn");
 const loginBtn = document.getElementById("auth-login-btn");
+const guestBtn = document.getElementById("auth-guest-btn");
 const logoutBtn = document.getElementById("auth-logout-btn");
 const statusEl = document.getElementById("auth-status");
 const userLabelEl = document.getElementById("auth-user-label");
+const startPanelEl = document.getElementById("start-panel");
+const menuPanelEl = document.getElementById("menu-panel");
 
 function hasAuthUi() {
-    return Boolean(emailInput && passwordInput && registerBtn && loginBtn && logoutBtn && statusEl && userLabelEl);
+    return Boolean(emailInput && passwordInput && registerBtn && loginBtn && guestBtn && logoutBtn && statusEl && userLabelEl);
 }
 
 function setStatus(message, isError = false) {
@@ -30,10 +33,30 @@ function setStatus(message, isError = false) {
 }
 
 function setBusy(isBusy) {
-    if (!registerBtn || !loginBtn || !logoutBtn) return;
+    if (!registerBtn || !loginBtn || !guestBtn || !logoutBtn) return;
     registerBtn.disabled = isBusy;
     loginBtn.disabled = isBusy;
+    guestBtn.disabled = isBusy;
     if (!auth?.currentUser) logoutBtn.disabled = true;
+}
+
+function setSessionMode(mode) {
+    localStorage.setItem("mathsSessionMode", mode);
+}
+
+function clearSessionMode() {
+    localStorage.removeItem("mathsSessionMode");
+}
+
+function showStartPanel() {
+    startPanelEl?.classList.remove("hidden");
+    menuPanelEl?.classList.add("hidden");
+    if (logoutBtn) logoutBtn.disabled = true;
+}
+
+function showMenuPanel() {
+    startPanelEl?.classList.add("hidden");
+    menuPanelEl?.classList.remove("hidden");
 }
 
 function getCredentials() {
@@ -88,6 +111,8 @@ async function handleRegister() {
         );
 
         setStatus("Registration successful.");
+        setSessionMode("auth");
+        showMenuPanel();
         if (passwordInput) passwordInput.value = "";
     } catch (error) {
         setStatus(error?.message || "Registration failed.", true);
@@ -113,6 +138,8 @@ async function handleLogin() {
         const cred = await signInWithEmailAndPassword(auth, email, password);
         await upsertUserProfile(cred.user, email);
         setStatus("Login successful.");
+        setSessionMode("auth");
+        showMenuPanel();
         if (passwordInput) passwordInput.value = "";
     } catch (error) {
         setStatus(error?.message || "Login failed.", true);
@@ -130,6 +157,8 @@ async function handleLogout() {
     try {
         setBusy(true);
         await signOut(auth);
+        clearSessionMode();
+        showStartPanel();
         setStatus("Logged out.");
     } catch (error) {
         setStatus(error?.message || "Logout failed.", true);
@@ -138,26 +167,52 @@ async function handleLogout() {
     }
 }
 
+function handleGuestMode() {
+    clearSessionMode();
+    setSessionMode("guest");
+    setStatus("Guest mode enabled. Your progress stays on this device.");
+    if (logoutBtn) logoutBtn.disabled = false;
+    showMenuPanel();
+}
+
 if (hasAuthUi()) {
     registerBtn.addEventListener("click", handleRegister);
     loginBtn.addEventListener("click", handleLogin);
+    guestBtn.addEventListener("click", handleGuestMode);
     logoutBtn.addEventListener("click", handleLogout);
 
     if (!firebaseReady || !auth) {
         setStatus("Set up firebase.js first (apiKey, projectId, appId...).", true);
         registerBtn.disabled = true;
         loginBtn.disabled = true;
+        guestBtn.disabled = false;
         logoutBtn.disabled = true;
+        showStartPanel();
     } else {
         onAuthStateChanged(auth, (user) => {
             if (!user) {
                 userLabelEl.innerText = "Not signed in";
                 logoutBtn.disabled = true;
+                if (getSessionMode() === "guest") {
+                    showMenuPanel();
+                } else if (getSessionMode() === "auth") {
+                    showMenuPanel();
+                } else {
+                    showStartPanel();
+                }
                 return;
             }
 
             userLabelEl.innerText = `Signed in: ${user.email || user.uid}`;
+            setSessionMode("auth");
             logoutBtn.disabled = false;
+            showMenuPanel();
         });
+
+        if (getSessionMode() === "guest") {
+            showMenuPanel();
+        } else if (getSessionMode() !== "auth") {
+            showStartPanel();
+        }
     }
 }

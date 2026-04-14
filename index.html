@@ -12,10 +12,10 @@
     <div class="game-container home-container">
 
         <h1>Maths Challenge</h1>
-        <p class="subtitle">Choose what you want to practice today!</p>
-        <p id="home-daily-note" class="subtitle home-daily-note">Your daily 2 tasks are waiting for you in Weekly Challenge ⭐</p>
+        <p class="subtitle">Sign in, register, or continue as a guest.</p>
 
-        <section class="auth-panel" aria-label="Account">
+        <section id="start-panel" class="auth-panel" aria-label="Account">
+            <p class="auth-title">Start here</p>
             <p id="auth-user-label" class="auth-user-label">Not signed in</p>
             <div class="auth-grid">
                 <input id="auth-email" type="email" placeholder="Email" autocomplete="email">
@@ -24,41 +24,49 @@
             <div class="auth-actions">
                 <button class="menu-btn" id="auth-register-btn" type="button">Register</button>
                 <button class="menu-btn" id="auth-login-btn" type="button">Login</button>
-                <button class="menu-btn special" id="auth-logout-btn" type="button" disabled>Logout</button>
+                <button class="menu-btn special" id="auth-guest-btn" type="button">Continue as Guest</button>
             </div>
             <p id="auth-status" class="auth-status"></p>
         </section>
 
-        <div class="menu-buttons home-menu-buttons">
+        <section id="menu-panel" class="hidden">
+            <p id="home-daily-note" class="subtitle home-daily-note">Your daily 2 tasks are waiting for you in Weekly Challenge ⭐</p>
 
-            <!-- Main Game -->
-            <button class="menu-btn home-menu-btn" onclick="location.href='game.html'">
-                Play Game
-            </button>
+            <div class="menu-buttons home-menu-buttons">
 
-            <!-- Individual Operations -->
-            <button class="menu-btn home-menu-btn" onclick="location.href='addition.html'">
-                Addition +
-            </button>
-            <button class="menu-btn home-menu-btn" onclick="location.href='subtraction.html'">
-                Subtraction -
-            </button>
-            <button class="menu-btn home-menu-btn" onclick="location.href='multiplication.html'">
-                Multiplication ×
-            </button>
-            <button class="menu-btn home-menu-btn" onclick="location.href='division.html'">
-                Division ÷
-            </button>
-            <button class="menu-btn home-menu-btn" onclick="location.href='mixed.html'">
-                Mixed Practice
-            </button>
+                <!-- Main Game -->
+                <button class="menu-btn home-menu-btn" onclick="location.href='game.html'">
+                    Play Game
+                </button>
 
-            <!-- Weekly Challenge -->
-            <button class="menu-btn special home-menu-btn home-weekly-btn" onclick="location.href='weekly.html'">
-                Weekly Challenge ⭐
-            </button>
+                <!-- Individual Operations -->
+                <button class="menu-btn home-menu-btn" onclick="location.href='addition.html'">
+                    Addition +
+                </button>
+                <button class="menu-btn home-menu-btn" onclick="location.href='subtraction.html'">
+                    Subtraction -
+                </button>
+                <button class="menu-btn home-menu-btn" onclick="location.href='multiplication.html'">
+                    Multiplication ×
+                </button>
+                <button class="menu-btn home-menu-btn" onclick="location.href='division.html'">
+                    Division ÷
+                </button>
+                <button class="menu-btn home-menu-btn" onclick="location.href='mixed.html'">
+                    Mixed Practice
+                </button>
 
-        </div>
+                <!-- Weekly Challenge -->
+                <button class="menu-btn special home-menu-btn home-weekly-btn" onclick="location.href='weekly.html'">
+                    Weekly Challenge ⭐
+                </button>
+
+            </div>
+
+            <div class="auth-panel auth-session-panel">
+                <button class="menu-btn special" id="auth-logout-btn" type="button" disabled>Logout</button>
+            </div>
+        </section>
 
     </div>
 
