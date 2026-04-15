@@ -11,9 +11,7 @@ import {
     setDoc,
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { auth, db, firebaseReady } from "./firebase.js?v=2026-04-15-authfix-1";
-
-window.__registerModuleReady = true;
+import { auth, db, firebaseReady } from "./firebase.js";
 
 // ===== DOM Elements =====
 

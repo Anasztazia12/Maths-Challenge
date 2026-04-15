@@ -29,18 +29,18 @@
                 </nav>
             </div>
 
-            <p id="home-daily-note" class="subtitle home-daily-note">Your daily 2 tasks are waiting for you in Weekly Challenge *</p>
+            <p id="home-daily-note" class="subtitle home-daily-note">Your daily 2 tasks are waiting for you in Weekly Challenge ⭐</p>
 
             <div class="menu-buttons home-menu-buttons">
                 <button class="menu-btn home-menu-btn" onclick="location.href='game.html'">Play Game</button>
                 <button class="menu-btn home-menu-btn" onclick="location.href='addition.html'">Addition +</button>
                 <button class="menu-btn home-menu-btn" onclick="location.href='subtraction.html'">Subtraction -</button>
-                <button class="menu-btn home-menu-btn" onclick="location.href='multiplication.html'">Multiplication x</button>
-                <button class="menu-btn home-menu-btn" onclick="location.href='division.html'">Division /</button>
-                <button class="menu-btn home-menu-btn" onclick="location.href='mixed.html'">Mixed Practice - + x /</button>
-                <button class="menu-btn special home-menu-btn home-weekly-btn" onclick="location.href='weekly.html'">Weekly Challenge *</button>
+                <button class="menu-btn home-menu-btn" onclick="location.href='multiplication.html'">Multiplication ×</button>
+                <button class="menu-btn home-menu-btn" onclick="location.href='division.html'">Division ÷</button>
+                <button class="menu-btn home-menu-btn" onclick="location.href='mixed.html'">Mixed Practice - + × ÷</button>
+                <button class="menu-btn special home-menu-btn home-weekly-btn" onclick="location.href='weekly.html'">Weekly Challenge ⭐</button>
                 <button class="menu-btn home-menu-btn avatar-shop-btn" id="home-avatar-shop-btn" onclick="location.href='shop.html'">
-                    <span class="avatar-shop-btn-icon" aria-hidden="true">:-)</span>
+                    <span class="avatar-shop-btn-icon" aria-hidden="true">🙂👤</span>
                     <span>Avatar Shop</span>
                 </button>
             </div>
@@ -123,7 +123,7 @@
             const todayCount = Math.max(0, Math.min(DAILY_LIMIT, Number(progress.byDay?.[todayKey] || 0)));
 
             if (completed >= WEEKLY_TOTAL_TASKS) {
-                noteEl.innerText = "Weekly Challenge complete! You finished 10/10 tasks this week.";
+                noteEl.innerText = "Weekly Challenge complete! You finished 10/10 tasks this week. 🏆";
                 return;
             }
 
@@ -133,18 +133,18 @@
             }
 
             if (todayCount === 1) {
-                noteEl.innerText = "You completed 1/2 tasks today. One more is waiting in Weekly Challenge *";
+                noteEl.innerText = "You completed 1/2 tasks today. One more is waiting in Weekly Challenge ⭐";
                 return;
             }
 
-            noteEl.innerText = "Your daily 2 tasks are waiting for you in Weekly Challenge *";
+            noteEl.innerText = "Your daily 2 tasks are waiting for you in Weekly Challenge ⭐";
         }
 
         updateHomeDailyNote();
     </script>
 
-    <script type="module" src="firebase.js?v=2026-04-15-authfix-1"></script>
-    <script type="module" src="register.js?v=2026-04-15-authfix-1"></script>
+    <script type="module" src="firebase.js"></script>
+    <script type="module" src="register.js"></script>
     <script src="sw-register.js"></script>
 </body>
 </html>
