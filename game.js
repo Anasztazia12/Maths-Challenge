@@ -1530,6 +1530,11 @@ if (inGameBackBtn) {
             localStorage.removeItem(getScopedStorageKey("weeklyTaskDone"));
         }
 
+        if (window.goBackOnePage) {
+            window.goBackOnePage(getInGameBackTarget());
+            return;
+        }
+
         location.href = getInGameBackTarget();
     };
 }

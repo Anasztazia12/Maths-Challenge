@@ -86,6 +86,21 @@
         }
     }
 
+    window.goBackOnePage = function goBackOnePage(fallbackUrl) {
+        if (window.history.length > 1) {
+            window.history.back();
+            return;
+        }
+
+        if (fallbackUrl) {
+            window.location.replace(fallbackUrl);
+            return;
+        }
+
+        const sessionMode = localStorage.getItem("mathsSessionMode") || "";
+        window.location.replace(sessionMode ? "home.html" : "index.html");
+    };
+
     window.goBackToHome = function goBackToHome() {
         const sessionMode = localStorage.getItem("mathsSessionMode") || "";
         window.location.replace(sessionMode ? "home.html" : "index.html");

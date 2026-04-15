@@ -75,6 +75,7 @@ const resultsFilterCompletedBtn = document.getElementById("results-filter-comple
 const resultsFilterUnfinishedBtn = document.getElementById("results-filter-unfinished-btn");
 const isAuthPage = Boolean(startPanelEl && authEntryActionsEl);
 const isHomeDashboardPage = Boolean(menuPanelEl) && !isAuthPage;
+const AUTH_VIEW_HASHES = new Set(["login", "register", "reset", "verify"]);
 
 // ===== State =====
 let resetEmailForVerify = "";
@@ -122,6 +123,45 @@ function showEntryActions() {
     authEntryActionsEl?.classList.remove("hidden");
 }
 
+function setAuthViewHash(view) {
+    if (!isAuthPage) return;
+
+    const nextHash = view ? `#${view}` : "";
+    if (window.location.hash === nextHash) return;
+    window.location.hash = nextHash;
+}
+
+function getAuthViewFromHash() {
+    const view = window.location.hash.replace(/^#/, "").trim().toLowerCase();
+    return AUTH_VIEW_HASHES.has(view) ? view : "";
+}
+
+function syncAuthViewFromHash() {
+    const view = getAuthViewFromHash();
+
+    if (view === "login") {
+        showLoginForm();
+        return;
+    }
+
+    if (view === "register") {
+        showRegisterForm();
+        return;
+    }
+
+    if (view === "reset") {
+        showResetForm();
+        return;
+    }
+
+    if (view === "verify") {
+        showVerifyResetForm();
+        return;
+    }
+
+    showEntryActions();
+}
+
 function showLoginForm() {
     hideAllAuthForms();
     authLoginFormEl?.classList.remove("hidden");
@@ -129,6 +169,7 @@ function showLoginForm() {
     authLoginEmailEl.value = rememberedEmail;
     authLoginPasswordEl.value = "";
     authLoginStatusEl.textContent = "";
+    setAuthViewHash("login");
 }
 
 function showResetForm() {
@@ -136,6 +177,7 @@ function showResetForm() {
     authResetFormEl?.classList.remove("hidden");
     authResetEmailEl.value = "";
     authResetStatusEl.textContent = "";
+    setAuthViewHash("reset");
 }
 
 function showVerifyResetForm() {
@@ -145,6 +187,7 @@ function showVerifyResetForm() {
     authNewPasswordEl.value = "";
     authConfirmPasswordEl.value = "";
     authVerifyStatusEl.textContent = "";
+    setAuthViewHash("verify");
 }
 
 function showRegisterForm() {
@@ -155,6 +198,7 @@ function showRegisterForm() {
     authRegisterPasswordEl.value = "";
     authRegisterPasswordConfirmEl.value = "";
     authRegisterStatusEl.textContent = "";
+    setAuthViewHash("register");
 }
 
 function togglePasswordVisibility(inputEl, btnEl) {
@@ -646,20 +690,20 @@ if (registerBtn) registerBtn.addEventListener("click", showRegisterForm);
 if (guestBtn) guestBtn.addEventListener("click", handleGuestMode);
 
 // Login form
-if (authLoginBackBtnEl) authLoginBackBtnEl.addEventListener("click", showEntryActions);
+if (authLoginBackBtnEl) authLoginBackBtnEl.addEventListener("click", () => window.history.back());
 if (authLoginSubmitBtnEl) authLoginSubmitBtnEl.addEventListener("click", handleLogin);
 if (authLoginForgotBtnEl) authLoginForgotBtnEl.addEventListener("click", showResetForm);
 
 // Reset form
-if (authResetBackBtnEl) authResetBackBtnEl.addEventListener("click", showLoginForm);
+if (authResetBackBtnEl) authResetBackBtnEl.addEventListener("click", () => window.history.back());
 if (authResetSendBtnEl) authResetSendBtnEl.addEventListener("click", handleResetSend);
 
 // Verify reset form
-if (authVerifyBackBtnEl) authVerifyBackBtnEl.addEventListener("click", showResetForm);
+if (authVerifyBackBtnEl) authVerifyBackBtnEl.addEventListener("click", () => window.history.back());
 if (authVerifySubmitBtnEl) authVerifySubmitBtnEl.addEventListener("click", handleVerifyReset);
 
 // Register form
-if (authRegisterBackBtnEl) authRegisterBackBtnEl.addEventListener("click", showEntryActions);
+if (authRegisterBackBtnEl) authRegisterBackBtnEl.addEventListener("click", () => window.history.back());
 if (authRegisterSubmitBtnEl) authRegisterSubmitBtnEl.addEventListener("click", handleRegister);
 if (authRegisterPasswordToggleEl) {
     authRegisterPasswordToggleEl.addEventListener("click", (e) => {
@@ -726,18 +770,13 @@ async function initializeHomeState() {
     const sessionMode = getSessionMode();
 
     if (isAuthPage) {
-        if (sessionMode === "guest") {
-            location.replace("home.html");
-            return;
-        }
-
         if (sessionMode === "auth" && auth?.currentUser) {
             location.replace("home.html");
             return;
         }
 
         showStartPanel();
-        showEntryActions();
+        syncAuthViewFromHash();
 
         if (!firebaseReady || !auth) {
             return;
@@ -759,6 +798,8 @@ async function initializeHomeState() {
                 clearSessionMode();
             }
         });
+
+        window.addEventListener("hashchange", syncAuthViewFromHash);
         return;
     }
 
