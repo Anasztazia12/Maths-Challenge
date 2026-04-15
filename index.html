@@ -39,6 +39,9 @@
                 <button class="menu-btn" id="auth-login-btn" type="button">Login</button>
                 <button class="menu-btn special" id="auth-guest-btn" type="button">Continue as Guest</button>
             </div>
+            <div class="auth-actions auth-actions-single">
+                <button class="menu-btn" id="auth-reset-password-btn" type="button">Reset Password (Email Code)</button>
+            </div>
             <p id="auth-status" class="auth-status"></p>
         </section>
 
@@ -48,6 +51,10 @@
             <div class="auth-panel profile-panel">
                 <p class="auth-title">Active profile</p>
                 <p id="profile-summary" class="auth-user-label">Loading profile...</p>
+                <div id="profile-avatar-preview" class="profile-avatar-preview" aria-hidden="true"></div>
+                <div class="profile-menu-row profile-avatar-row">
+                    <select id="profile-avatar-select"></select>
+                </div>
                 <div class="profile-menu-row">
                     <select id="profile-select"></select>
                     <button class="menu-btn special" id="profile-results-btn" type="button">Results</button>
@@ -96,6 +103,10 @@
                 <!-- Weekly Challenge -->
                 <button class="menu-btn special home-menu-btn home-weekly-btn" onclick="location.href='weekly.html'">
                     Weekly Challenge ⭐
+                </button>
+
+                <button class="menu-btn home-menu-btn" onclick="location.href='shop.html'">
+                    Avatar Shop
                 </button>
 
             </div>

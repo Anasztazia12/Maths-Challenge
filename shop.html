@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avatar Shop</title>
+    <link rel="preload" as="image" href="assets/image/background_operations.webp">
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body class="bg-operations">
+
+    <aside id="shop-corner-avatar" class="shop-corner-avatar" aria-label="Selected avatar"></aside>
+
+    <div class="game-container shop-container">
+        <h1>Avatar Shop</h1>
+        <p class="subtitle">Choose a category, then tap visual item cards to equip or buy.</p>
+
+        <p id="shop-profile-label" class="auth-user-label">Profile: -</p>
+        <p id="shop-points" class="shop-points">Points: 0</p>
+
+        <div id="shop-avatar-preview" class="shop-avatar-preview"></div>
+
+        <section class="section shop-block">
+            <h2>Category</h2>
+            <div id="shop-category-tabs" class="shop-category-tabs"></div>
+        </section>
+
+        <section class="section shop-block">
+            <h2>Base Avatars</h2>
+            <div id="shop-preset-list" class="shop-list"></div>
+        </section>
+
+        <section class="section shop-block">
+            <h2 id="shop-wardrobe-title">Wardrobe</h2>
+            <div id="shop-wardrobe" class="shop-item-grid compact"></div>
+        </section>
+
+        <section class="section shop-block">
+            <h2 id="shop-market-title">Shop</h2>
+            <div id="shop-market" class="shop-item-grid compact"></div>
+        </section>
+
+        <p id="shop-status" class="save-status"></p>
+
+        <button class="menu-btn" onclick="location.href='index.html'">⬅ Back to Home</button>
+    </div>
+
+    <script src="profile-manager.js"></script>
+    <script src="session-guard.js"></script>
+    <script src="shop.js"></script>
+    <script src="sw-register.js"></script>
+</body>
+</html>

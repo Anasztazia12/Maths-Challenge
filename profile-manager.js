@@ -5,6 +5,190 @@
     const DEFAULT_PROFILE_COUNT = 1;
     const MAX_PROFILE_COUNT = 2;
     const DEFAULT_RESULT_LIMIT = 100;
+    const DEFAULT_POINTS = 0;
+
+    const AVATAR_PRESETS = [
+        {
+            id: "starter-girl",
+            name: "Girl Starter",
+            avatar: {
+                avatarType: "type-girl",
+                eye: "eyes-classic",
+                eyeColor: "eye-color-brown",
+                nose: "nose-small",
+                mouth: "mouth-smile",
+                skin: "skin-peach",
+                hairColor: "hair-color-brown",
+                hairLength: "hair-length-long",
+                hat: "hat-none",
+                glasses: "glasses-none",
+                accessory: "acc-none",
+                background: "bg-sky",
+                outfit: "outfit-pink"
+            }
+        },
+        {
+            id: "starter-boy",
+            name: "Boy Starter",
+            avatar: {
+                avatarType: "type-boy",
+                eye: "eyes-happy",
+                eyeColor: "eye-color-blue",
+                nose: "nose-button",
+                mouth: "mouth-grin",
+                skin: "skin-golden",
+                hairColor: "hair-color-black",
+                hairLength: "hair-length-short",
+                hat: "hat-none",
+                glasses: "glasses-none",
+                accessory: "acc-none",
+                background: "bg-forest",
+                outfit: "outfit-emerald"
+            }
+        },
+        {
+            id: "starter-dog",
+            name: "Puppy Starter",
+            avatar: {
+                avatarType: "type-dog",
+                eye: "eyes-wink",
+                eyeColor: "eye-color-green",
+                nose: "nose-paw",
+                mouth: "mouth-wow",
+                skin: "skin-fur-golden",
+                hairColor: "hair-color-blonde",
+                hairLength: "hair-length-none",
+                hat: "hat-cap",
+                glasses: "glasses-none",
+                accessory: "acc-bandana",
+                background: "bg-sunset",
+                outfit: "outfit-sunset"
+            }
+        },
+        {
+            id: "starter-heroine",
+            name: "Star Heroine",
+            avatar: {
+                avatarType: "type-girl",
+                eye: "eyes-star",
+                eyeColor: "eye-color-violet",
+                nose: "nose-tiny",
+                mouth: "mouth-cool",
+                skin: "skin-bronze",
+                hairColor: "hair-color-red",
+                hairLength: "hair-length-medium",
+                hat: "hat-crown",
+                glasses: "glasses-round",
+                accessory: "acc-star-pin",
+                background: "bg-neon",
+                outfit: "outfit-violet"
+            }
+        }
+    ];
+
+    const AVATAR_SHOP = {
+        avatarType: [
+            { id: "type-girl", label: "Girl", glyph: "Girl", cost: 0 },
+            { id: "type-boy", label: "Boy", glyph: "Boy", cost: 10 },
+            { id: "type-dog", label: "Dog", glyph: "Dog", cost: 40 }
+        ],
+        eyes: [
+            { id: "eyes-classic", label: "Classic Eyes", glyph: "• •", cost: 0 },
+            { id: "eyes-happy", label: "Happy Eyes", glyph: "^ ^", cost: 15 },
+            { id: "eyes-wink", label: "Wink Eyes", glyph: "; •", cost: 20 },
+            { id: "eyes-star", label: "Star Eyes", glyph: "★ ★", cost: 30 }
+        ],
+        eyeColor: [
+            { id: "eye-color-brown", label: "Brown Eyes", color: "#6b3f21", cost: 0 },
+            { id: "eye-color-blue", label: "Blue Eyes", color: "#2563eb", cost: 10 },
+            { id: "eye-color-green", label: "Green Eyes", color: "#16a34a", cost: 15 },
+            { id: "eye-color-violet", label: "Violet Eyes", color: "#7c3aed", cost: 30 }
+        ],
+        nose: [
+            { id: "nose-small", label: "Small Nose", glyph: "ˇ", cost: 0 },
+            { id: "nose-button", label: "Button Nose", glyph: "●", cost: 10 },
+            { id: "nose-pointy", label: "Pointy Nose", glyph: "▲", cost: 25 },
+            { id: "nose-tiny", label: "Tiny Nose", glyph: "•", cost: 20 },
+            { id: "nose-paw", label: "Paw Nose", glyph: "▴", cost: 25 }
+        ],
+        mouth: [
+            { id: "mouth-smile", label: "Smile", glyph: "⌣", cost: 0 },
+            { id: "mouth-grin", label: "Grin", glyph: "◡", cost: 15 },
+            { id: "mouth-cool", label: "Cool", glyph: "—", cost: 20 },
+            { id: "mouth-wow", label: "Wow", glyph: "◯", cost: 25 }
+        ],
+        skin: [
+            { id: "skin-peach", label: "Peach", color: "#f9c9a4", cost: 0 },
+            { id: "skin-golden", label: "Golden", color: "#e3b07c", cost: 15 },
+            { id: "skin-bronze", label: "Bronze", color: "#b87f56", cost: 20 },
+            { id: "skin-deep", label: "Deep", color: "#7a4b2d", cost: 30 },
+            { id: "skin-fur-golden", label: "Golden Fur", color: "#d6a86e", cost: 25 },
+            { id: "skin-fur-brown", label: "Brown Fur", color: "#8b5e34", cost: 40 }
+        ],
+        hairColor: [
+            { id: "hair-color-brown", label: "Brown Hair", color: "#6d4c41", cost: 0 },
+            { id: "hair-color-black", label: "Black Hair", color: "#1f2937", cost: 10 },
+            { id: "hair-color-blonde", label: "Blonde Hair", color: "#fbbf24", cost: 15 },
+            { id: "hair-color-red", label: "Red Hair", color: "#dc2626", cost: 30 }
+        ],
+        hairLength: [
+            { id: "hair-length-none", label: "No Hair", glyph: "No Hair", cost: 0 },
+            { id: "hair-length-short", label: "Short Hair", glyph: "Short", cost: 5 },
+            { id: "hair-length-medium", label: "Medium Hair", glyph: "Medium", cost: 10 },
+            { id: "hair-length-long", label: "Long Hair", glyph: "Long", cost: 15 }
+        ],
+        hat: [
+            { id: "hat-none", label: "No Hat", glyph: "None", cost: 0 },
+            { id: "hat-cap", label: "Cap", glyph: "Cap", cost: 15 },
+            { id: "hat-beanie", label: "Beanie", glyph: "Beanie", cost: 25 },
+            { id: "hat-crown", label: "Crown", glyph: "Crown", cost: 30 }
+        ],
+        glasses: [
+            { id: "glasses-none", label: "No Glasses", glyph: "None", cost: 0 },
+            { id: "glasses-round", label: "Round Glasses", glyph: "Round", cost: 15 },
+            { id: "glasses-square", label: "Square Glasses", glyph: "Square", cost: 25 },
+            { id: "glasses-sun", label: "Sunglasses", glyph: "Sunglasses", cost: 30 },
+            { id: "glasses-sun-color", label: "Colorful Premium Sunglasses", glyph: "Colorful", cost: 40 }
+        ],
+        accessory: [
+            { id: "acc-none", label: "No Accessory", glyph: "None", cost: 0 },
+            { id: "acc-star-pin", label: "Star Pin", glyph: "Star Pin", cost: 10 },
+            { id: "acc-bandana", label: "Bandana", glyph: "Bandana", cost: 20 },
+            { id: "acc-bow", label: "Bow", glyph: "Bow", cost: 15 },
+            { id: "acc-scarf", label: "Scarf", glyph: "Scarf", cost: 30 }
+        ],
+        background: [
+            { id: "bg-sky", label: "Sky", color: "linear-gradient(180deg,#bae6fd,#60a5fa)", cost: 0 },
+            { id: "bg-forest", label: "Forest", color: "linear-gradient(180deg,#86efac,#22c55e)", cost: 10 },
+            { id: "bg-sunset", label: "Sunset", color: "linear-gradient(180deg,#fdba74,#f97316)", cost: 20 },
+            { id: "bg-neon", label: "Neon", color: "linear-gradient(180deg,#c4b5fd,#7c3aed)", cost: 30 },
+            { id: "bg-candy", label: "Candy", color: "linear-gradient(180deg,#f9a8d4,#ec4899)", cost: 40 }
+        ],
+        outfit: [
+            { id: "outfit-sky", label: "Sky Hoodie", color: "#38bdf8", cost: 0 },
+            { id: "outfit-emerald", label: "Emerald Hoodie", color: "#34d399", cost: 25 },
+            { id: "outfit-violet", label: "Violet Hoodie", color: "#a78bfa", cost: 30 },
+            { id: "outfit-sunset", label: "Sunset Hoodie", color: "#fb7185", cost: 30 },
+            { id: "outfit-pink", label: "Pink Hoodie", color: "#f472b6", cost: 20 },
+            { id: "outfit-sport", label: "Sport Jacket", color: "#60a5fa", cost: 25 }
+        ]
+    };
+
+    const SHOP_CATEGORY_TO_AVATAR_KEY = {
+        avatarType: "avatarType",
+        eyes: "eye",
+        eyeColor: "eyeColor",
+        nose: "nose",
+        mouth: "mouth",
+        skin: "skin",
+        hairColor: "hairColor",
+        hairLength: "hairLength",
+        hat: "hat",
+        glasses: "glasses",
+        accessory: "accessory",
+        background: "background",
+        outfit: "outfit"
+    };
 
     function toText(value) {
         return String(value ?? "").trim();
@@ -28,6 +212,70 @@
         return Number(value) === 2 ? 2 : DEFAULT_PROFILE_COUNT;
     }
 
+    function getPresetById(presetId) {
+        return AVATAR_PRESETS.find((item) => item.id === presetId) || AVATAR_PRESETS[0];
+    }
+
+    function getDefaultAvatarByPreset(presetId) {
+        const preset = getPresetById(presetId);
+        return {
+            presetId: preset.id,
+            ...preset.avatar
+        };
+    }
+
+    function getItemIdsByCategory(category) {
+        return (AVATAR_SHOP[category] || []).map((item) => item.id);
+    }
+
+    function normalizeAvatar(avatarRaw) {
+        const presetId = toText(avatarRaw?.presetId) || AVATAR_PRESETS[0].id;
+        const base = getDefaultAvatarByPreset(presetId);
+
+        const nextAvatar = {
+            ...base,
+            ...avatarRaw,
+            presetId: getPresetById(presetId).id
+        };
+
+        Object.entries(SHOP_CATEGORY_TO_AVATAR_KEY).forEach(([category, avatarKey]) => {
+            const allowed = getItemIdsByCategory(category);
+            if (!allowed.includes(nextAvatar[avatarKey])) {
+                nextAvatar[avatarKey] = base[avatarKey];
+            }
+        });
+
+        return nextAvatar;
+    }
+
+    function normalizeWardrobe(wardrobeRaw, avatar) {
+        const nextWardrobe = {};
+
+        Object.entries(SHOP_CATEGORY_TO_AVATAR_KEY).forEach(([category, avatarKey]) => {
+            const allowed = getItemIdsByCategory(category);
+            const rawList = Array.isArray(wardrobeRaw?.[category]) ? wardrobeRaw[category] : [];
+            const cleaned = rawList.filter((id) => allowed.includes(id));
+            const selectedId = avatar[avatarKey];
+
+            if (!cleaned.includes(selectedId)) cleaned.push(selectedId);
+            nextWardrobe[category] = Array.from(new Set(cleaned));
+        });
+
+        return nextWardrobe;
+    }
+
+    function normalizeProfile(profileRaw, index, accountKey) {
+        const avatar = normalizeAvatar(profileRaw?.avatar);
+        const wardrobe = normalizeWardrobe(profileRaw?.wardrobe, avatar);
+
+        return {
+            id: toText(profileRaw?.id) || buildProfileId(accountKey, index),
+            name: buildProfileName(profileRaw?.name, index, accountKey),
+            avatar,
+            wardrobe
+        };
+    }
+
     function buildProfileId(accountKey, index) {
         return `${toText(accountKey) || GUEST_ACCOUNT_KEY}-profile-${index + 1}`.replace(/[^a-zA-Z0-9_-]/g, "_");
     }
@@ -44,10 +292,16 @@
     }
 
     function buildDefaultProfiles(accountKey, profileCount, profileNames) {
-        return Array.from({ length: normalizeProfileCount(profileCount) }, (_, index) => ({
-            id: buildProfileId(accountKey, index),
-            name: buildProfileName(profileNames?.[index], index, accountKey)
-        }));
+        return Array.from({ length: normalizeProfileCount(profileCount) }, (_, index) => {
+            const preset = AVATAR_PRESETS[index % AVATAR_PRESETS.length];
+            const avatar = getDefaultAvatarByPreset(preset.id);
+            return {
+                id: buildProfileId(accountKey, index),
+                name: buildProfileName(profileNames?.[index], index, accountKey),
+                avatar,
+                wardrobe: normalizeWardrobe({}, avatar)
+            };
+        });
     }
 
     function buildDefaultAccountState(options = {}) {
@@ -79,10 +333,7 @@
         const profiles = Array.isArray(rawState?.profiles) && rawState.profiles.length > 0
             ? rawState.profiles
                 .slice(0, MAX_PROFILE_COUNT)
-                .map((profile, index) => ({
-                    id: toText(profile?.id) || buildProfileId(fallbackAccountKey, index),
-                    name: buildProfileName(profile?.name || fallbackNames[index], index, fallbackAccountKey)
-                }))
+                .map((profile, index) => normalizeProfile({ ...profile, name: profile?.name || fallbackNames[index] }, index, fallbackAccountKey))
             : buildDefaultProfiles(fallbackAccountKey, requestedProfileCount, fallbackNames);
 
         const activeProfileId = toText(rawState?.activeProfileId) || profiles[0]?.id || "";
@@ -183,6 +434,29 @@
         return value;
     }
 
+    function getPoints(options = {}) {
+        return Math.max(0, Number(localStorage.getItem(getScopedStorageKey("pointsBalance", options)) || DEFAULT_POINTS));
+    }
+
+    function setPoints(value, options = {}) {
+        const safeValue = Math.max(0, Number(value) || 0);
+        localStorage.setItem(getScopedStorageKey("pointsBalance", options), String(safeValue));
+        return safeValue;
+    }
+
+    function addPoints(amount, options = {}) {
+        const safeAmount = Math.max(0, Number(amount) || 0);
+        return setPoints(getPoints(options) + safeAmount, options);
+    }
+
+    function spendPoints(amount, options = {}) {
+        const safeAmount = Math.max(0, Number(amount) || 0);
+        const balance = getPoints(options);
+        if (balance < safeAmount) return false;
+        setPoints(balance - safeAmount, options);
+        return true;
+    }
+
     function appendScopedHistory(baseKey, entry, options = {}) {
         const currentHistory = loadScopedJson(baseKey, [], options);
         const nextHistory = [entry, ...currentHistory].slice(0, DEFAULT_RESULT_LIMIT);
@@ -218,9 +492,19 @@
         getScopedStorageKey,
         loadScopedJson,
         saveScopedJson,
+        getPoints,
+        setPoints,
+        addPoints,
+        spendPoints,
         appendScopedHistory,
         getProfileHistory,
         saveProfileHistory,
-        addProfileResult
+        addProfileResult,
+        AVATAR_PRESETS,
+        AVATAR_SHOP,
+        SHOP_CATEGORY_TO_AVATAR_KEY,
+        getDefaultAvatarByPreset,
+        normalizeAvatar,
+        normalizeWardrobe
     };
 })();

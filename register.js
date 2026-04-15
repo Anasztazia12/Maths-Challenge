@@ -1,6 +1,7 @@
 import {
     createUserWithEmailAndPassword,
     onAuthStateChanged,
+    sendPasswordResetEmail,
     signInWithEmailAndPassword,
     signOut
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -24,11 +25,14 @@ const profileNameOneInput = document.getElementById("profile-name-1");
 const profileNameTwoInput = document.getElementById("profile-name-2");
 const registerBtn = document.getElementById("auth-register-btn");
 const loginBtn = document.getElementById("auth-login-btn");
+const resetPasswordBtn = document.getElementById("auth-reset-password-btn");
 const guestBtn = document.getElementById("auth-guest-btn");
 const logoutBtn = document.getElementById("auth-logout-btn");
 const statusEl = document.getElementById("auth-status");
 const userLabelEl = document.getElementById("auth-user-label");
 const profileSummaryEl = document.getElementById("profile-summary");
+const profileAvatarPreviewEl = document.getElementById("profile-avatar-preview");
+const profileAvatarSelectEl = document.getElementById("profile-avatar-select");
 const profileSelectEl = document.getElementById("profile-select");
 const profileResultsBtn = document.getElementById("profile-results-btn");
 const profileEditBtn = document.getElementById("profile-edit-btn");
@@ -59,11 +63,14 @@ function hasAuthUi() {
         && profileNameTwoInput
         && registerBtn
         && loginBtn
+        && resetPasswordBtn
         && guestBtn
         && logoutBtn
         && statusEl
         && userLabelEl
         && profileSummaryEl
+        && profileAvatarPreviewEl
+        && profileAvatarSelectEl
         && profileSelectEl
         && profileResultsBtn
         && profileEditBtn
@@ -80,6 +87,55 @@ function hasAuthUi() {
     );
 }
 
+function getAvatarItem(category, id) {
+    const profileStore = getProfileStore();
+    if (!profileStore) return null;
+    return (profileStore.AVATAR_SHOP?.[category] || []).find((item) => item.id === id) || null;
+}
+
+function renderAvatarPreview(profile) {
+    if (!profileAvatarPreviewEl || !profile) return;
+
+    const avatarType = getAvatarItem("avatarType", profile.avatar?.avatarType);
+    const eyes = getAvatarItem("eyes", profile.avatar?.eye);
+    const eyeColor = getAvatarItem("eyeColor", profile.avatar?.eyeColor);
+    const nose = getAvatarItem("nose", profile.avatar?.nose);
+    const mouth = getAvatarItem("mouth", profile.avatar?.mouth);
+    const skin = getAvatarItem("skin", profile.avatar?.skin);
+    const hairColor = getAvatarItem("hairColor", profile.avatar?.hairColor);
+    const hairLength = getAvatarItem("hairLength", profile.avatar?.hairLength);
+    const hat = getAvatarItem("hat", profile.avatar?.hat);
+    const glasses = getAvatarItem("glasses", profile.avatar?.glasses);
+    const accessory = getAvatarItem("accessory", profile.avatar?.accessory);
+    const outfit = getAvatarItem("outfit", profile.avatar?.outfit);
+
+    const typeGlyph = avatarType?.glyph || "Kid";
+    const eyeGlyph = eyes?.glyph || "• •";
+    const eyeColorValue = eyeColor?.color || "#111827";
+    const noseGlyph = nose?.glyph || "ˇ";
+    const mouthGlyph = mouth?.glyph || "⌣";
+    const skinColor = skin?.color || "#f9c9a4";
+    const hairColorValue = hairColor?.color || "#6d4c41";
+    const hairLengthLabel = hairLength?.glyph || "Short";
+    const hatLabel = hat?.glyph || "None";
+    const glassesLabel = glasses?.glyph || "None";
+    const accessoryLabel = accessory?.glyph || "None";
+    const outfitColor = outfit?.color || "#38bdf8";
+
+    profileAvatarPreviewEl.innerHTML = `<div class="avatar-mini-card">
+        <div class="avatar-mini-type">${typeGlyph}</div>
+        <div class="avatar-mini-hair" style="background:${hairColorValue};">${hairLengthLabel}</div>
+        <div class="avatar-mini-head" style="background:${skinColor};">
+            <div class="avatar-mini-eyes" style="color:${eyeColorValue};">${eyeGlyph}</div>
+            <div class="avatar-mini-nose">${noseGlyph}</div>
+            <div class="avatar-mini-mouth">${mouthGlyph}</div>
+        </div>
+        <div class="avatar-mini-gear">${hatLabel} • ${glassesLabel}</div>
+        <div class="avatar-mini-gear">${accessoryLabel}</div>
+        <div class="avatar-mini-body" style="background:${outfitColor};"></div>
+    </div>`;
+}
+
 function setStatus(message, isError = false) {
     if (!statusEl) return;
     statusEl.innerText = message || "";
@@ -87,9 +143,10 @@ function setStatus(message, isError = false) {
 }
 
 function setBusy(isBusy) {
-    if (!registerBtn || !loginBtn || !guestBtn || !logoutBtn) return;
+    if (!registerBtn || !loginBtn || !resetPasswordBtn || !guestBtn || !logoutBtn) return;
     registerBtn.disabled = isBusy;
     loginBtn.disabled = isBusy;
+    resetPasswordBtn.disabled = isBusy;
     guestBtn.disabled = isBusy;
     if (!auth?.currentUser) logoutBtn.disabled = true;
 }
@@ -171,7 +228,21 @@ function renderProfileUi(accountState) {
 
     if (profileSummaryEl) {
         const profileCountText = profileContext.profileCount === 1 ? "1 profile" : `${profileContext.profileCount} profiles`;
-        profileSummaryEl.innerText = `${profileContext.profileName} • ${profileCountText}`;
+        const points = profileStore.getPoints();
+        profileSummaryEl.innerText = `${profileContext.profileName} • ${profileCountText} • ${points} points`;
+    }
+
+    renderAvatarPreview(profileContext.activeProfile);
+
+    if (profileAvatarSelectEl) {
+        profileAvatarSelectEl.innerHTML = "";
+        (profileStore.AVATAR_PRESETS || []).forEach((preset) => {
+            const option = document.createElement("option");
+            option.value = preset.id;
+            option.innerText = `Avatar: ${preset.name}`;
+            profileAvatarSelectEl.appendChild(option);
+        });
+        profileAvatarSelectEl.value = profileContext.activeProfile?.avatar?.presetId || profileStore.AVATAR_PRESETS?.[0]?.id || "";
     }
 
     if (profileSelectEl) {
@@ -261,6 +332,41 @@ function setSelectedProfile(profileId) {
     }
 
     return nextState;
+}
+
+async function setSelectedAvatarPreset(presetId) {
+    const profileStore = getProfileStore();
+    if (!profileStore) return;
+
+    const state = profileStore.loadAccountState();
+    const activeId = state.activeProfileId;
+    const preset = (profileStore.AVATAR_PRESETS || []).find((item) => item.id === presetId) || profileStore.AVATAR_PRESETS?.[0];
+    if (!preset) return;
+
+    state.profiles = state.profiles.map((profile) => {
+        if (profile.id !== activeId) return profile;
+        const avatar = profileStore.getDefaultAvatarByPreset(preset.id);
+        return {
+            ...profile,
+            avatar,
+            wardrobe: profileStore.normalizeWardrobe(profile.wardrobe, avatar)
+        };
+    });
+
+    const nextState = profileStore.setAccountState(state);
+    renderProfileUi(nextState);
+
+    if (firebaseReady && auth?.currentUser && db) {
+        try {
+            await saveAccountStateToCloud(auth.currentUser, nextState);
+        } catch (error) {
+            console.error("Could not sync avatar preset", error);
+            setStatus("Avatar changed locally. Cloud sync failed.", true);
+            return;
+        }
+    }
+
+    setStatus("Avatar updated.");
 }
 
 function formatResultRow(result) {
@@ -380,18 +486,15 @@ async function loadAccountStateFromCloud(user, email) {
     }
 
     const savedState = profileSnapshot.data() || {};
-    const nextState = profileStore.buildDefaultAccountState({
+    const nextState = {
         accountKey: user.uid,
         email: savedState.email || email,
         profileCount: savedState.profileCount || savedState.profiles?.length || 1,
-        profileNames: Array.isArray(savedState.profiles) ? savedState.profiles.map((profile) => profile?.name) : ["Player", "Player 2"]
-    });
+        profiles: Array.isArray(savedState.profiles) ? savedState.profiles : undefined,
+        activeProfileId: savedState.activeProfileId || ""
+    };
 
-    if (savedState.activeProfileId && nextState.profiles.some((profile) => profile.id === savedState.activeProfileId)) {
-        nextState.activeProfileId = savedState.activeProfileId;
-    }
-
-    return nextState;
+    return profileStore.saveAccountState(nextState);
 }
 
 function getCredentials() {
@@ -524,6 +627,29 @@ async function handleLogin() {
     }
 }
 
+async function handleResetPassword() {
+    if (!firebaseReady || !auth) {
+        setStatus("Firebase config missing in firebase.js", true);
+        return;
+    }
+
+    const email = (emailInput?.value || "").trim();
+    if (!email) {
+        setStatus("Type your email first, then click Reset Password.", true);
+        return;
+    }
+
+    try {
+        setBusy(true);
+        await sendPasswordResetEmail(auth, email);
+        setStatus("Password reset email sent. Check your inbox for the reset code/link.");
+    } catch (error) {
+        setStatus(error?.message || "Could not send reset email.", true);
+    } finally {
+        setBusy(false);
+    }
+}
+
 async function handleLogout() {
     if (!firebaseReady || !auth) {
         setStatus("Firebase config missing in firebase.js", true);
@@ -619,6 +745,9 @@ if (hasAuthUi()) {
         setSelectedProfile(profileSelectEl.value);
         closeProfileEditPanel();
     });
+    profileAvatarSelectEl.addEventListener("change", () => {
+        setSelectedAvatarPreset(profileAvatarSelectEl.value);
+    });
     profileResultsBtn.addEventListener("click", openResultsPanel);
     profileEditBtn.addEventListener("click", openProfileEditPanel);
     profileEditCancelBtn.addEventListener("click", closeProfileEditPanel);
@@ -628,6 +757,7 @@ if (hasAuthUi()) {
 
     registerBtn.addEventListener("click", handleRegister);
     loginBtn.addEventListener("click", handleLogin);
+    resetPasswordBtn.addEventListener("click", handleResetPassword);
     guestBtn.addEventListener("click", handleGuestMode);
     logoutBtn.addEventListener("click", handleLogout);
 
@@ -635,6 +765,7 @@ if (hasAuthUi()) {
         setStatus("Set up firebase.js first (apiKey, projectId, appId...).", true);
         registerBtn.disabled = true;
         loginBtn.disabled = true;
+        resetPasswordBtn.disabled = true;
         guestBtn.disabled = false;
         logoutBtn.disabled = true;
         showStartPanel();

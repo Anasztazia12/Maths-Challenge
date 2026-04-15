@@ -351,10 +351,35 @@ function getCertificateHeadline(correctCount, totalCount, rating) {
     return `${rating} Result: ${correctCount}/${totalCount}`;
 }
 
-function addArcadeCoinsFromQuiz(correctCount) {
-    const current = Math.max(0, Number(localStorage.getItem(getScopedStorageKey("arcadeCoins")) || 0));
-    const gained = Math.max(0, Number(correctCount) || 0);
-    localStorage.setItem(getScopedStorageKey("arcadeCoins"), String(current + gained));
+function calculateRewardPoints(correctCount, totalCount) {
+    const safeCorrect = Math.max(0, Number(correctCount) || 0);
+    const safeTotal = Math.max(1, Number(totalCount) || 1);
+    const errors = Math.max(0, safeTotal - safeCorrect);
+    const isPerfectTimedTable6 = op === "multiplication" && isTimedMode && QUESTION_TIME_SECONDS === 6 && errors === 0;
+
+    if (isPerfectTimedTable6) return 15;
+
+    const isVeryGood = errors <= 2;
+    const isMediumHardGood = ["medium", "hard"].includes(diff) && errors <= 5;
+
+    if (isVeryGood || isMediumHardGood) return 10;
+
+    return 5;
+}
+
+function addRewardPoints(correctCount, totalCount) {
+    const profileStore = getProfileStore();
+    const gained = calculateRewardPoints(correctCount, totalCount);
+
+    if (!profileStore) {
+        const current = Math.max(0, Number(localStorage.getItem(getScopedStorageKey("arcadeCoins")) || 0));
+        localStorage.setItem(getScopedStorageKey("arcadeCoins"), String(current + gained));
+        return gained;
+    }
+
+    profileStore.addPoints(gained);
+    localStorage.setItem(getScopedStorageKey("arcadeCoins"), String(profileStore.getPoints()));
+    return gained;
 }
 
 // Sounds
@@ -922,7 +947,7 @@ function showEndScreen() {
         const badge = getBadgeLevel(correctCount, total);
         const studentName = studentNameInput?.value?.trim() || profileContext.profileName || "Player";
 
-        addArcadeCoinsFromQuiz(correctCount);
+        const gainedPoints = addRewardPoints(correctCount, total);
 
         lastResultData = {
             accountKey: profileContext.accountKey,
@@ -950,8 +975,8 @@ function showEndScreen() {
 
         if (cloudSaveStatusEl) {
             cloudSaveStatusEl.innerText = getSessionMode() === "guest"
-                ? "Guest mode: cloud save is disabled. Local save still works."
-                : "Cloud save will sync to your account if you are signed in.";
+                ? `Guest mode: cloud save is disabled. You earned ${gainedPoints} points.`
+                : `Cloud save will sync to your account if you are signed in. You earned ${gainedPoints} points.`;
             cloudSaveStatusEl.classList.remove("save-status-error");
         }
 
