@@ -88,7 +88,7 @@
 
     window.goBackToHome = function goBackToHome() {
         const sessionMode = localStorage.getItem("mathsSessionMode") || "";
-        window.location.href = sessionMode ? "home.html" : "index.html";
+        window.location.replace(sessionMode ? "home.html" : "index.html");
     };
 
     if (document.readyState === "loading") {

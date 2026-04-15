@@ -8,7 +8,7 @@ function hasAllowedSession() {
 
 function redirectToStart() {
     if (window.location.pathname.endsWith("/index.html") || window.location.pathname.endsWith("/")) return;
-    window.location.href = "index.html";
+    window.location.replace("index.html");
 }
 
 if (!hasAllowedSession()) {

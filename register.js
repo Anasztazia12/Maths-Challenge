@@ -196,11 +196,11 @@ function getBackToHomeUrl() {
 }
 
 function goBackToHome() {
-    location.href = getBackToHomeUrl();
+    location.replace(getBackToHomeUrl());
 }
 
 function navigateToHome() {
-    location.href = "home.html";
+    location.replace("home.html");
 }
 
 function consumeMenuActionFromUrl() {
@@ -434,7 +434,7 @@ async function handleLogout() {
     }
     clearSessionMode();
     if (isHomeDashboardPage) {
-        location.href = "index.html";
+        location.replace("index.html");
         return;
     }
     showStartPanel();
@@ -550,10 +550,8 @@ async function handleAccountDeletion() {
         clearSessionMode();
         localStorage.removeItem("mathsLastLoginEmail");
         
-        // Redirect to home
-        showStartPanel();
-        showEntryActions();
-        setStatusMessage(authStatusEl, "Account deleted. Confirmation email sent.", false);
+        // Redirect back to the auth landing page without keeping the dashboard in history
+        location.replace("index.html");
     } catch (error) {
         console.error("Account deletion failed:", error);
         setStatusMessage(authStatusEl, error?.message || "Failed to delete account.", true);
@@ -728,6 +726,16 @@ async function initializeHomeState() {
     const sessionMode = getSessionMode();
 
     if (isAuthPage) {
+        if (sessionMode === "guest") {
+            location.replace("home.html");
+            return;
+        }
+
+        if (sessionMode === "auth" && auth?.currentUser) {
+            location.replace("home.html");
+            return;
+        }
+
         showStartPanel();
         showEntryActions();
 
@@ -741,7 +749,13 @@ async function initializeHomeState() {
         }
 
         onAuthStateChanged(auth, (user) => {
-            if (!user && getSessionMode() === "auth") {
+            if (user) {
+                setSessionMode("auth");
+                location.replace("home.html");
+                return;
+            }
+
+            if (getSessionMode() === "auth") {
                 clearSessionMode();
             }
         });
@@ -765,12 +779,12 @@ async function initializeHomeState() {
     }
 
     if (sessionMode !== "auth") {
-        location.href = "index.html";
+        location.replace("index.html");
         return;
     }
 
     if (!firebaseReady || !auth) {
-        location.href = "index.html";
+        location.replace("index.html");
         return;
     }
 
@@ -789,7 +803,7 @@ async function initializeHomeState() {
         }
 
         clearSessionMode();
-        location.href = "index.html";
+        location.replace("index.html");
     });
 }
 

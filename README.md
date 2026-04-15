@@ -49,7 +49,7 @@ Maths Challenge is a browser-based math learning and practice project for childr
 3. For the Weekly Challenge, complete up to 2 tasks per day to reach 10 for the week and earn a trophy.
 4. Review your results and export a certificate if desired.
 
-> **Note:** If you do not see the latest changes immediately, perform a hard refresh (Ctrl+F5) because the service worker cache may still be active.
+> **Note:** The service worker now fetches updated HTML, JS, and CSS directly, so the latest changes should appear without a hard refresh.
 
 ## 6. Firebase Auth + Cloud Save Setup
 
