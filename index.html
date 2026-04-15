@@ -92,6 +92,20 @@
         </section>
 
         <section id="menu-panel" class="hidden">
+            <div class="hamburger-menu-wrapper">
+                <button class="hamburger-btn" id="hamburger-btn" aria-label="Menu" aria-expanded="false">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <nav class="hamburger-panel hidden" id="hamburger-panel">
+                    <button class="menu-item" id="menu-edit-profile-btn">Edit Profile Name</button>
+                    <button class="menu-item" id="menu-results-btn">Results</button>
+                    <button class="menu-item" id="menu-logout-btn">Logout</button>
+                    <button class="menu-item danger" id="menu-delete-account-btn">Delete Account</button>
+                </nav>
+            </div>
+
             <p id="home-daily-note" class="subtitle home-daily-note">Your daily 2 tasks are waiting for you in Weekly Challenge ⭐</p>
 
             <div class="menu-buttons home-menu-buttons">
@@ -149,6 +163,7 @@
     </div>
 
     <script src="profile-manager.js"></script>
+    <script src="hamburger.js"></script>
     <script>
         const WEEKLY_TOTAL_TASKS = 10;
         const DAILY_LIMIT = 2;

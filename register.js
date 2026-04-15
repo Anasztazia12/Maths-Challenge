@@ -707,11 +707,18 @@ async function initializeHomeState() {
 
     const profileStore = getProfileStore();
     const sessionMode = getSessionMode();
+    const pendingAction = consumeMenuActionFromUrl();
+    let pendingActionHandled = false;
+
+    const runPendingActionOnce = () => {
+        if (pendingActionHandled || !pendingAction) return;
+        pendingActionHandled = true;
+        runMenuAction(pendingAction);
+    };
 
     if (sessionMode === "guest") {
         restoreGuestSession(profileStore);
-        const pendingAction = consumeMenuActionFromUrl();
-        if (pendingAction) runMenuAction(pendingAction);
+        runPendingActionOnce();
         return;
     }
 
@@ -726,22 +733,22 @@ async function initializeHomeState() {
 
     if (sessionMode === "auth" && auth.currentUser) {
         restoreAuthSession(profileStore, auth.currentUser);
-        const pendingAction = consumeMenuActionFromUrl();
-        if (pendingAction) runMenuAction(pendingAction);
+        runPendingActionOnce();
         return;
     }
 
-    if (sessionMode === "auth" && !auth.currentUser) {
-        clearSessionMode();
+    if (!sessionMode && auth.currentUser) {
+        setSessionMode("auth");
+        restoreAuthSession(profileStore, auth.currentUser);
+        runPendingActionOnce();
+        return;
     }
 
     onAuthStateChanged(auth, (user) => {
-        if (getSessionMode() !== "auth") return;
-
         if (user) {
+            setSessionMode("auth");
             restoreAuthSession(getProfileStore(), user);
-            const pendingAction = consumeMenuActionFromUrl();
-            if (pendingAction) runMenuAction(pendingAction);
+            runPendingActionOnce();
             return;
         }
 
@@ -749,9 +756,6 @@ async function initializeHomeState() {
         showStartPanel();
         showEntryActions();
     });
-
-    const pendingAction = consumeMenuActionFromUrl();
-    if (pendingAction) runMenuAction(pendingAction);
 }
 
 void initializeHomeState();
