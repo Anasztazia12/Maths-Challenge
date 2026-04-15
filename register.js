@@ -3,6 +3,7 @@ import {
     sendPasswordResetEmail,
     signInWithEmailAndPassword,
     signOut,
+    deleteUser,
     onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
@@ -61,6 +62,7 @@ const authRegisterPasswordConfirmToggleEl = document.getElementById("auth-regist
 const authRegisterBackBtnEl = document.getElementById("auth-register-back-btn");
 const authRegisterSubmitBtnEl = document.getElementById("auth-register-submit-btn");
 const authRegisterStatusEl = document.getElementById("auth-register-status");
+const authStatusEl = document.getElementById("auth-status");
 
 // Profile UI
 const profileSummaryEl = document.getElementById("profile-summary");
@@ -70,7 +72,14 @@ const resultsPanelTitleEl = document.getElementById("results-panel-title");
 const resultsListEl = document.getElementById("results-list");
 const resultsRefreshBtn = document.getElementById("results-refresh-btn");
 const resultsCloseBtn = document.getElementById("results-close-btn");
-const logoutBtn = document.getElementById("auth-logout-btn");
+
+// Hamburger Menu Elements
+const hamburgerBtn = document.getElementById("hamburger-btn");
+const hamburgerPanel = document.getElementById("hamburger-panel");
+const menuEditProfileBtn = document.getElementById("menu-edit-profile-btn");
+const menuResultsBtn = document.getElementById("menu-results-btn");
+const menuLogoutBtn = document.getElementById("menu-logout-btn");
+const menuDeleteAccountBtn = document.getElementById("menu-delete-account-btn");
 
 // ===== State =====
 let currentAuthStep = "entry"; // entry, login, register, reset, verifyReset
@@ -438,6 +447,56 @@ function closeResultsPanel() {
     resultsPanelEl?.classList.add("hidden");
 }
 
+function openEditProfileNameDialog() {
+    const profileName = prompt("Enter new profile name:");
+    if (profileName && profileName.trim()) {
+        const profileStore = getProfileStore();
+        if (!profileStore) return;
+        
+        const accountState = profileStore.loadAccountState();
+        const updated = profileStore.setProfileName(profileName.trim(), accountState);
+        renderProfileUi(updated);
+        setStatusMessage(authStatusEl, "Profile name updated!", false);
+    }
+}
+
+function showDeleteConfirmation() {
+    const confirmed = confirm("Are you sure you want to delete your account? This action cannot be undone.");
+    if (confirmed) {
+        handleAccountDeletion();
+    }
+}
+
+async function handleAccountDeletion() {
+    if (!firebaseReady || !auth || !auth.currentUser) {
+        alert("You must be logged in to delete your account.");
+        return;
+    }
+
+    try {
+        const user = auth.currentUser;
+        const email = user.email;
+        
+        // Send deletion confirmation email
+        await sendPasswordResetEmail(auth, email);
+        
+        // Delete user account
+        await deleteUser(user);
+        
+        // Clear session
+        clearSessionMode();
+        localStorage.removeItem("mathsLastLoginEmail");
+        
+        // Redirect to home
+        showStartPanel();
+        showEntryActions();
+        setStatusMessage(authStatusEl, "Account deleted. Confirmation email sent.", false);
+    } catch (error) {
+        console.error("Account deletion failed:", error);
+        setStatusMessage(authStatusEl, error?.message || "Failed to delete account.", true);
+    }
+}
+
 function loadProfileResults() {
     const profileStore = getProfileStore();
     if (!profileStore) return;
@@ -528,7 +587,48 @@ if (authRegisterPasswordConfirmToggleEl) {
 if (profileResultsBtn) profileResultsBtn.addEventListener("click", openResultsPanel);
 if (resultsRefreshBtn) resultsRefreshBtn.addEventListener("click", loadProfileResults);
 if (resultsCloseBtn) resultsCloseBtn.addEventListener("click", closeResultsPanel);
-if (logoutBtn) logoutBtn.addEventListener("click", handleLogout);
+
+// Hamburger Menu
+if (hamburgerBtn) {
+    hamburgerBtn.addEventListener("click", () => {
+        hamburgerPanel?.classList.toggle("hidden");
+    });
+}
+
+document.addEventListener("click", (e) => {
+    const isHamburger = e.target.closest(".hamburger-menu-wrapper");
+    if (!isHamburger && !hamburgerPanel?.classList.contains("hidden")) {
+        hamburgerPanel?.classList.add("hidden");
+    }
+});
+
+if (menuResultsBtn) {
+    menuResultsBtn.addEventListener("click", () => {
+        hamburgerPanel?.classList.add("hidden");
+        openResultsPanel();
+    });
+}
+
+if (menuEditProfileBtn) {
+    menuEditProfileBtn.addEventListener("click", () => {
+        hamburgerPanel?.classList.add("hidden");
+        openEditProfileNameDialog();
+    });
+}
+
+if (menuLogoutBtn) {
+    menuLogoutBtn.addEventListener("click", () => {
+        hamburgerPanel?.classList.add("hidden");
+        handleLogout();
+    });
+}
+
+if (menuDeleteAccountBtn) {
+    menuDeleteAccountBtn.addEventListener("click", () => {
+        hamburgerPanel?.classList.add("hidden");
+        showDeleteConfirmation();
+    });
+}
 
 // ===== Initialization =====
 

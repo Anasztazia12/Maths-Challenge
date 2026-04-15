@@ -11,6 +11,21 @@
 
     <aside id="home-corner-avatar" class="home-corner-avatar hidden" aria-label="Selected avatar"></aside>
 
+    <!-- Hamburger Menu -->
+    <div class="hamburger-menu-wrapper">
+        <button class="hamburger-btn" id="hamburger-btn" aria-label="Menu" aria-expanded="false">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        <nav class="hamburger-panel hidden" id="hamburger-panel">
+            <button class="menu-item" id="menu-edit-profile-btn">✏️ Edit Profile Name</button>
+            <button class="menu-item" id="menu-results-btn">📊 Results</button>
+            <button class="menu-item" id="menu-logout-btn">🚪 Logout</button>
+            <button class="menu-item danger" id="menu-delete-account-btn">🗑️ Delete Account</button>
+        </nav>
+    </div>
+
     <div class="game-container home-container">
 
         <h1>Maths Challenge</h1>
@@ -137,11 +152,6 @@
                     <span>Avatar Shop</span>
                 </button>
 
-            </div>
-
-            <div class="auth-panel auth-session-panel">
-                <button class="menu-btn special" id="auth-logout-btn" type="button" disabled>Logout</button>
-                <button class="menu-btn danger" id="auth-delete-account-btn" type="button" disabled>Delete Account</button>
             </div>
 
             <div id="results-panel" class="auth-panel hidden">

@@ -540,6 +540,16 @@
         return getActiveProfile(state);
     }
 
+    function setProfileName(newName, accountState, profileId = null) {
+        if (!accountState.profiles) accountState.profiles = [];
+        const targetId = profileId || accountState.activeProfileId || "profile-1";
+        const profile = accountState.profiles.find((p) => p.id === targetId);
+        if (profile) {
+            profile.name = newName;
+        }
+        return saveAccountState(accountState);
+    }
+
     function getCurrentProfileContext() {
         return getActiveProfile(loadAccountState());
     }
@@ -636,6 +646,7 @@
         getActiveProfile,
         getCurrentProfileContext,
         setActiveProfile,
+        setProfileName,
         getScopedStorageKey,
         loadScopedJson,
         saveScopedJson,
