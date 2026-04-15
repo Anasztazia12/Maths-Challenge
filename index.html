@@ -17,47 +17,81 @@
         <p class="subtitle">Sign in, register, or continue as a guest.</p>
 
         <section id="start-panel" class="auth-panel" aria-label="Account">
-            <p class="auth-title">Start here</p>
-            <p id="auth-user-label" class="auth-user-label">Not signed in</p>
-            <div class="auth-actions auth-entry-actions">
-                <button class="menu-btn" id="auth-register-btn" type="button">Registration</button>
+            <p class="auth-title">Welcome</p>
+            <p id="auth-user-label" class="auth-user-label">Choose an option to continue</p>
+
+            <!-- Entry buttons -->
+            <div id="auth-entry-actions" class="auth-actions auth-entry-actions hidden">
                 <button class="menu-btn" id="auth-login-btn" type="button">Login</button>
-                <button class="menu-btn hidden" id="auth-reset-password-btn" type="button">Reset Password</button>
+                <button class="menu-btn" id="auth-register-btn" type="button">Registration</button>
                 <button class="menu-btn special" id="auth-guest-btn" type="button">Continue as Guest</button>
             </div>
-            <div id="auth-details-panel" class="hidden">
-            <div class="auth-grid">
-                <input id="auth-email" type="email" placeholder="Email" autocomplete="email">
-                <input id="auth-password" type="password" placeholder="Password (min 6 chars)" autocomplete="current-password">
-            </div>
-            <div class="profile-setup">
-                <div class="profile-setup-row">
-                    <label for="profile-count">How many profiles do you want to add?</label>
-                    <select id="profile-count">
-                        <option value="1" selected>1 profile</option>
-                        <option value="2">2 profiles</option>
-                    </select>
+
+            <!-- Login Form -->
+            <div id="auth-login-form" class="auth-form hidden">
+                <p class="auth-title">Login</p>
+                <div class="auth-grid">
+                    <input id="auth-login-email" type="email" placeholder="Email" autocomplete="email">
+                    <input id="auth-login-password" type="password" placeholder="Password" autocomplete="current-password">
                 </div>
-                <div class="profile-name-grid">
-                    <input id="profile-name-1" type="text" placeholder="Profile 1 nickname" autocomplete="nickname">
-                    <input id="profile-name-2" type="text" placeholder="Profile 2 nickname" autocomplete="nickname">
+                <div class="auth-actions auth-mode-actions">
+                    <button class="menu-btn" id="auth-login-back-btn" type="button">Back</button>
+                    <button class="menu-btn special" id="auth-login-submit-btn" type="button">Login</button>
                 </div>
+                <button class="link-btn" id="auth-login-forgot-btn" type="button">Forgot Password?</button>
+                <p id="auth-login-status" class="auth-status"></p>
             </div>
-            <div class="auth-actions auth-mode-actions">
-                <button class="menu-btn" id="auth-back-btn" type="button">Back</button>
-            </div>
-            <div id="otp-panel" class="otp-panel hidden" aria-label="Email code login">
-                <p class="auth-title otp-title">Email Code Login</p>
-                <div class="auth-grid otp-grid">
-                    <input id="auth-otp-code" type="text" inputmode="numeric" placeholder="Enter email code" autocomplete="one-time-code">
+
+            <!-- Reset Password Form -->
+            <div id="auth-reset-form" class="auth-form hidden">
+                <p class="auth-title">Reset Password</p>
+                <div class="auth-grid">
+                    <input id="auth-reset-email" type="email" placeholder="Email" autocomplete="email">
                 </div>
-                <div class="auth-actions otp-actions">
-                    <button class="menu-btn" id="auth-send-otp-btn" type="button">Send Code</button>
-                    <button class="menu-btn special" id="auth-verify-otp-btn" type="button">Login With Code</button>
+                <div class="auth-actions auth-mode-actions">
+                    <button class="menu-btn" id="auth-reset-back-btn" type="button">Back</button>
+                    <button class="menu-btn special" id="auth-reset-send-btn" type="button">Send Code</button>
                 </div>
-                <p class="otp-note">Uses backend endpoint if configured.</p>
+                <p id="auth-reset-status" class="auth-status"></p>
             </div>
+
+            <!-- Verify Reset Code Form -->
+            <div id="auth-verify-reset-form" class="auth-form hidden">
+                <p class="auth-title">Enter Code</p>
+                <div class="auth-grid">
+                    <input id="auth-verify-code" type="text" inputmode="numeric" placeholder="Enter code from email" autocomplete="one-time-code">
+                    <input id="auth-new-password" type="password" placeholder="New Password" autocomplete="new-password">
+                    <input id="auth-confirm-password" type="password" placeholder="Confirm Password" autocomplete="new-password">
+                </div>
+                <div class="auth-actions auth-mode-actions">
+                    <button class="menu-btn" id="auth-verify-back-btn" type="button">Back</button>
+                    <button class="menu-btn special" id="auth-verify-submit-btn" type="button">Change Password</button>
+                </div>
+                <p id="auth-verify-status" class="auth-status"></p>
             </div>
+
+            <!-- Registration Form -->
+            <div id="auth-register-form" class="auth-form hidden">
+                <p class="auth-title">Registration</p>
+                <div class="auth-grid">
+                    <input id="auth-register-email" type="email" placeholder="Email" autocomplete="email">
+                    <input id="auth-register-username" type="text" placeholder="Username" autocomplete="username">
+                    <div class="password-field">
+                        <input id="auth-register-password" type="password" placeholder="Password" autocomplete="new-password">
+                        <button class="toggle-password-btn" id="auth-register-password-toggle" type="button" aria-label="Toggle password visibility">👁️</button>
+                    </div>
+                    <div class="password-field">
+                        <input id="auth-register-password-confirm" type="password" placeholder="Confirm Password" autocomplete="new-password">
+                        <button class="toggle-password-btn" id="auth-register-password-confirm-toggle" type="button" aria-label="Toggle password visibility">👁️</button>
+                    </div>
+                </div>
+                <div class="auth-actions auth-mode-actions">
+                    <button class="menu-btn" id="auth-register-back-btn" type="button">Back</button>
+                    <button class="menu-btn special" id="auth-register-submit-btn" type="button">Register</button>
+                </div>
+                <p id="auth-register-status" class="auth-status"></p>
+            </div>
+
             <p id="auth-status" class="auth-status"></p>
         </section>
 
@@ -68,9 +102,6 @@
                 <p class="auth-title">Active profile</p>
                 <p id="profile-summary" class="auth-user-label">Loading profile...</p>
                 <div id="profile-avatar-preview" class="profile-avatar-preview" aria-hidden="true"></div>
-                <div class="profile-menu-row profile-avatar-row">
-                    <select id="profile-avatar-select"></select>
-                </div>
                 <div class="profile-menu-row">
                     <select id="profile-select"></select>
                     <button class="menu-btn special" id="profile-results-btn" type="button">Results</button>

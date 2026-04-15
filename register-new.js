@@ -83,7 +83,6 @@ const logoutBtn = document.getElementById("auth-logout-btn");
 // ===== State =====
 let currentAuthStep = "entry"; // entry, login, register, reset, verifyReset
 let resetEmailForVerify = "";
-const LAST_LOGIN_EMAIL_KEY = "mathsLastLoginEmail";
 
 // ===== Utility Functions =====
 
@@ -130,8 +129,7 @@ function showEntryActions() {
 function showLoginForm() {
     hideAllAuthForms();
     authLoginFormEl?.classList.remove("hidden");
-    const rememberedEmail = localStorage.getItem(LAST_LOGIN_EMAIL_KEY) || "";
-    authLoginEmailEl.value = rememberedEmail;
+    authLoginEmailEl.value = "";
     authLoginPasswordEl.value = "";
     authLoginStatusEl.textContent = "";
     currentAuthStep = "login";
@@ -263,7 +261,6 @@ async function handleLogin() {
     try {
         authLoginSubmitBtnEl.disabled = true;
         const result = await signInWithEmailAndPassword(auth, email, password);
-        localStorage.setItem(LAST_LOGIN_EMAIL_KEY, email);
 
         const profileStore = getProfileStore();
         if (profileStore) {
@@ -373,7 +370,6 @@ async function handleRegister() {
     try {
         authRegisterSubmitBtnEl.disabled = true;
         const result = await createUserWithEmailAndPassword(auth, email, password);
-        localStorage.setItem(LAST_LOGIN_EMAIL_KEY, email);
 
         // Save user profile
         await setDoc(doc(db, "users", result.user.uid, "profile", "main"), {
@@ -576,28 +572,41 @@ if (logoutBtn) logoutBtn.addEventListener("click", handleLogout);
 
 // ===== Initialization =====
 
-async function enforceManualStart() {
-    showStartPanel();
-    showEntryActions();
-    clearSessionMode();
-
-    if (!firebaseReady || !auth) return;
-
-    const rememberedEmail = auth.currentUser?.email || "";
-    if (rememberedEmail) {
-        localStorage.setItem(LAST_LOGIN_EMAIL_KEY, rememberedEmail);
-    }
-
-    // Force explicit login click + submit; no automatic sign-in on page load.
-    if (auth.currentUser) {
-        try {
-            await signOut(auth);
-        } catch (error) {
-            console.error("Automatic sign-out for manual auth start failed", error);
+function initSession() {
+    const sessionMode = getSessionMode();
+    if (sessionMode === "guest" || sessionMode === "auth") {
+        showMenuPanel();
+        if (getProfileStore()) {
+            renderProfileUi(getProfileStore().loadAccountState());
         }
+    } else {
+        showStartPanel();
+        showEntryActions();
     }
 }
 
-void enforceManualStart();
+if (firebaseReady && auth) {
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            // User is signed in
+            if (getProfileStore()) {
+                getProfileStore().setActiveAccountKey(user.uid);
+                renderProfileUi(getProfileStore().loadAccountState(user.uid, {
+                    accountKey: user.uid,
+                    email: user.email,
+                    profileCount: 1,
+                    profileNames: ["Player"]
+                }));
+            }
+            setSessionMode("auth");
+            showMenuPanel();
+        } else {
+            // User is signed out
+            initSession();
+        }
+    });
+} else {
+    initSession();
+}
 
 export { renderHomeCornerAvatar };
