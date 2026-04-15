@@ -31,8 +31,8 @@
                     <input id="auth-login-password" type="password" placeholder="Password" autocomplete="current-password">
                 </div>
                 <div class="auth-actions auth-mode-actions">
-                    <button class="menu-btn" id="auth-login-back-btn" type="button">Back</button>
                     <button class="menu-btn special" id="auth-login-submit-btn" type="button">Login</button>
+                    <button class="menu-btn" id="auth-login-back-btn" type="button">Back</button>
                 </div>
                 <button class="link-btn" id="auth-login-forgot-btn" type="button">Forgot Password?</button>
                 <p id="auth-login-status" class="auth-status"></p>
@@ -298,6 +298,14 @@
             byId("auth-verify-back-btn")?.addEventListener("click", showReset);
             byId("auth-reset-send-btn")?.addEventListener("click", showVerifyReset);
 
+            byId("auth-login-submit-btn")?.addEventListener("click", () => {
+                if (window.__registerModuleReady) return;
+                const status = byId("auth-login-status");
+                if (!status) return;
+                status.textContent = "Login module not loaded yet. Please refresh the page once.";
+                status.style.color = "#fca5a5";
+            });
+
             byId("auth-guest-btn")?.addEventListener("click", () => {
                 localStorage.setItem("mathsSessionMode", "guest");
                 startPanel?.classList.add("hidden");
@@ -306,8 +314,8 @@
         })();
     </script>
 
-    <script type="module" src="firebase.js"></script>
-    <script type="module" src="register.js"></script>
+    <script type="module" src="firebase.js?v=2026-04-15-authfix-1"></script>
+    <script type="module" src="register.js?v=2026-04-15-authfix-1"></script>
     <script src="sw-register.js"></script>
 </body>
 </html>
