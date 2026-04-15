@@ -934,7 +934,7 @@ function showEndScreen() {
     const tablesQuery = tablesParam ? `&tables=${encodeURIComponent(tablesParam)}` : "";
     const replayQuery = `mode=${mode || "input"}&op=${op || "mixed"}&diff=${diff || "easy"}${tablesQuery}`;
     const playAgainTarget = isWeekly ? "weekly.html" : `play.html?${replayQuery}`;
-    const backTarget = isWeekly ? "weekly.html" : "index.html";
+    const backTarget = isWeekly ? "weekly.html" : "home.html";
 
     if (counterEl) counterEl.style.display = "none";
     if (timerWrapEl) timerWrapEl.classList.add("hidden");

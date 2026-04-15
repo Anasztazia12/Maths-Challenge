@@ -75,6 +75,8 @@ const resultsCloseBtn = document.getElementById("results-close-btn");
 const resultsFilterAllBtn = document.getElementById("results-filter-all-btn");
 const resultsFilterCompletedBtn = document.getElementById("results-filter-completed-btn");
 const resultsFilterUnfinishedBtn = document.getElementById("results-filter-unfinished-btn");
+const isAuthPage = Boolean(startPanelEl && authEntryActionsEl);
+const isHomeDashboardPage = Boolean(menuPanelEl) && !isAuthPage;
 
 // ===== State =====
 let resetEmailForVerify = "";
@@ -192,11 +194,15 @@ function getAvatarBaseImageSources(avatarTypeId) {
 
 function getBackToHomeUrl() {
     const sessionMode = localStorage.getItem("mathsSessionMode");
-    return sessionMode ? "index.html" : "index.html";
+    return sessionMode ? "home.html" : "index.html";
 }
 
 function goBackToHome() {
     location.href = getBackToHomeUrl();
+}
+
+function navigateToHome() {
+    location.href = "home.html";
 }
 
 function consumeMenuActionFromUrl() {
@@ -264,7 +270,11 @@ async function handleLogin() {
 
         setSessionMode("auth");
         setStatusMessage(authLoginStatusEl, "Login successful!");
-        setTimeout(() => showMenuPanel(), 500);
+        if (isAuthPage) {
+            setTimeout(() => navigateToHome(), 250);
+        } else {
+            setTimeout(() => showMenuPanel(), 250);
+        }
     } catch (error) {
         setStatusMessage(authLoginStatusEl, error?.message || "Login failed. Check your email and password.", true);
     } finally {
@@ -386,7 +396,11 @@ async function handleRegister() {
 
         setSessionMode("auth");
         setStatusMessage(authRegisterStatusEl, "Registration successful!");
-        setTimeout(() => showMenuPanel(), 500);
+        if (isAuthPage) {
+            setTimeout(() => navigateToHome(), 250);
+        } else {
+            setTimeout(() => showMenuPanel(), 250);
+        }
     } catch (error) {
         setStatusMessage(authRegisterStatusEl, error?.message || "Registration failed.", true);
     } finally {
@@ -407,6 +421,10 @@ async function handleGuestMode() {
 
     clearSessionMode();
     setSessionMode("guest");
+    if (isAuthPage) {
+        navigateToHome();
+        return;
+    }
     showMenuPanel();
 }
 
@@ -417,6 +435,10 @@ async function handleLogout() {
         console.error("Logout error:", error);
     }
     clearSessionMode();
+    if (isHomeDashboardPage) {
+        location.href = "index.html";
+        return;
+    }
     showStartPanel();
     showEntryActions();
 }
@@ -704,14 +726,51 @@ function restoreAuthSession(profileStore, user) {
 }
 
 async function initializeHomeState() {
-    showStartPanel();
-    showEntryActions();
-
     const profileStore = getProfileStore();
     const sessionMode = getSessionMode();
+
+    if (isAuthPage) {
+        showStartPanel();
+        showEntryActions();
+
+        if (sessionMode === "guest") {
+            navigateToHome();
+            return;
+        }
+
+        if (!firebaseReady || !auth) {
+            return;
+        }
+
+        const rememberedEmail = auth.currentUser?.email || "";
+        if (rememberedEmail) {
+            localStorage.setItem(LAST_LOGIN_EMAIL_KEY, rememberedEmail);
+        }
+
+        if (sessionMode === "auth" && auth.currentUser) {
+            navigateToHome();
+            return;
+        }
+
+        if (!sessionMode && auth.currentUser) {
+            setSessionMode("auth");
+            navigateToHome();
+            return;
+        }
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                setSessionMode("auth");
+                navigateToHome();
+            }
+        });
+        return;
+    }
+
+    if (!isHomeDashboardPage) return;
+
     const pendingAction = consumeMenuActionFromUrl();
     let pendingActionHandled = false;
-
     const runPendingActionOnce = () => {
         if (pendingActionHandled || !pendingAction) return;
         pendingActionHandled = true;
@@ -724,23 +783,17 @@ async function initializeHomeState() {
         return;
     }
 
+    if (sessionMode !== "auth") {
+        location.href = "index.html";
+        return;
+    }
+
     if (!firebaseReady || !auth) {
+        location.href = "index.html";
         return;
     }
 
-    const rememberedEmail = auth.currentUser?.email || "";
-    if (rememberedEmail) {
-        localStorage.setItem(LAST_LOGIN_EMAIL_KEY, rememberedEmail);
-    }
-
-    if (sessionMode === "auth" && auth.currentUser) {
-        restoreAuthSession(profileStore, auth.currentUser);
-        runPendingActionOnce();
-        return;
-    }
-
-    if (!sessionMode && auth.currentUser) {
-        setSessionMode("auth");
+    if (auth.currentUser) {
         restoreAuthSession(profileStore, auth.currentUser);
         runPendingActionOnce();
         return;
@@ -755,8 +808,7 @@ async function initializeHomeState() {
         }
 
         clearSessionMode();
-        showStartPanel();
-        showEntryActions();
+        location.href = "index.html";
     });
 }
 

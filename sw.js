@@ -4,6 +4,7 @@ const CACHE_NAME = `maths-challenge-${CACHE_VERSION}`;
 const CORE_ASSETS = [
   "./",
   "index.html",
+  "home.html",
   "game.html",
   "play.html",
   "weekly.html",

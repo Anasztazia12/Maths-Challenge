@@ -1,12 +1,11 @@
 (function () {
-    function onIndexPage() {
-        return window.location.pathname.toLowerCase().endsWith("/index.html")
-            || window.location.pathname === "/"
-            || window.location.pathname.toLowerCase().endsWith("\\index.html");
+    function onHomePage() {
+        return window.location.pathname.toLowerCase().endsWith("/home.html")
+            || window.location.pathname.toLowerCase().endsWith("\\home.html");
     }
 
     function buildActionUrl(action) {
-        const target = new URL("index.html", window.location.href);
+        const target = new URL("home.html", window.location.href);
         target.searchParams.set("action", action);
         return target.toString();
     }
@@ -17,7 +16,7 @@
 
     function triggerAction(action) {
         const actions = window.MathsMenuActions;
-        if (onIndexPage() && actions && typeof actions[action] === "function") {
+        if (onHomePage() && actions && typeof actions[action] === "function") {
             actions[action]();
             return;
         }
@@ -88,7 +87,8 @@
     }
 
     window.goBackToHome = function goBackToHome() {
-        window.location.href = "index.html";
+        const sessionMode = localStorage.getItem("mathsSessionMode") || "";
+        window.location.href = sessionMode ? "home.html" : "index.html";
     };
 
     if (document.readyState === "loading") {

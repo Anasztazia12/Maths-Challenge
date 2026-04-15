@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maths Challenge - Home</title>
+    <link rel="preload" as="image" href="assets/image/pophunters.webp">
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body class="bg-home">
+
+    <aside id="home-corner-avatar" class="home-corner-avatar hidden" aria-label="Selected avatar"></aside>
+
+    <div class="game-container home-container">
+        <h1>Maths Challenge</h1>
+
+        <section id="menu-panel">
+            <div class="hamburger-menu-wrapper">
+                <button class="hamburger-btn" id="hamburger-btn" aria-label="Menu" aria-expanded="false">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <nav class="hamburger-panel hidden" id="hamburger-panel">
+                    <button class="menu-item" id="menu-edit-profile-btn">Edit Profile Name</button>
+                    <button class="menu-item" id="menu-results-btn">Results</button>
+                    <button class="menu-item" id="menu-logout-btn">Logout</button>
+                    <button class="menu-item danger" id="menu-delete-account-btn">Delete Account</button>
+                </nav>
+            </div>
+
+            <p id="home-daily-note" class="subtitle home-daily-note">Your daily 2 tasks are waiting for you in Weekly Challenge *</p>
+
+            <div class="menu-buttons home-menu-buttons">
+                <button class="menu-btn home-menu-btn" onclick="location.href='game.html'">Play Game</button>
+                <button class="menu-btn home-menu-btn" onclick="location.href='addition.html'">Addition +</button>
+                <button class="menu-btn home-menu-btn" onclick="location.href='subtraction.html'">Subtraction -</button>
+                <button class="menu-btn home-menu-btn" onclick="location.href='multiplication.html'">Multiplication x</button>
+                <button class="menu-btn home-menu-btn" onclick="location.href='division.html'">Division /</button>
+                <button class="menu-btn home-menu-btn" onclick="location.href='mixed.html'">Mixed Practice - + x /</button>
+                <button class="menu-btn special home-menu-btn home-weekly-btn" onclick="location.href='weekly.html'">Weekly Challenge *</button>
+                <button class="menu-btn home-menu-btn avatar-shop-btn" id="home-avatar-shop-btn" onclick="location.href='shop.html'">
+                    <span class="avatar-shop-btn-icon" aria-hidden="true">:-)</span>
+                    <span>Avatar Shop</span>
+                </button>
+            </div>
+
+            <div id="results-panel" class="auth-panel hidden">
+                <p class="auth-title">Completed Tests</p>
+                <p id="results-panel-title" class="auth-user-label">Profile history</p>
+                <div class="results-filter-actions" role="group" aria-label="Result filters">
+                    <button class="menu-btn results-filter-btn active" id="results-filter-all-btn" type="button">All</button>
+                    <button class="menu-btn results-filter-btn" id="results-filter-completed-btn" type="button">Completed</button>
+                    <button class="menu-btn results-filter-btn" id="results-filter-unfinished-btn" type="button">Unfinished</button>
+                </div>
+                <div id="results-list" class="results-list"></div>
+                <div class="auth-actions results-actions">
+                    <button class="menu-btn" id="results-refresh-btn" type="button">Refresh</button>
+                    <button class="menu-btn special" id="results-close-btn" type="button">Close</button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="profile-manager.js"></script>
+    <script src="hamburger.js"></script>
+    <script src="session-guard.js"></script>
+    <script>
+        const WEEKLY_TOTAL_TASKS = 10;
+        const DAILY_LIMIT = 2;
+
+        function getCurrentDayKey() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, "0");
+            const day = String(now.getDate()).padStart(2, "0");
+            return `${year}-${month}-${day}`;
+        }
+
+        function getCurrentWeekKey() {
+            const now = new Date();
+            const utcDate = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+            const dayNumber = utcDate.getUTCDay() || 7;
+            utcDate.setUTCDate(utcDate.getUTCDate() + 4 - dayNumber);
+
+            const yearStart = new Date(Date.UTC(utcDate.getUTCFullYear(), 0, 1));
+            const weekNumber = Math.ceil((((utcDate - yearStart) / 86400000) + 1) / 7);
+
+            return `${utcDate.getUTCFullYear()}-W${String(weekNumber).padStart(2, "0")}`;
+        }
+
+        function getSafeWeeklyProgress() {
+            const profileStore = window.MathsProfileStore;
+            const scopedKey = profileStore ? profileStore.getScopedStorageKey("weeklyProgress") : "weeklyProgress";
+            const currentWeekKey = getCurrentWeekKey();
+            const storedWeekKey = localStorage.getItem(profileStore ? profileStore.getScopedStorageKey("weeklyWeekKey") : "weeklyWeekKey");
+
+            if (storedWeekKey !== currentWeekKey) {
+                return { completed: 0, byDay: {} };
+            }
+
+            const raw = localStorage.getItem(scopedKey);
+            if (!raw) return { completed: 0, byDay: {} };
+
+            try {
+                const parsed = JSON.parse(raw);
+                return {
+                    completed: Math.max(0, Math.min(WEEKLY_TOTAL_TASKS, Number(parsed?.completed) || 0)),
+                    byDay: parsed && typeof parsed.byDay === "object" && parsed.byDay ? parsed.byDay : {}
+                };
+            } catch {
+                return { completed: 0, byDay: {} };
+            }
+        }
+
+        function updateHomeDailyNote() {
+            const noteEl = document.getElementById("home-daily-note");
+            if (!noteEl) return;
+
+            const progress = getSafeWeeklyProgress();
+            const completed = progress.completed;
+            const todayKey = getCurrentDayKey();
+            const todayCount = Math.max(0, Math.min(DAILY_LIMIT, Number(progress.byDay?.[todayKey] || 0)));
+
+            if (completed >= WEEKLY_TOTAL_TASKS) {
+                noteEl.innerText = "Weekly Challenge complete! You finished 10/10 tasks this week.";
+                return;
+            }
+
+            if (todayCount >= DAILY_LIMIT) {
+                noteEl.innerText = `Great job! Today is done (${todayCount}/${DAILY_LIMIT}). Come back tomorrow for the next tasks.`;
+                return;
+            }
+
+            if (todayCount === 1) {
+                noteEl.innerText = "You completed 1/2 tasks today. One more is waiting in Weekly Challenge *";
+                return;
+            }
+
+            noteEl.innerText = "Your daily 2 tasks are waiting for you in Weekly Challenge *";
+        }
+
+        updateHomeDailyNote();
+    </script>
+
+    <script type="module" src="firebase.js?v=2026-04-15-authfix-1"></script>
+    <script type="module" src="register.js?v=2026-04-15-authfix-1"></script>
+    <script src="sw-register.js"></script>
+</body>
+</html>
