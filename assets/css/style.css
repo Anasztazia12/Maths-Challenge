@@ -203,6 +203,47 @@ h1 {
     font-size: 34px;
 }
 
+.player-corner-widget {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 31;
+    width: 120px;
+    padding: 6px;
+    border-radius: 12px;
+    background: rgba(2, 6, 23, 0.72);
+    border: 1px solid rgba(186, 230, 253, 0.22);
+    box-shadow: 0 10px 22px rgba(2, 8, 23, 0.45);
+    text-align: center;
+}
+
+.player-corner-name {
+    font-size: 11px;
+    font-weight: 800;
+    color: #e2e8f0;
+    margin-bottom: 4px;
+}
+
+.player-corner-avatar-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.player-corner-avatar {
+    width: 72px;
+    height: 72px;
+    object-fit: contain;
+    filter: drop-shadow(0 6px 12px rgba(2, 8, 23, 0.35));
+}
+
+.player-corner-gold {
+    margin-top: 4px;
+    font-size: 12px;
+    font-weight: 900;
+    color: #fde68a;
+}
+
 .home-daily-note {
     font-size: 17px;
     font-weight: 800;
@@ -639,6 +680,23 @@ h1 {
     display: flex;
     justify-content: center;
     margin-bottom: 10px;
+    min-height: 260px;
+}
+
+.shop-avatar-preview .avatar-figure {
+    width: min(78vw, 280px);
+    min-height: auto;
+    aspect-ratio: 1 / 1;
+}
+
+.shop-avatar-preview .avatar-base-image {
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-height: none;
+    transform: none;
+    object-fit: contain;
+    padding: 8px;
 }
 
 .avatar-preview-pop {
@@ -1083,7 +1141,7 @@ h1 {
 .shop-item-locked {
     opacity: 0.62;
     filter: grayscale(0.25);
-    cursor: not-allowed;
+    cursor: pointer;
 }
 
 .shop-lock-icon {
@@ -2622,5 +2680,16 @@ body.bg-home #end-screen {
         width: 112px;
         top: 8px;
         right: 8px;
+    }
+
+    .player-corner-widget {
+        width: 106px;
+        top: 8px;
+        right: 8px;
+    }
+
+    .player-corner-avatar {
+        width: 62px;
+        height: 62px;
     }
 }

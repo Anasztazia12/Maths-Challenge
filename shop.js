@@ -17,6 +17,10 @@ const marketEl = document.getElementById("shop-market");
 const statusEl = document.getElementById("shop-status");
 
 let activeCategory = null;
+let previewAvatar = null;
+
+const HIDDEN_AVATAR_TYPE_IDS = new Set(["type-boy", "type-girl", "type-dog"]);
+const HIDDEN_PRESET_IDS = new Set(["starter-boy", "starter-girl", "starter-dog"]);
 
 const CATEGORY_ICONS = {
     avatarType: "👤",
@@ -64,6 +68,18 @@ function getActiveProfile(state) {
 function getCatalogItem(category, itemId) {
     const profileStore = getProfileStore();
     return (profileStore?.AVATAR_SHOP?.[category] || []).find((item) => item.id === itemId) || null;
+}
+
+function getVisibleCatalogItems(category) {
+    const profileStore = getProfileStore();
+    const items = profileStore?.AVATAR_SHOP?.[category] || [];
+    if (category !== "avatarType") return items;
+    return items.filter((item) => !HIDDEN_AVATAR_TYPE_IDS.has(item.id));
+}
+
+function getVisiblePresets() {
+    const profileStore = getProfileStore();
+    return (profileStore?.AVATAR_PRESETS || []).filter((preset) => !HIDDEN_PRESET_IDS.has(preset.id));
 }
 
 function getAvatarBaseImageSources(avatarTypeId) {
@@ -165,8 +181,12 @@ function buildFigureHtml(profile, sizeClass = "large") {
 }
 
 function renderAvatarPreview(profile) {
+    const previewProfile = previewAvatar
+        ? { ...profile, avatar: previewAvatar }
+        : profile;
+
     if (avatarPreviewEl) {
-        avatarPreviewEl.innerHTML = buildFigureHtml(profile, "large");
+        avatarPreviewEl.innerHTML = buildFigureHtml(previewProfile, "large");
     }
 
     if (cornerAvatarEl) {
@@ -192,6 +212,29 @@ function saveState(state) {
     const profileStore = getProfileStore();
     if (!profileStore) return null;
     return profileStore.setAccountState(state);
+}
+
+function previewItem(category, itemId) {
+    const profileStore = getProfileStore();
+    if (!profileStore) return;
+
+    const state = getCurrentState();
+    const active = getActiveProfile(state);
+    if (!active) return;
+
+    const avatarKey = profileStore.SHOP_CATEGORY_TO_AVATAR_KEY[category];
+    if (!avatarKey) return;
+
+    const item = getCatalogItem(category, itemId);
+    if (!item) return;
+
+    previewAvatar = {
+        ...active.avatar,
+        [avatarKey]: itemId
+    };
+
+    renderAvatarPreview(active);
+    animateAvatarPreview();
 }
 
 function equipItem(category, itemId) {
@@ -220,6 +263,7 @@ function equipItem(category, itemId) {
     });
 
     saveState(state);
+    previewAvatar = null;
     renderAll();
     animateAvatarPreview();
     setStatus("Item equipped.");
@@ -243,9 +287,12 @@ function purchaseItem(category, itemId) {
     }
 
     if (!profileStore.spendPoints(item.cost)) {
-        setStatus("Not enough points.", true);
+        previewItem(category, itemId);
+        setStatus("Preview only. Not enough points to buy.", true);
         return;
     }
+
+    previewAvatar = null;
 
     state.profiles = state.profiles.map((profile) => {
         if (profile.id !== active.id) return profile;
@@ -289,6 +336,7 @@ function setPreset(presetId) {
     });
 
     saveState(state);
+    previewAvatar = null;
     renderAll();
     animateAvatarPreview();
     setStatus(`Preset selected: ${preset.name}.`);
@@ -319,8 +367,8 @@ function buildItemCardHtml(category, item, isActive, priceLabel, mode, options =
     const activeClass = isActive ? "shop-item-active" : "";
     const lockClass = isLocked ? "shop-item-locked" : "";
     const visual = buildItemVisual(category, item);
-    const action = isLocked ? "locked" : mode;
-    return `<button type="button" class="shop-item-btn ${activeClass} ${lockClass}" title="${item.label}" data-action="${action}" data-category="${category}" data-id="${item.id}" ${isLocked ? "disabled" : ""}>
+    const action = isLocked ? "preview" : mode;
+    return `<button type="button" class="shop-item-btn ${activeClass} ${lockClass}" title="${item.label}" data-action="${action}" data-category="${category}" data-id="${item.id}">
         ${visual}
         <span class="shop-card-price">${priceLabel}</span>
         ${isLocked ? '<span class="shop-lock-icon">🔒</span>' : ""}
@@ -379,7 +427,7 @@ function renderPresets(profile) {
     const profileStore = getProfileStore();
     if (!presetListEl || !profileStore || !profile) return;
 
-    presetListEl.innerHTML = (profileStore.AVATAR_PRESETS || []).map((preset) => {
+    presetListEl.innerHTML = getVisiblePresets().map((preset) => {
         const isActive = profile.avatar?.presetId === preset.id;
         const avatarTypeId = preset.avatar?.avatarType || "";
         const avatarTypeItem = getCatalogItem("avatarType", avatarTypeId);
@@ -401,7 +449,10 @@ function renderWardrobe(profile) {
     const selectedId = profile.avatar?.[avatarKey];
     const owned = profile.wardrobe?.[activeCategory] || [];
 
-    const cards = owned.map((itemId) => {
+    const visibleIds = new Set(getVisibleCatalogItems(activeCategory).map((item) => item.id));
+    const cards = owned
+        .filter((itemId) => visibleIds.has(itemId))
+        .map((itemId) => {
         const item = getCatalogItem(activeCategory, itemId);
         if (!item) return "";
         return buildItemCardHtml(activeCategory, item, selectedId === item.id, "Owned", "equip");
@@ -421,7 +472,7 @@ function renderMarket(profile) {
 
     const owned = profile.wardrobe?.[activeCategory] || [];
     const points = profileStore.getPoints();
-    const cards = (profileStore.AVATAR_SHOP[activeCategory] || []).map((item) => {
+    const cards = getVisibleCatalogItems(activeCategory).map((item) => {
         if (owned.includes(item.id)) return "";
         const isLocked = Number(item.cost) > points;
         return buildItemCardHtml(activeCategory, item, false, `${item.cost} pts`, "buy", { isLocked });
@@ -475,6 +526,7 @@ function setupEvents() {
             const button = event.target.closest("button[data-action='tab']");
             if (!button) return;
             activeCategory = button.dataset.category || activeCategory;
+            previewAvatar = null;
             renderAll();
         });
     }
@@ -482,6 +534,7 @@ function setupEvents() {
     if (categoryBackBtn) {
         categoryBackBtn.addEventListener("click", () => {
             activeCategory = null;
+            previewAvatar = null;
             renderAll();
         });
     }
@@ -496,6 +549,13 @@ function setupEvents() {
 
     if (marketEl) {
         marketEl.addEventListener("click", (event) => {
+            const previewButton = event.target.closest("button[data-action='preview']");
+            if (previewButton) {
+                previewItem(previewButton.dataset.category || "", previewButton.dataset.id || "");
+                setStatus("Preview only. Buy this item to equip it.");
+                return;
+            }
+
             const button = event.target.closest("button[data-action='buy']");
             if (!button) return;
             purchaseItem(button.dataset.category || "", button.dataset.id || "");

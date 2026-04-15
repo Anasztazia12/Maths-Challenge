@@ -8,6 +8,12 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
     doc,
+    getDoc,
+    getDocs,
+    collection,
+    query,
+    orderBy,
+    limit,
     setDoc,
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -215,6 +221,164 @@ function setStatusMessage(element, message, isError = false) {
     if (!element) return;
     element.textContent = message;
     element.style.color = isError ? "#fca5a5" : "#fde68a";
+}
+
+function toMillis(value) {
+    if (!value) return 0;
+    if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+    if (typeof value === "string") {
+        const parsed = Date.parse(value);
+        return Number.isFinite(parsed) ? parsed : 0;
+    }
+    if (typeof value?.toMillis === "function") {
+        const asMillis = value.toMillis();
+        return Number.isFinite(asMillis) ? asMillis : 0;
+    }
+    return 0;
+}
+
+function buildResultKey(result) {
+    const time = Number(result?.timestamp) || toMillis(result?.endedAt) || toMillis(result?.date) || 0;
+    const correct = Number(result?.correctCount || result?.correct || 0);
+    const total = Number(result?.total || 0);
+    const operation = String(result?.operationLabel || result?.op || result?.operation || "").trim();
+    const mode = String(result?.modeLabel || result?.mode || "").trim();
+    return [time, correct, total, operation, mode].join("|");
+}
+
+function mergeUniqueResults(primary, secondary, maxCount = 100) {
+    const seen = new Set();
+    const merged = [];
+
+    [...primary, ...secondary].forEach((item) => {
+        if (!item || typeof item !== "object") return;
+        const key = buildResultKey(item);
+        if (seen.has(key)) return;
+        seen.add(key);
+        merged.push(item);
+    });
+
+    merged.sort((a, b) => {
+        const ta = Number(a?.timestamp) || toMillis(a?.endedAt) || toMillis(a?.date) || 0;
+        const tb = Number(b?.timestamp) || toMillis(b?.endedAt) || toMillis(b?.date) || 0;
+        return tb - ta;
+    });
+
+    return merged.slice(0, maxCount);
+}
+
+async function saveAccountStateToCloud(user, accountState) {
+    if (!firebaseReady || !db || !user?.uid || !accountState) return;
+
+    const primaryName = accountState.profiles?.[0]?.name || "Player";
+
+    await setDoc(
+        doc(db, "users", user.uid, "profile", "main"),
+        {
+            uid: user.uid,
+            email: user.email || accountState.email || "",
+            username: primaryName,
+            accountState,
+            updatedAt: serverTimestamp(),
+            lastLoginAt: serverTimestamp()
+        },
+        { merge: true }
+    );
+}
+
+async function loadCloudResults(user, profileId) {
+    if (!firebaseReady || !db || !user?.uid || !profileId) return [];
+
+    const snapshot = await getDocs(
+        query(
+            collection(db, "users", user.uid, "profiles", profileId, "quizResults"),
+            orderBy("createdAt", "desc"),
+            limit(100)
+        )
+    );
+
+    return snapshot.docs.map((docSnap) => {
+        const data = docSnap.data() || {};
+        const createdAtMillis = toMillis(data.createdAt);
+        const endedAt = data.endedAt || (createdAtMillis ? new Date(createdAtMillis).toISOString() : new Date().toISOString());
+        const timestamp = Number(data.timestamp) || createdAtMillis || toMillis(endedAt) || Date.now();
+
+        return {
+            accountKey: data.accountKey || user.uid,
+            profileId: data.profileId || profileId,
+            profileName: data.profileName || "Player",
+            studentName: data.studentName || data.profileName || "Player",
+            correctCount: Number(data.correctCount || 0),
+            total: Number(data.total || 0),
+            rating: data.rating || "",
+            badge: data.badge || null,
+            operationLabel: data.operationLabel || data.operation || "Quiz",
+            difficultyLabel: data.difficultyLabel || "",
+            modeLabel: data.modeLabel || data.mode || "",
+            tableInfoLabel: data.tableInfoLabel || "",
+            completionStatus: data.completionStatus || "completed",
+            startedAt: data.startedAt || endedAt,
+            endedAt,
+            date: data.date || endedAt,
+            timestamp,
+            dateLabel: data.dateLabel || new Date(timestamp).toLocaleDateString(),
+            createdAtLabel: data.createdAtLabel || new Date(timestamp).toLocaleDateString(),
+            sessionMode: "auth",
+            results: Array.isArray(data.results) ? data.results : []
+        };
+    });
+}
+
+async function syncAuthDataFromCloud(profileStore, user) {
+    if (!profileStore || !user?.uid) return null;
+
+    let state = profileStore.loadAccountState(user.uid, {
+        accountKey: user.uid,
+        email: user.email || "",
+        profileCount: 1,
+        profileNames: ["Player"]
+    });
+
+    try {
+        const profileDocRef = doc(db, "users", user.uid, "profile", "main");
+        const profileDocSnap = await getDoc(profileDocRef);
+        const cloudData = profileDocSnap.exists() ? (profileDocSnap.data() || {}) : null;
+
+        if (cloudData?.accountState && typeof cloudData.accountState === "object") {
+            const localUpdatedAt = toMillis(state.updatedAt);
+            const cloudUpdatedAt = toMillis(cloudData.accountState.updatedAt) || toMillis(cloudData.updatedAt);
+
+            if (cloudUpdatedAt > localUpdatedAt) {
+                state = profileStore.setAccountState({
+                    ...cloudData.accountState,
+                    accountKey: user.uid,
+                    email: user.email || cloudData.email || state.email || ""
+                });
+            }
+        } else if (cloudData?.username && state.profiles?.[0] && (!state.profiles[0].name || state.profiles[0].name === "Player")) {
+            state = profileStore.setProfileName(String(cloudData.username).trim(), state, state.profiles[0].id);
+        }
+
+        const activeProfileId = state.activeProfileId || state.profiles?.[0]?.id;
+        if (activeProfileId) {
+            const cloudResults = await loadCloudResults(user, activeProfileId);
+            const localResults = profileStore.getProfileHistory({
+                accountKey: user.uid,
+                profileId: activeProfileId
+            });
+            const merged = mergeUniqueResults(cloudResults, Array.isArray(localResults) ? localResults : []);
+            profileStore.saveProfileHistory(merged, {
+                accountKey: user.uid,
+                profileId: activeProfileId
+            });
+        }
+
+        await saveAccountStateToCloud(user, state);
+    } catch (error) {
+        console.error("Auth cloud sync failed", error);
+    }
+
+    return state;
 }
 
 async function sendEmailNotification(email, subject, message) {
@@ -540,8 +704,17 @@ function openEditProfileNameDialog() {
         if (!profileStore) return;
         
         const accountState = profileStore.loadAccountState();
-        const updated = profileStore.setProfileName(profileName.trim(), accountState);
+        const activeProfileId = accountState.activeProfileId || accountState.profiles?.[0]?.id || null;
+        const updated = profileStore.setProfileName(profileName.trim(), accountState, activeProfileId);
         renderProfileUi(updated);
+
+        if (firebaseReady && auth?.currentUser) {
+            saveAccountStateToCloud(auth.currentUser, updated)
+                .then(() => setStatusMessage(authStatusEl, "Profile name updated and synced!", false))
+                .catch(() => setStatusMessage(authStatusEl, "Profile name updated locally, cloud sync failed.", true));
+            return;
+        }
+
         setStatusMessage(authStatusEl, "Profile name updated!", false);
     }
 }
@@ -602,9 +775,13 @@ async function handleAccountDeletion() {
     }
 }
 
-function loadProfileResults() {
+async function loadProfileResults() {
     const profileStore = getProfileStore();
     if (!profileStore) return;
+
+    if (firebaseReady && auth?.currentUser) {
+        await syncAuthDataFromCloud(profileStore, auth.currentUser);
+    }
 
     const history = profileStore.getProfileHistory();
     if (!history || history.length === 0) {
@@ -750,17 +927,12 @@ function restoreGuestSession(profileStore) {
     return true;
 }
 
-function restoreAuthSession(profileStore, user) {
+async function restoreAuthSession(profileStore, user) {
     if (!profileStore || !user?.uid) return false;
 
     profileStore.setActiveAccountKey(user.uid);
-    const accountState = profileStore.loadAccountState(user.uid, {
-        accountKey: user.uid,
-        email: user.email || "",
-        profileCount: 1,
-        profileNames: ["Player"]
-    });
-    renderProfileUi(accountState);
+    const accountState = await syncAuthDataFromCloud(profileStore, user);
+    renderProfileUi(accountState || profileStore.loadAccountState(user.uid));
     showMenuPanel();
     return true;
 }
@@ -830,15 +1002,15 @@ async function initializeHomeState() {
     }
 
     if (auth.currentUser) {
-        restoreAuthSession(profileStore, auth.currentUser);
+        await restoreAuthSession(profileStore, auth.currentUser);
         runPendingActionOnce();
         return;
     }
 
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, async (user) => {
         if (user) {
             setSessionMode("auth");
-            restoreAuthSession(getProfileStore(), user);
+            await restoreAuthSession(getProfileStore(), user);
             runPendingActionOnce();
             return;
         }
