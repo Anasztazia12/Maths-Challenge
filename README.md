@@ -58,7 +58,7 @@ This project can register/login users and save quiz results per user (UID based)
 1. Open `firebase.js` and replace all `REPLACE_WITH_...` values with your Firebase project config.
 2. In Firebase Console -> Authentication -> Sign-in method, enable `Email/Password`.
 3. In Firebase Console -> Authentication -> Settings -> Authorized domains, add:
-    - your GitHub Pages domain (`yourname.github.io`)
+5    - your GitHub Pages domain (`yourname.github.io`)
     - `localhost` for local testing
 4. In Firebase Console -> Firestore Database -> Rules, use:
 

@@ -28,4 +28,22 @@ function ensureSessionBadge() {
     document.body.appendChild(badge);
 }
 
+function ensureProfileContext() {
+    const profileStore = window.MathsProfileStore;
+    if (!profileStore) return;
+
+    const mode = getSessionMode();
+    const accountKey = mode === "auth"
+        ? (localStorage.getItem("mathsActiveAccountKey") || "guest")
+        : "guest";
+
+    profileStore.setActiveAccountKey(accountKey);
+    profileStore.loadAccountState(accountKey, {
+        accountKey,
+        profileCount: 1,
+        profileNames: [mode === "guest" ? "Guest" : "Player"]
+    });
+}
+
+ensureProfileContext();
 ensureSessionBadge();

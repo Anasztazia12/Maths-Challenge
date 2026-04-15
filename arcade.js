@@ -1,6 +1,11 @@
 const arcadeCanvas = document.getElementById("arcade-canvas");
 
 if (arcadeCanvas) {
+    function getScopedKey(baseKey) {
+        const profileStore = window.MathsProfileStore;
+        return profileStore ? profileStore.getScopedStorageKey(baseKey) : baseKey;
+    }
+
     const arcadeTargetEl = document.getElementById("arcade-target");
     const arcadeBasketEl = document.getElementById("arcade-basket");
     const arcadeNeedEl = document.getElementById("arcade-need");
@@ -59,10 +64,10 @@ if (arcadeCanvas) {
         onGround: false
     };
 
-    const savedArcadeProfile = JSON.parse(localStorage.getItem("arcadeProfile") || "null") || {};
+    const savedArcadeProfile = JSON.parse(localStorage.getItem(getScopedKey("arcadeProfile")) || "null") || {};
 
     const profile = {
-        coins: Math.max(0, Number(savedArcadeProfile.coins) || Number(localStorage.getItem("arcadeCoins") || 0)),
+        coins: Math.max(0, Number(savedArcadeProfile.coins) || Number(localStorage.getItem(getScopedKey("arcadeCoins")) || 0)),
         weaponLevel: Math.max(1, Number(savedArcadeProfile.weaponLevel) || 1),
         cosmetics: {
             fur: savedArcadeProfile?.cosmetics?.fur || "brown",
@@ -73,8 +78,8 @@ if (arcadeCanvas) {
     };
 
     function saveArcadeProfile() {
-        localStorage.setItem("arcadeCoins", String(profile.coins));
-        localStorage.setItem("arcadeProfile", JSON.stringify(profile));
+        localStorage.setItem(getScopedKey("arcadeCoins"), String(profile.coins));
+        localStorage.setItem(getScopedKey("arcadeProfile"), JSON.stringify(profile));
     }
 
     const state = {

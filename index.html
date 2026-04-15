@@ -21,6 +21,19 @@
                 <input id="auth-email" type="email" placeholder="Email" autocomplete="email">
                 <input id="auth-password" type="password" placeholder="Password (min 6 chars)" autocomplete="current-password">
             </div>
+            <div class="profile-setup">
+                <div class="profile-setup-row">
+                    <label for="profile-count">How many profiles do you want to add?</label>
+                    <select id="profile-count">
+                        <option value="1" selected>1 profile</option>
+                        <option value="2">2 profiles</option>
+                    </select>
+                </div>
+                <div class="profile-name-grid">
+                    <input id="profile-name-1" type="text" placeholder="Profile 1 nickname" autocomplete="nickname">
+                    <input id="profile-name-2" type="text" placeholder="Profile 2 nickname" autocomplete="nickname">
+                </div>
+            </div>
             <div class="auth-actions">
                 <button class="menu-btn" id="auth-register-btn" type="button">Register</button>
                 <button class="menu-btn" id="auth-login-btn" type="button">Login</button>
@@ -31,6 +44,30 @@
 
         <section id="menu-panel" class="hidden">
             <p id="home-daily-note" class="subtitle home-daily-note">Your daily 2 tasks are waiting for you in Weekly Challenge ⭐</p>
+
+            <div class="auth-panel profile-panel">
+                <p class="auth-title">Active profile</p>
+                <p id="profile-summary" class="auth-user-label">Loading profile...</p>
+                <div class="profile-menu-row">
+                    <select id="profile-select"></select>
+                    <button class="menu-btn special" id="profile-results-btn" type="button">Results</button>
+                </div>
+                <div class="profile-menu-row profile-menu-row-single">
+                    <button class="menu-btn" id="profile-edit-btn" type="button">Edit Profile Names</button>
+                </div>
+            </div>
+
+            <div id="profile-edit-panel" class="auth-panel hidden" aria-label="Edit profile names">
+                <p class="auth-title">Edit Profile Names</p>
+                <div class="profile-name-grid">
+                    <input id="edit-profile-name-1" type="text" placeholder="Profile 1 nickname" autocomplete="nickname">
+                    <input id="edit-profile-name-2" type="text" placeholder="Profile 2 nickname" autocomplete="nickname">
+                </div>
+                <div class="auth-actions results-actions">
+                    <button class="menu-btn" id="profile-edit-cancel-btn" type="button">Cancel</button>
+                    <button class="menu-btn special" id="profile-edit-save-btn" type="button">Save Names</button>
+                </div>
+            </div>
 
             <div class="menu-buttons home-menu-buttons">
 
@@ -66,10 +103,21 @@
             <div class="auth-panel auth-session-panel">
                 <button class="menu-btn special" id="auth-logout-btn" type="button" disabled>Logout</button>
             </div>
+
+            <div id="results-panel" class="auth-panel hidden">
+                <p class="auth-title">Completed Tests</p>
+                <p id="results-panel-title" class="auth-user-label">Profile history</p>
+                <div id="results-list" class="results-list"></div>
+                <div class="auth-actions results-actions">
+                    <button class="menu-btn" id="results-refresh-btn" type="button">Refresh</button>
+                    <button class="menu-btn special" id="results-close-btn" type="button">Close</button>
+                </div>
+            </div>
         </section>
 
     </div>
 
+    <script src="profile-manager.js"></script>
     <script>
         const WEEKLY_TOTAL_TASKS = 10;
         const DAILY_LIMIT = 2;
@@ -95,14 +143,16 @@
         }
 
         function getSafeWeeklyProgress() {
+            const profileStore = window.MathsProfileStore;
+            const scopedKey = profileStore ? profileStore.getScopedStorageKey("weeklyProgress") : "weeklyProgress";
             const currentWeekKey = getCurrentWeekKey();
-            const storedWeekKey = localStorage.getItem("weeklyWeekKey");
+            const storedWeekKey = localStorage.getItem(profileStore ? profileStore.getScopedStorageKey("weeklyWeekKey") : "weeklyWeekKey");
 
             if (storedWeekKey !== currentWeekKey) {
                 return { completed: 0, byDay: {} };
             }
 
-            const raw = localStorage.getItem("weeklyProgress");
+            const raw = localStorage.getItem(scopedKey);
             if (!raw) return { completed: 0, byDay: {} };
 
             try {

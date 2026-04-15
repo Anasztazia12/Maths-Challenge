@@ -83,6 +83,39 @@ function getSessionMode() {
     return localStorage.getItem("mathsSessionMode") || "";
 }
 
+function getProfileStore() {
+    return window.MathsProfileStore || null;
+}
+
+function getCurrentProfileContext() {
+    const profileStore = getProfileStore();
+    if (!profileStore) {
+        return {
+            accountKey: "guest",
+            activeProfileId: "guest-profile",
+            profileName: "Player"
+        };
+    }
+
+    return profileStore.getCurrentProfileContext();
+}
+
+function getScopedStorageKey(baseKey) {
+    const profileStore = getProfileStore();
+    if (!profileStore) return baseKey;
+    return profileStore.getScopedStorageKey(baseKey);
+}
+
+function saveProfileResultLocally(data) {
+    const profileStore = getProfileStore();
+    if (!profileStore || !data) return;
+
+    profileStore.addProfileResult(data, {
+        accountKey: data.accountKey,
+        profileId: data.profileId
+    });
+}
+
 function getCurrentDateLabel() {
     return new Date().toLocaleDateString();
 }
@@ -319,9 +352,9 @@ function getCertificateHeadline(correctCount, totalCount, rating) {
 }
 
 function addArcadeCoinsFromQuiz(correctCount) {
-    const current = Math.max(0, Number(localStorage.getItem("arcadeCoins") || 0));
+    const current = Math.max(0, Number(localStorage.getItem(getScopedStorageKey("arcadeCoins")) || 0));
     const gained = Math.max(0, Number(correctCount) || 0);
-    localStorage.setItem("arcadeCoins", String(current + gained));
+    localStorage.setItem(getScopedStorageKey("arcadeCoins"), String(current + gained));
 }
 
 // Sounds
@@ -427,7 +460,8 @@ function updateBadgeShelf(activeBadgeClass) {
 function refreshCertificatePreview() {
     if (!lastResultData) return;
 
-    const studentName = (studentNameInput?.value || lastResultData.studentName || "Player").trim() || "Player";
+    const profileName = getCurrentProfileContext().profileName || "Player";
+    const studentName = (studentNameInput?.value || lastResultData.studentName || profileName).trim() || profileName;
     const dateLabel = getCurrentDateLabel();
 
     if (certificateNameEl) certificateNameEl.innerText = studentName;
@@ -487,6 +521,7 @@ async function getCloudSaveSdk() {
 }
 
 async function saveResultToCloud(data) {
+    const profileContext = getCurrentProfileContext();
     const sessionMode = getSessionMode();
 
     if (sessionMode === "guest") {
@@ -510,6 +545,10 @@ async function saveResultToCloud(data) {
         const basePayload = {
             uid: user.uid,
             userEmail: user.email || "",
+            accountKey: profileContext.accountKey,
+            profileId: profileContext.activeProfileId,
+            profileName: profileContext.profileName,
+            profileCount: profileContext.profileCount,
             dateLabel: data.dateLabel,
             studentName: data.studentName,
             correctCount: data.correctCount,
@@ -523,10 +562,10 @@ async function saveResultToCloud(data) {
             createdAt: sdk.serverTimestamp()
         };
 
-        await sdk.addDoc(sdk.collection(sdk.db, "users", user.uid, "quizResults"), basePayload);
+        await sdk.addDoc(sdk.collection(sdk.db, "users", user.uid, "profiles", profileContext.activeProfileId, "quizResults"), basePayload);
 
         await sdk.setDoc(
-            sdk.doc(sdk.db, "users", user.uid, "stats", "summary"),
+            sdk.doc(sdk.db, "users", user.uid, "profiles", profileContext.activeProfileId, "stats", "summary"),
             {
                 updatedAt: sdk.serverTimestamp(),
                 lastResult: {
@@ -845,7 +884,7 @@ function renderEndScreenFromData(data, playAgainTarget, backTarget) {
 
 function loadSavedWeeklyResultData() {
     try {
-        const raw = localStorage.getItem("weeklyLastResultData");
+        const raw = localStorage.getItem(getScopedStorageKey("weeklyLastResultData"));
         if (!raw) return null;
         const parsed = JSON.parse(raw);
         if (!parsed || !Array.isArray(parsed.results)) return null;
@@ -858,9 +897,10 @@ function loadSavedWeeklyResultData() {
 // End screen
 function showEndScreen() {
     stopQuestionTimer();
+    const profileContext = getCurrentProfileContext();
 
     if (isWeekly) {
-        localStorage.setItem("weeklyTaskDone", "1");
+        localStorage.setItem(getScopedStorageKey("weeklyTaskDone"), "1");
     }
 
     const tablesQuery = tablesParam ? `&tables=${encodeURIComponent(tablesParam)}` : "";
@@ -880,11 +920,14 @@ function showEndScreen() {
         const total = questionResults.length;
         const rating = getResultRating(correctCount, total);
         const badge = getBadgeLevel(correctCount, total);
-        const studentName = studentNameInput?.value?.trim() || "Player";
+        const studentName = studentNameInput?.value?.trim() || profileContext.profileName || "Player";
 
         addArcadeCoinsFromQuiz(correctCount);
 
         lastResultData = {
+            accountKey: profileContext.accountKey,
+            profileId: profileContext.activeProfileId,
+            profileName: profileContext.profileName,
             studentName,
             correctCount,
             total,
@@ -899,6 +942,12 @@ function showEndScreen() {
             results: [...questionResults]
         };
 
+        saveProfileResultLocally({
+            ...lastResultData,
+            createdAtLabel: lastResultData.dateLabel,
+            sessionMode: getSessionMode()
+        });
+
         if (cloudSaveStatusEl) {
             cloudSaveStatusEl.innerText = getSessionMode() === "guest"
                 ? "Guest mode: cloud save is disabled. Local save still works."
@@ -910,8 +959,8 @@ function showEndScreen() {
 
         if (isWeekly) {
             const weeklyResultUrl = `play.html?${replayQuery}&weekly=1&showWeeklyResult=1`;
-            localStorage.setItem("weeklyLastResultData", JSON.stringify(lastResultData));
-            localStorage.setItem("weeklyLastResultUrl", weeklyResultUrl);
+            localStorage.setItem(getScopedStorageKey("weeklyLastResultData"), JSON.stringify(lastResultData));
+            localStorage.setItem(getScopedStorageKey("weeklyLastResultUrl"), weeklyResultUrl);
         }
 
         renderEndScreenFromData(lastResultData, playAgainTarget, backTarget);
@@ -944,7 +993,7 @@ function buildResultText(data) {
 async function saveResultToFile() {
     if (!lastResultData) return;
 
-    const nameRaw = (studentNameInput?.value || lastResultData.studentName || "player").trim();
+    const nameRaw = (studentNameInput?.value || lastResultData.studentName || getCurrentProfileContext().profileName || "player").trim();
     const safeName = (nameRaw || "player").replace(/[^a-zA-Z0-9_-]/g, "_");
     const data = {
         ...lastResultData,
@@ -1007,7 +1056,7 @@ async function saveResultToFile() {
 function printResultSheet() {
     if (!lastResultData) return;
 
-    const studentName = (studentNameInput?.value || lastResultData.studentName || "Player").trim() || "Player";
+    const studentName = (studentNameInput?.value || lastResultData.studentName || getCurrentProfileContext().profileName || "Player").trim() || "Player";
     const data = { ...lastResultData, studentName, dateLabel: getCurrentDateLabel() };
     const rows = data.results.map((item) => {
         const color = item.isCorrect ? "#14532d" : "#7f1d1d";
@@ -1201,7 +1250,7 @@ async function exportCertificatePdf() {
 
     refreshCertificatePreview();
     const data = { ...lastResultData };
-    const nameRaw = (data.studentName || "player").trim();
+    const nameRaw = (data.studentName || getCurrentProfileContext().profileName || "player").trim();
     const safeName = (nameRaw || "player").replace(/[^a-zA-Z0-9_-]/g, "_");
     const fileName = `math_certificate_${safeName}.pdf`;
 
@@ -1353,6 +1402,10 @@ if (studentNameInput) {
     studentNameInput.addEventListener("input", refreshCertificatePreview);
 }
 
+if (studentNameInput) {
+    studentNameInput.value = getCurrentProfileContext().profileName || "";
+}
+
 // Initial display setup
 if (endScreen) endScreen.classList.add("hidden");
 
@@ -1393,8 +1446,8 @@ if (inGameBackBtn) {
         stopQuestionTimer();
 
         if (isWeekly) {
-            localStorage.removeItem("doingWeekly");
-            localStorage.removeItem("weeklyTaskDone");
+            localStorage.removeItem(getScopedStorageKey("doingWeekly"));
+            localStorage.removeItem(getScopedStorageKey("weeklyTaskDone"));
         }
 
         location.href = getInGameBackTarget();

@@ -1,9 +1,18 @@
+function getProfileStore() {
+    return window.MathsProfileStore || null;
+}
+
+function getScopedKey(baseKey) {
+    const profileStore = getProfileStore();
+    return profileStore ? profileStore.getScopedStorageKey(baseKey) : baseKey;
+}
+
 // Load saved weekly progress (with safe fallback)
 const WEEKLY_TOTAL_TASKS = 10;
 const DAILY_LIMIT = 2;
 
-const savedWeeklyProgress = JSON.parse(localStorage.getItem("weeklyProgress") || "null");
-const legacyWeeklyCurrent = Number(localStorage.getItem("weeklyCurrent") || 0);
+const savedWeeklyProgress = JSON.parse(localStorage.getItem(getScopedKey("weeklyProgress")) || "null");
+const legacyWeeklyCurrent = Number(localStorage.getItem(getScopedKey("weeklyCurrent")) || 0);
 const initialCompleted = Number.isFinite(savedWeeklyProgress?.completed)
     ? savedWeeklyProgress.completed
     : legacyWeeklyCurrent;
@@ -25,7 +34,7 @@ let weeklyProgress = {
     byDay: initialByDay
 };
 
-let weeklyCelebrated = localStorage.getItem("weeklyCelebrated") === "1";
+let weeklyCelebrated = localStorage.getItem(getScopedKey("weeklyCelebrated")) === "1";
 
 function getCurrentWeekKey() {
     const now = new Date();
@@ -41,22 +50,21 @@ function getCurrentWeekKey() {
 
 function applyWeeklyResetIfNeeded() {
     const currentWeekKey = getCurrentWeekKey();
-    const storedWeekKey = localStorage.getItem("weeklyWeekKey");
+    const storedWeekKey = localStorage.getItem(getScopedKey("weeklyWeekKey"));
 
     if (storedWeekKey !== currentWeekKey) {
         weeklyProgress.completed = 0;
         weeklyProgress.byDay = {};
         weeklyCelebrated = false;
 
-        localStorage.setItem("weeklyWeekKey", currentWeekKey);
-        localStorage.setItem("weeklyProgress", JSON.stringify(weeklyProgress));
-        localStorage.setItem("weeklyCurrent", "0");
-
-        localStorage.removeItem("weeklyCelebrated");
-        localStorage.removeItem("weeklyTaskDone");
-        localStorage.removeItem("doingWeekly");
-        localStorage.removeItem("weeklyLastResultData");
-        localStorage.removeItem("weeklyLastResultUrl");
+        localStorage.setItem(getScopedKey("weeklyWeekKey"), currentWeekKey);
+        localStorage.setItem(getScopedKey("weeklyProgress"), JSON.stringify(weeklyProgress));
+        localStorage.setItem(getScopedKey("weeklyCurrent"), "0");
+        localStorage.removeItem(getScopedKey("weeklyCelebrated"));
+        localStorage.removeItem(getScopedKey("weeklyTaskDone"));
+        localStorage.removeItem(getScopedKey("doingWeekly"));
+        localStorage.removeItem(getScopedKey("weeklyLastResultData"));
+        localStorage.removeItem(getScopedKey("weeklyLastResultUrl"));
     }
 }
 
@@ -96,7 +104,7 @@ function syncWeeklyModalState() {
 }
 
 function buildWeeklyResultText() {
-    const weekKey = localStorage.getItem("weeklyWeekKey") || getCurrentWeekKey();
+    const weekKey = localStorage.getItem(getScopedKey("weeklyWeekKey")) || getCurrentWeekKey();
     return `Done!! You completed ${weeklyProgress.completed}/${WEEKLY_TOTAL_TASKS} tasks in ${weekKey}. Daily limit is ${DAILY_LIMIT} tasks, and next week the challenge resets automatically.`;
 }
 
@@ -131,13 +139,13 @@ function updateProgressUI() {
         if(!weeklyCelebrated) {
             showTrophy(true);
             weeklyCelebrated = true;
-            localStorage.setItem("weeklyCelebrated", "1");
+            localStorage.setItem(getScopedKey("weeklyCelebrated"), "1");
         } else {
             showTrophy(false);
         }
     } else {
         weeklyCelebrated = false;
-        localStorage.removeItem("weeklyCelebrated");
+        localStorage.removeItem(getScopedKey("weeklyCelebrated"));
 
         if(trophyPopup) {
             trophyPopup.classList.add("hidden");
@@ -166,7 +174,7 @@ function showTrophy(withConfetti) {
 
 if (weeklyDoneBtn) {
     weeklyDoneBtn.addEventListener("click", () => {
-        const latestResultUrl = localStorage.getItem("weeklyLastResultUrl");
+        const latestResultUrl = localStorage.getItem(getScopedKey("weeklyLastResultUrl"));
         if (latestResultUrl) {
             location.href = latestResultUrl;
             return;
@@ -258,8 +266,8 @@ function startWeeklyTask() {
     const diff = difficultyButtonsWrap?.dataset.selected || "easy";
     const op = operationButtonsWrap?.dataset.selected || "addition";
 
-    localStorage.setItem("doingWeekly","1");
-    localStorage.removeItem("weeklyTaskDone");
+    localStorage.setItem(getScopedKey("doingWeekly"), "1");
+    localStorage.removeItem(getScopedKey("weeklyTaskDone"));
     location.href = `play.html?mode=${mode}&op=${op}&diff=${diff}&weekly=1`;
 }
 
@@ -267,8 +275,8 @@ function startWeeklyTask() {
 window.addEventListener("load", () => {
     applyWeeklyResetIfNeeded();
 
-    const finishedWeeklyTask = localStorage.getItem("weeklyTaskDone") === "1";
-    const cameFromWeeklySession = localStorage.getItem("doingWeekly") === "1";
+    const finishedWeeklyTask = localStorage.getItem(getScopedKey("weeklyTaskDone")) === "1";
+    const cameFromWeeklySession = localStorage.getItem(getScopedKey("doingWeekly")) === "1";
 
     if(finishedWeeklyTask && cameFromWeeklySession){
         const dayKey = getCurrentDayKey();
@@ -279,12 +287,12 @@ window.addEventListener("load", () => {
             weeklyProgress.byDay[dayKey] = todayCount + 1;
         }
 
-        localStorage.setItem("weeklyWeekKey", getCurrentWeekKey());
-        localStorage.setItem("weeklyProgress", JSON.stringify(weeklyProgress));
-        localStorage.setItem("weeklyCurrent", String(weeklyProgress.completed));
+        localStorage.setItem(getScopedKey("weeklyWeekKey"), getCurrentWeekKey());
+        localStorage.setItem(getScopedKey("weeklyProgress"), JSON.stringify(weeklyProgress));
+        localStorage.setItem(getScopedKey("weeklyCurrent"), String(weeklyProgress.completed));
 
-        localStorage.removeItem("weeklyTaskDone");
-        localStorage.removeItem("doingWeekly");
+        localStorage.removeItem(getScopedKey("weeklyTaskDone"));
+        localStorage.removeItem(getScopedKey("doingWeekly"));
 
         updateProgressUI();
     } else {

@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-04-09-assets";
+const CACHE_VERSION = "2026-04-15-profiles";
 const CACHE_NAME = `maths-challenge-${CACHE_VERSION}`;
 
 const CORE_ASSETS = [
@@ -14,6 +14,7 @@ const CORE_ASSETS = [
   "mixed.html",
   "assets/css/style.css",
   "game.js",
+  "profile-manager.js",
   "arcade.js",
   "weekly.js",
   "assets/image/pophunters.webp",
