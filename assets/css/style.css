@@ -645,6 +645,12 @@ h1 {
     --avatar-outfit: #38bdf8;
     --avatar-hair: #6d4c41;
     --avatar-eye: #111827;
+    --hat-top: -24px;
+    --hat-left: 50%;
+    --hat-width: 52px;
+    --glasses-top: 12px;
+    --glasses-left: 50%;
+    --glasses-width: 30px;
     position: relative;
     width: 170px;
     min-height: 220px;
@@ -758,13 +764,15 @@ h1 {
 }
 
 .avatar-hat-image-wrap {
-    top: -24px;
+    top: var(--hat-top);
+    left: var(--hat-left);
+    transform: translateX(-50%);
     padding: 0;
     background: transparent;
 }
 
 .avatar-hat-image {
-    width: 52px;
+    width: var(--hat-width);
     height: 30px;
     object-fit: contain;
     display: block;
@@ -778,16 +786,60 @@ h1 {
 }
 
 .avatar-glasses-image-wrap {
-    top: 12px;
+    top: var(--glasses-top);
+    left: var(--glasses-left);
+    transform: translateX(-50%);
     padding: 2px 4px;
     background: rgba(255, 255, 255, 0.65);
 }
 
 .avatar-glasses-image {
-    width: 30px;
+    width: var(--glasses-width);
     height: 14px;
     object-fit: contain;
     display: block;
+}
+
+.avatar-figure.pose-type-photo-1 {
+    --hat-top: -22px;
+    --hat-width: 54px;
+    --glasses-top: 12px;
+    --glasses-width: 31px;
+}
+
+.avatar-figure.pose-type-photo-2 {
+    --hat-top: -23px;
+    --hat-width: 52px;
+    --glasses-top: 13px;
+    --glasses-width: 30px;
+}
+
+.avatar-figure.pose-type-photo-3 {
+    --hat-top: -25px;
+    --hat-width: 55px;
+    --glasses-top: 11px;
+    --glasses-width: 32px;
+}
+
+.avatar-figure.pose-type-photo-4 {
+    --hat-top: -24px;
+    --hat-width: 53px;
+    --glasses-top: 12px;
+    --glasses-width: 31px;
+}
+
+.avatar-figure.pose-type-photo-5 {
+    --hat-top: -26px;
+    --hat-width: 56px;
+    --glasses-top: 11px;
+    --glasses-width: 32px;
+}
+
+.avatar-figure.pose-type-photo-6 {
+    --hat-top: -23px;
+    --hat-width: 54px;
+    --glasses-top: 13px;
+    --glasses-width: 31px;
 }
 
 .avatar-torso {

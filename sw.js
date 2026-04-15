@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-04-15-accessories-v1";
+const CACHE_VERSION = "2026-04-15-accessories-v2";
 const CACHE_NAME = `maths-challenge-${CACHE_VERSION}`;
 
 const CORE_ASSETS = [
@@ -29,8 +29,10 @@ const CORE_ASSETS = [
   "assets/image/avatar6.png",
   "assets/accessories/hat.png",
   "assets/accessories/hat2.png",
+  "assets/accessories/hat3.png",
   "assets/accessories/sunglasses.png",
   "assets/accessories/sunglasses2.png",
+  "assets/accessories/sunglasses3.png",
   "assets/image/background_game.webp",
   "assets/image/background_operations.webp",
   "assets/image/background_weekly.webp",

@@ -34,6 +34,12 @@ const CATEGORY_ICONS = {
     outfit: "👕"
 };
 
+const CATEGORY_LABELS = {
+    eyeColor: "Eye Color",
+    hairColor: "Hair Color",
+    glasses: "Sunglasses"
+};
+
 function getProfileStore() {
     return window.MathsProfileStore || null;
 }
@@ -144,8 +150,9 @@ function buildFigureHtml(profile, sizeClass = "large") {
     const baseImage = hasBaseImage
         ? buildImageWithFallback(baseImageSources, "avatar-base-image", `${avatarTypeLabel} base`)
         : "";
+    const poseClass = avatar?.avatarType ? `pose-${avatar.avatarType}` : "";
 
-    return `<div class="avatar-figure ${sizeClass}" style="--avatar-bg:${bgStyle};--avatar-skin:${skinColor};--avatar-outfit:${outfitColor};--avatar-hair:${hairColorValue};--avatar-eye:${eyeColorValue};">
+    return `<div class="avatar-figure ${sizeClass} ${poseClass}" style="--avatar-bg:${bgStyle};--avatar-skin:${skinColor};--avatar-outfit:${outfitColor};--avatar-hair:${hairColorValue};--avatar-eye:${eyeColorValue};">
         <div class="avatar-figure-bg"></div>
         <div class="avatar-type-tag">${avatarTypeLabel}</div>
         ${baseImage}
@@ -342,7 +349,8 @@ function buildItemCardHtml(category, item, isActive, priceLabel, mode, options =
 }
 
 function getCategoryLabel(category) {
-    return category.replace(/([A-Z])/g, " $1").replace(/^./, (x) => x.toUpperCase());
+    return CATEGORY_LABELS[category]
+        || category.replace(/([A-Z])/g, " $1").replace(/^./, (x) => x.toUpperCase());
 }
 
 function getCategoryIcon(category) {

@@ -263,7 +263,8 @@
             { id: "hat-beanie", label: "Beanie", glyph: "Beanie", cost: 25 },
             { id: "hat-crown", label: "Crown", glyph: "Crown", cost: 30 },
             { id: "hat-photo-1", label: "Street Hat", glyph: "Street", imagePath: "assets/accessories/hat.png", cost: 35 },
-            { id: "hat-photo-2", label: "Pro Hat", glyph: "Pro", imagePath: "assets/accessories/hat2.png", cost: 45 }
+            { id: "hat-photo-2", label: "Pro Hat", glyph: "Pro", imagePath: "assets/accessories/hat2.png", cost: 45 },
+            { id: "hat-photo-3", label: "Legend Hat", glyph: "Legend", imagePath: "assets/accessories/hat3.png", cost: 55 }
         ],
         glasses: [
             { id: "glasses-none", label: "No Glasses", glyph: "None", cost: 0 },
@@ -271,7 +272,8 @@
             { id: "glasses-square", label: "Square Glasses", glyph: "Square", cost: 25 },
             { id: "glasses-sun", label: "Sunglasses", glyph: "Sunglasses", imagePath: "assets/accessories/sunglasses.png", cost: 30 },
             { id: "glasses-sun-color", label: "Colorful Premium Sunglasses", glyph: "Colorful", imagePath: "assets/accessories/sunglasses.png", cost: 40 },
-            { id: "glasses-sun-pro", label: "Mirror Sunglasses", glyph: "Mirror", imagePath: "assets/accessories/sunglasses2.png", cost: 50 }
+            { id: "glasses-sun-pro", label: "Mirror Sunglasses", glyph: "Mirror", imagePath: "assets/accessories/sunglasses2.png", cost: 50 },
+            { id: "glasses-sun-elite", label: "Elite Sunglasses", glyph: "Elite", imagePath: "assets/accessories/sunglasses3.png", cost: 60 }
         ],
         accessory: [
             { id: "acc-none", label: "No Accessory", glyph: "None", cost: 0 },
