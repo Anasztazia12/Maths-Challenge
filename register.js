@@ -79,6 +79,7 @@ const menuEditProfileBtn = document.getElementById("menu-edit-profile-btn");
 const menuResultsBtn = document.getElementById("menu-results-btn");
 const menuLogoutBtn = document.getElementById("menu-logout-btn");
 const menuDeleteAccountBtn = document.getElementById("menu-delete-account-btn");
+const hamburgerWrapper = document.querySelector(".hamburger-menu-wrapper");
 
 // ===== State =====
 let currentAuthStep = "entry"; // entry, login, register, reset, verifyReset
@@ -106,11 +107,14 @@ function clearSessionMode() {
 function showStartPanel() {
     startPanelEl?.classList.remove("hidden");
     menuPanelEl?.classList.add("hidden");
+    hamburgerPanel?.classList.add("hidden");
+    hamburgerWrapper?.classList.add("hidden");
 }
 
 function showMenuPanel() {
     startPanelEl?.classList.add("hidden");
     menuPanelEl?.classList.remove("hidden");
+    hamburgerWrapper?.classList.remove("hidden");
 }
 
 function hideAllAuthForms() {
