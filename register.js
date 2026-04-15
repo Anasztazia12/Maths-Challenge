@@ -1,12 +1,17 @@
 import {
     createUserWithEmailAndPassword,
+    deleteUser,
+    EmailAuthProvider,
     onAuthStateChanged,
+    reauthenticateWithCredential,
     sendPasswordResetEmail,
+    signInWithCustomToken,
     signInWithEmailAndPassword,
     signOut
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
     collection,
+    deleteDoc,
     doc,
     getDoc,
     getDocs,
@@ -21,11 +26,19 @@ import { auth, db, firebaseReady } from "./firebase.js";
 const emailInput = document.getElementById("auth-email");
 const passwordInput = document.getElementById("auth-password");
 const profileCountSelect = document.getElementById("profile-count");
+const profileSetupEl = document.querySelector("#start-panel .profile-setup");
 const profileNameOneInput = document.getElementById("profile-name-1");
 const profileNameTwoInput = document.getElementById("profile-name-2");
+const authDetailsPanelEl = document.getElementById("auth-details-panel");
+const authBackBtn = document.getElementById("auth-back-btn");
 const registerBtn = document.getElementById("auth-register-btn");
 const loginBtn = document.getElementById("auth-login-btn");
 const resetPasswordBtn = document.getElementById("auth-reset-password-btn");
+const sendOtpBtn = document.getElementById("auth-send-otp-btn");
+const verifyOtpBtn = document.getElementById("auth-verify-otp-btn");
+const otpCodeInput = document.getElementById("auth-otp-code");
+const otpPanelEl = document.getElementById("otp-panel");
+const deleteAccountBtn = document.getElementById("auth-delete-account-btn");
 const guestBtn = document.getElementById("auth-guest-btn");
 const logoutBtn = document.getElementById("auth-logout-btn");
 const statusEl = document.getElementById("auth-status");
@@ -48,7 +61,12 @@ const resultsRefreshBtn = document.getElementById("results-refresh-btn");
 const resultsCloseBtn = document.getElementById("results-close-btn");
 const startPanelEl = document.getElementById("start-panel");
 const menuPanelEl = document.getElementById("menu-panel");
+const homeCornerAvatarEl = document.getElementById("home-corner-avatar");
 const sessionBadgeId = "session-badge";
+const OTP_SEND_ENDPOINT = "/api/auth/send-login-code";
+const OTP_VERIFY_ENDPOINT = "/api/auth/verify-login-code";
+let authMode = "none";
+let loginFailed = false;
 
 function getProfileStore() {
     return window.MathsProfileStore || null;
@@ -59,11 +77,19 @@ function hasAuthUi() {
         emailInput
         && passwordInput
         && profileCountSelect
+        && profileSetupEl
         && profileNameOneInput
         && profileNameTwoInput
+        && authDetailsPanelEl
+        && authBackBtn
         && registerBtn
         && loginBtn
         && resetPasswordBtn
+        && sendOtpBtn
+        && verifyOtpBtn
+        && otpCodeInput
+        && otpPanelEl
+        && deleteAccountBtn
         && guestBtn
         && logoutBtn
         && statusEl
@@ -91,6 +117,67 @@ function getAvatarItem(category, id) {
     const profileStore = getProfileStore();
     if (!profileStore) return null;
     return (profileStore.AVATAR_SHOP?.[category] || []).find((item) => item.id === id) || null;
+}
+
+function getAvatarBaseImageSources(avatarTypeId) {
+    if (avatarTypeId === "type-photo-1") return ["assets/image/avatar.png", "assets/image/avata.png"];
+    if (avatarTypeId === "type-photo-2") return ["assets/image/avatar2.png"];
+    if (avatarTypeId === "type-photo-3") return ["assets/image/avatar3.png"];
+    if (avatarTypeId === "type-photo-4") return ["assets/image/avatar4.png"];
+    if (avatarTypeId === "type-photo-5") return ["assets/image/avatar5.png"];
+    if (avatarTypeId === "type-photo-6") return ["assets/image/avatar6.png"];
+    return [];
+}
+
+function setResetPasswordVisibility() {
+    if (!resetPasswordBtn) return;
+    const show = authMode === "login" && loginFailed;
+    resetPasswordBtn.classList.toggle("hidden", !show);
+}
+
+function setAuthMode(mode) {
+    authMode = mode;
+    if (mode === "none") {
+        authDetailsPanelEl?.classList.add("hidden");
+        otpPanelEl?.classList.add("hidden");
+        loginFailed = false;
+        setResetPasswordVisibility();
+        return;
+    }
+
+    authDetailsPanelEl?.classList.remove("hidden");
+    otpPanelEl?.classList.toggle("hidden", mode !== "login");
+    profileSetupEl?.classList.toggle("hidden", mode !== "register");
+
+    if (mode === "register") {
+        setProfileInputsVisibility();
+    } else {
+        profileNameTwoInput?.classList.add("hidden");
+    }
+
+    if (mode !== "login") {
+        loginFailed = false;
+    }
+
+    setResetPasswordVisibility();
+}
+
+function renderHomeCornerAvatar(profile) {
+    if (!homeCornerAvatarEl || !profile?.avatar) return;
+
+    const type = getAvatarItem("avatarType", profile.avatar.avatarType);
+    const imageSources = getAvatarBaseImageSources(profile.avatar.avatarType);
+    const firstImage = imageSources[0] || "";
+    const secondImage = imageSources[1] || "";
+    const fallbackAttr = secondImage
+        ? ` onerror="if(!this.dataset.fb){this.dataset.fb='1';this.src='${secondImage}';}else{this.onerror=null;this.style.display='none';}"`
+        : "";
+
+    homeCornerAvatarEl.innerHTML = `<div class="home-corner-avatar-title">Your Avatar</div>
+        <div class="home-corner-avatar-card">
+            ${firstImage ? `<img class="home-corner-avatar-img" src="${firstImage}" alt="${type?.label || "Avatar"}"${fallbackAttr}>` : `<span class="home-corner-avatar-emoji">🙂</span>`}
+        </div>`;
+    homeCornerAvatarEl.classList.remove("hidden");
 }
 
 function renderAvatarPreview(profile) {
@@ -143,12 +230,100 @@ function setStatus(message, isError = false) {
 }
 
 function setBusy(isBusy) {
-    if (!registerBtn || !loginBtn || !resetPasswordBtn || !guestBtn || !logoutBtn) return;
+    if (!registerBtn || !loginBtn || !resetPasswordBtn || !sendOtpBtn || !verifyOtpBtn || !deleteAccountBtn || !guestBtn || !logoutBtn) return;
     registerBtn.disabled = isBusy;
     loginBtn.disabled = isBusy;
     resetPasswordBtn.disabled = isBusy;
+    sendOtpBtn.disabled = isBusy;
+    verifyOtpBtn.disabled = isBusy;
+    deleteAccountBtn.disabled = isBusy || !auth?.currentUser;
     guestBtn.disabled = isBusy;
     if (!auth?.currentUser) logoutBtn.disabled = true;
+}
+
+async function postOtpRequest(endpoint, payload) {
+    const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+        throw new Error(data?.message || `Request failed (${response.status})`);
+    }
+
+    return data;
+}
+
+async function handleSendOtp() {
+    if (!firebaseReady || !auth) {
+        setStatus("Firebase config missing in firebase.js", true);
+        return;
+    }
+
+    const email = (emailInput?.value || "").trim();
+    if (!email) {
+        setStatus("Type your email first, then send code.", true);
+        return;
+    }
+
+    try {
+        setBusy(true);
+        await postOtpRequest(OTP_SEND_ENDPOINT, { email });
+        setStatus("Email code sent. Check inbox and enter code.");
+    } catch (error) {
+        const fallbackMessage = String(error?.message || "").includes("404")
+            ? "OTP backend endpoint is missing. Configure /api/auth/send-login-code."
+            : (error?.message || "Could not send email code.");
+        setStatus(fallbackMessage, true);
+    } finally {
+        setBusy(false);
+    }
+}
+
+async function handleVerifyOtpLogin() {
+    if (!firebaseReady || !auth || !db) {
+        setStatus("Firebase config missing in firebase.js", true);
+        return;
+    }
+
+    const email = (emailInput?.value || "").trim();
+    const otpCode = (otpCodeInput?.value || "").trim();
+    if (!email || !otpCode) {
+        setStatus("Type your email and code first.", true);
+        return;
+    }
+
+    try {
+        setBusy(true);
+        const verifyResult = await postOtpRequest(OTP_VERIFY_ENDPOINT, {
+            email,
+            code: otpCode
+        });
+
+        if (!verifyResult?.customToken) {
+            throw new Error("Backend response missing customToken.");
+        }
+
+        const cred = await signInWithCustomToken(auth, verifyResult.customToken);
+        const normalizedState = await syncAuthenticatedState(cred.user, email);
+        if (normalizedState) {
+            renderProfileUi(normalizedState);
+        }
+
+        setSessionMode("auth");
+        userLabelEl.innerText = `Signed in: ${cred.user.email || email}`;
+        showMenuPanel();
+        setStatus("Logged in with email code.");
+        if (otpCodeInput) otpCodeInput.value = "";
+    } catch (error) {
+        setStatus(error?.message || "Could not verify email code.", true);
+    } finally {
+        setBusy(false);
+    }
 }
 
 function setSessionMode(mode) {
@@ -182,6 +357,7 @@ function syncSessionBadge(mode) {
 function showStartPanel() {
     startPanelEl?.classList.remove("hidden");
     menuPanelEl?.classList.add("hidden");
+    setAuthMode("none");
     if (logoutBtn) logoutBtn.disabled = true;
 }
 
@@ -191,6 +367,10 @@ function showMenuPanel() {
 }
 
 function setProfileInputsVisibility() {
+    if (authMode !== "register") {
+        profileNameTwoInput?.classList.add("hidden");
+        return;
+    }
     const showSecondProfile = Number(profileCountSelect?.value || 1) === 2;
     if (profileNameTwoInput) {
         profileNameTwoInput.classList.toggle("hidden", !showSecondProfile);
@@ -233,6 +413,7 @@ function renderProfileUi(accountState) {
     }
 
     renderAvatarPreview(profileContext.activeProfile);
+    renderHomeCornerAvatar(profileContext.activeProfile);
 
     if (profileAvatarSelectEl) {
         profileAvatarSelectEl.innerHTML = "";
@@ -537,6 +718,12 @@ function updateProfileInputsFromSelection() {
 }
 
 async function handleRegister() {
+    if (authMode !== "register") {
+        setAuthMode("register");
+        setStatus("Enter details, then tap Registration again.");
+        return;
+    }
+
     if (!firebaseReady || !auth || !db) {
         setStatus("Firebase config missing in firebase.js", true);
         return;
@@ -593,6 +780,12 @@ async function handleRegister() {
 }
 
 async function handleLogin() {
+    if (authMode !== "login") {
+        setAuthMode("login");
+        setStatus("Enter email and password, then tap Login again.");
+        return;
+    }
+
     if (!firebaseReady || !auth || !db) {
         setStatus("Firebase config missing in firebase.js", true);
         return;
@@ -616,11 +809,15 @@ async function handleLogin() {
         }
 
         setStatus("Login successful.");
+        loginFailed = false;
+        setResetPasswordVisibility();
         setSessionMode("auth");
         userLabelEl.innerText = `Signed in: ${cred.user.email || email}`;
         showMenuPanel();
         if (passwordInput) passwordInput.value = "";
     } catch (error) {
+        loginFailed = true;
+        setResetPasswordVisibility();
         setStatus(error?.message || "Login failed.", true);
     } finally {
         setBusy(false);
@@ -674,8 +871,84 @@ async function handleLogout() {
         showStartPanel();
         setStatus("Logged out.");
         userLabelEl.innerText = "Not signed in";
+        deleteAccountBtn.disabled = true;
     } catch (error) {
         setStatus(error?.message || "Logout failed.", true);
+    } finally {
+        setBusy(false);
+    }
+}
+
+async function handleDeleteAccount() {
+    if (!firebaseReady || !auth) {
+        setStatus("Firebase config missing in firebase.js", true);
+        return;
+    }
+
+    const user = auth.currentUser;
+    if (!user) {
+        setStatus("Sign in first to delete your account.", true);
+        return;
+    }
+
+    const confirmed = window.confirm("Delete your account permanently? This cannot be undone.");
+    if (!confirmed) return;
+
+    const password = String(passwordInput?.value || "").trim();
+    if (!password) {
+        setStatus("Type your password, then click Delete Account again.", true);
+        return;
+    }
+
+    try {
+        setBusy(true);
+
+        if (user.email) {
+            const credential = EmailAuthProvider.credential(user.email, password);
+            await reauthenticateWithCredential(user, credential);
+        }
+
+        const profileStore = getProfileStore();
+        const accountKey = user.uid;
+        const localState = profileStore?.loadAccountState(accountKey);
+
+        if (firebaseReady && db) {
+            const profileIds = Array.from(new Set((localState?.profiles || []).map((profile) => profile.id).filter(Boolean)));
+
+            for (const profileId of profileIds) {
+                const resultsRef = collection(db, "users", user.uid, "profiles", profileId, "quizResults");
+                const resultsSnapshot = await getDocs(resultsRef);
+                for (const item of resultsSnapshot.docs) {
+                    await deleteDoc(item.ref);
+                }
+                await deleteDoc(doc(db, "users", user.uid, "profiles", profileId));
+            }
+
+            await deleteDoc(doc(db, "users", user.uid, "profile", "main"));
+        }
+
+        await deleteUser(user);
+
+        if (profileStore) {
+            const accountStorageKey = profileStore.getAccountStorageKey(accountKey);
+            localStorage.removeItem(accountStorageKey);
+            profileStore.setActiveAccountKey("guest");
+            const guestState = profileStore.setAccountState(profileStore.buildDefaultAccountState({
+                accountKey: "guest",
+                profileCount: 1,
+                profileNames: ["Guest"]
+            }));
+            renderProfileUi(guestState);
+        }
+
+        clearSessionMode();
+        showStartPanel();
+        userLabelEl.innerText = "Not signed in";
+        setStatus("Account deleted.");
+        if (passwordInput) passwordInput.value = "";
+        deleteAccountBtn.disabled = true;
+    } catch (error) {
+        setStatus(error?.message || "Could not delete account.", true);
     } finally {
         setBusy(false);
     }
@@ -699,8 +972,15 @@ function handleGuestMode() {
     setSessionMode("guest");
     setStatus("Guest mode enabled. Your progress stays on this device.");
     if (logoutBtn) logoutBtn.disabled = false;
+    if (deleteAccountBtn) deleteAccountBtn.disabled = true;
     userLabelEl.innerText = "Guest mode";
+    setAuthMode("none");
     showMenuPanel();
+}
+
+function handleAuthBack() {
+    setAuthMode("none");
+    setStatus("");
 }
 
 async function refreshMenuState(user, email) {
@@ -717,6 +997,7 @@ async function refreshMenuState(user, email) {
         userLabelEl.innerText = `Signed in: ${user.email || email || user.uid}`;
         setSessionMode("auth");
         logoutBtn.disabled = false;
+        deleteAccountBtn.disabled = false;
         showMenuPanel();
         return;
     }
@@ -728,6 +1009,7 @@ async function refreshMenuState(user, email) {
     }));
 
     renderProfileUi(guestState);
+    deleteAccountBtn.disabled = true;
     if (getSessionMode() === "guest") {
         userLabelEl.innerText = "Guest mode";
         showMenuPanel();
@@ -757,7 +1039,11 @@ if (hasAuthUi()) {
 
     registerBtn.addEventListener("click", handleRegister);
     loginBtn.addEventListener("click", handleLogin);
+    authBackBtn.addEventListener("click", handleAuthBack);
     resetPasswordBtn.addEventListener("click", handleResetPassword);
+    sendOtpBtn.addEventListener("click", handleSendOtp);
+    verifyOtpBtn.addEventListener("click", handleVerifyOtpLogin);
+    deleteAccountBtn.addEventListener("click", handleDeleteAccount);
     guestBtn.addEventListener("click", handleGuestMode);
     logoutBtn.addEventListener("click", handleLogout);
 
@@ -766,6 +1052,9 @@ if (hasAuthUi()) {
         registerBtn.disabled = true;
         loginBtn.disabled = true;
         resetPasswordBtn.disabled = true;
+        sendOtpBtn.disabled = true;
+        verifyOtpBtn.disabled = true;
+        deleteAccountBtn.disabled = true;
         guestBtn.disabled = false;
         logoutBtn.disabled = true;
         showStartPanel();
@@ -783,6 +1072,7 @@ if (hasAuthUi()) {
         if (getProfileStore()) {
             renderProfileUi(getProfileStore().loadAccountState());
         }
+        setAuthMode("none");
         syncSessionBadge(getSessionMode());
     }
 }

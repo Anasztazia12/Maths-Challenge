@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-04-15-profiles";
+const CACHE_VERSION = "2026-04-15-accessories-v1";
 const CACHE_NAME = `maths-challenge-${CACHE_VERSION}`;
 
 const CORE_ASSETS = [
@@ -20,6 +20,17 @@ const CORE_ASSETS = [
   "arcade.js",
   "weekly.js",
   "assets/image/pophunters.webp",
+  "assets/image/avatar.png",
+  "assets/image/avata.png",
+  "assets/image/avatar2.png",
+  "assets/image/avatar3.png",
+  "assets/image/avatar4.png",
+  "assets/image/avatar5.png",
+  "assets/image/avatar6.png",
+  "assets/accessories/hat.png",
+  "assets/accessories/hat2.png",
+  "assets/accessories/sunglasses.png",
+  "assets/accessories/sunglasses2.png",
   "assets/image/background_game.webp",
   "assets/image/background_operations.webp",
   "assets/image/background_weekly.webp",

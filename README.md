@@ -76,8 +76,25 @@ service cloud.firestore {
 Data structure used by the app:
 
 - `users/{uid}/profile/main` for profile/login metadata
-- `users/{uid}/quizResults/{autoId}` for saved quiz summaries
-- `users/{uid}/stats/summary` for aggregated counters
+- `users/{uid}/profiles/{profileId}/quizResults/{autoId}` for profile-specific quiz summaries
+
+## 7. Email Code (OTP) Login Backend Contract
+
+Frontend UI now includes email-code login, but it requires backend endpoints to send and verify OTP.
+
+Required endpoints:
+
+- `POST /api/auth/send-login-code`
+- body: `{ "email": "user@example.com" }`
+- response: `{ "ok": true, "message": "Code sent" }`
+
+- `POST /api/auth/verify-login-code`
+- body: `{ "email": "user@example.com", "code": "123456" }`
+- response: `{ "ok": true, "customToken": "<firebase-custom-token>" }`
+
+The `customToken` must be generated on the server with Firebase Admin SDK and is consumed by `signInWithCustomToken` on the client.
+
+If these endpoints are not available, the app shows a clear status error and falls back to normal email/password or Firebase password reset email.
 
 ---
 

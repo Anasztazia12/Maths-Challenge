@@ -152,11 +152,55 @@ h1 {
     box-shadow: 0 0 15px #ffd700;
 }
 
+.menu-btn.danger {
+    background: linear-gradient(90deg, #ef4444, #b91c1c);
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.8);
+}
+
 .home-container {
     width: min(600px, 94vw);
     padding: 34px 30px;
     background: rgba(255, 255, 255, 0.08);
     box-shadow: 0 0 18px rgba(126, 58, 242, 0.3);
+}
+
+.home-corner-avatar {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 30;
+    width: 112px;
+    padding: 8px;
+    border-radius: 14px;
+    background: rgba(2, 6, 23, 0.74);
+    border: 1px solid rgba(186, 230, 253, 0.26);
+    box-shadow: 0 10px 22px rgba(2, 8, 23, 0.45);
+}
+
+.home-corner-avatar-title {
+    font-size: 11px;
+    font-weight: 800;
+    margin-bottom: 4px;
+    color: #e2e8f0;
+    text-align: center;
+}
+
+.home-corner-avatar-card {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 70px;
+}
+
+.home-corner-avatar-img {
+    width: 74px;
+    height: 74px;
+    object-fit: contain;
+    filter: drop-shadow(0 6px 12px rgba(2, 8, 23, 0.35));
+}
+
+.home-corner-avatar-emoji {
+    font-size: 34px;
 }
 
 .home-daily-note {
@@ -221,6 +265,15 @@ h1 {
     gap: 8px;
 }
 
+.auth-entry-actions {
+    margin-top: 2px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.auth-mode-actions {
+    grid-template-columns: 1fr;
+}
+
 .auth-actions .menu-btn {
     margin-top: 0;
     min-height: 42px;
@@ -232,6 +285,34 @@ h1 {
     min-height: 20px;
     font-size: 12px;
     color: #fde68a;
+}
+
+.otp-panel {
+    margin-top: 10px;
+    padding: 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(253, 224, 71, 0.3);
+    background: rgba(15, 23, 42, 0.62);
+}
+
+.otp-title {
+    margin-bottom: 6px;
+}
+
+.otp-grid input {
+    letter-spacing: 1px;
+    text-align: center;
+}
+
+.otp-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.otp-note {
+    margin: 8px 0 0;
+    font-size: 11px;
+    color: #cbd5e1;
+    opacity: 0.9;
 }
 
 .profile-setup {
@@ -449,7 +530,7 @@ h1 {
 .shop-corner-avatar {
     position: fixed;
     top: 10px;
-    left: 10px;
+    right: 10px;
     z-index: 30;
     width: 132px;
     padding: 8px;
@@ -480,10 +561,49 @@ h1 {
     margin-bottom: 10px;
 }
 
+.avatar-preview-pop {
+    animation: avatarPreviewPop 0.32s ease;
+}
+
+@keyframes avatarPreviewPop {
+    0% {
+        transform: scale(0.96);
+    }
+    50% {
+        transform: scale(1.04);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
 .shop-category-tabs {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 6px;
+}
+
+.shop-category-header {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.shop-back-btn {
+    margin-top: 0;
+    min-height: 36px;
+    padding: 6px 10px;
+    font-size: 12px;
+}
+
+.shop-selected-category {
+    margin: 0;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 700;
+    color: #c7f9ff;
 }
 
 .shop-tab-btn {
@@ -495,6 +615,15 @@ h1 {
     font-weight: 700;
     padding: 7px 6px;
     cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.shop-tab-icon {
+    font-size: 14px;
+    line-height: 1;
 }
 
 .shop-tab-btn.tab-active {
@@ -580,6 +709,23 @@ h1 {
     align-items: center;
 }
 
+.avatar-base-image {
+    position: absolute;
+    z-index: 2;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 72%;
+    max-height: 84%;
+    object-fit: contain;
+    filter: drop-shadow(0 6px 14px rgba(2, 8, 23, 0.35));
+}
+
+.avatar-figure.small .avatar-base-image {
+    width: 76%;
+    bottom: 8px;
+}
+
 .avatar-eyes,
 .avatar-nose,
 .avatar-mouth {
@@ -611,10 +757,37 @@ h1 {
     transform: translateX(-50%);
 }
 
+.avatar-hat-image-wrap {
+    top: -24px;
+    padding: 0;
+    background: transparent;
+}
+
+.avatar-hat-image {
+    width: 52px;
+    height: 30px;
+    object-fit: contain;
+    display: block;
+    filter: drop-shadow(0 2px 4px rgba(15, 23, 42, 0.35));
+}
+
 .avatar-glasses {
     top: 16px;
     left: 50%;
     transform: translateX(-50%);
+}
+
+.avatar-glasses-image-wrap {
+    top: 12px;
+    padding: 2px 4px;
+    background: rgba(255, 255, 255, 0.65);
+}
+
+.avatar-glasses-image {
+    width: 30px;
+    height: 14px;
+    object-fit: contain;
+    display: block;
 }
 
 .avatar-torso {
@@ -744,6 +917,13 @@ h1 {
     color: #f8fafc;
 }
 
+.shop-card-thumb {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(15, 23, 42, 0.35));
+}
+
 .shop-card-swatch {
     width: 28px;
     height: 28px;
@@ -766,6 +946,17 @@ h1 {
 .shop-item-active .shop-card-price,
 .shop-item-active .shop-card-glyph {
     color: #111827;
+}
+
+.shop-item-locked {
+    opacity: 0.62;
+    filter: grayscale(0.25);
+    cursor: not-allowed;
+}
+
+.shop-lock-icon {
+    font-size: 13px;
+    line-height: 1;
 }
 
 .session-badge {
@@ -801,6 +992,24 @@ h1 {
     margin-top: 0;
     background: linear-gradient(90deg, #b91c9c, #5b21b6);
     box-shadow: 0 0 8px rgba(217, 70, 239, 0.45);
+}
+
+.avatar-shop-btn {
+    background: linear-gradient(90deg, #06b6d4, #0ea5e9);
+    box-shadow: 0 0 10px rgba(14, 165, 233, 0.6);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.avatar-shop-btn-icon {
+    font-size: 18px;
+    line-height: 1;
+}
+
+.avatar-shop-btn:hover {
+    box-shadow: 0 0 14px rgba(6, 182, 212, 0.7), 0 0 20px rgba(14, 165, 233, 0.45);
 }
 
 .home-menu-btn:hover {
@@ -1792,6 +2001,26 @@ body.bg-home #end-screen {
         padding: 24px 14px;
     }
 
+    .home-corner-avatar {
+        width: 88px;
+        padding: 6px;
+        top: 8px;
+        right: 8px;
+    }
+
+    .home-corner-avatar-img {
+        width: 54px;
+        height: 54px;
+    }
+
+    .auth-entry-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .shop-category-tabs {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .home-daily-note {
         font-size: 14px;
         margin-bottom: 12px;
@@ -2111,5 +2340,21 @@ body.bg-home #end-screen {
     #certificate-preview .result-tool-buttons .menu-btn {
         min-width: 150px;
         flex: 1 1 44%;
+    }
+}
+
+@media (max-width: 900px) {
+    .shop-container {
+        width: min(94vw, 720px);
+    }
+
+    .shop-category-tabs {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .shop-corner-avatar {
+        width: 112px;
+        top: 8px;
+        right: 8px;
     }
 }

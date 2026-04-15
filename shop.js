@@ -4,13 +4,35 @@ const avatarPreviewEl = document.getElementById("shop-avatar-preview");
 const cornerAvatarEl = document.getElementById("shop-corner-avatar");
 const presetListEl = document.getElementById("shop-preset-list");
 const categoryTabsEl = document.getElementById("shop-category-tabs");
+const categoryHeaderEl = document.getElementById("shop-category-header");
+const categoryBackBtn = document.getElementById("shop-category-back-btn");
+const selectedCategoryEl = document.getElementById("shop-selected-category");
+const presetSectionEl = document.getElementById("shop-preset-section");
+const wardrobeSectionEl = document.getElementById("shop-wardrobe-section");
+const marketSectionEl = document.getElementById("shop-market-section");
 const wardrobeTitleEl = document.getElementById("shop-wardrobe-title");
 const wardrobeEl = document.getElementById("shop-wardrobe");
 const marketTitleEl = document.getElementById("shop-market-title");
 const marketEl = document.getElementById("shop-market");
 const statusEl = document.getElementById("shop-status");
 
-let activeCategory = "eyes";
+let activeCategory = null;
+
+const CATEGORY_ICONS = {
+    avatarType: "👤",
+    eyes: "👀",
+    eyeColor: "🎨",
+    nose: "👃",
+    mouth: "🙂",
+    skin: "🧴",
+    hairColor: "🪮",
+    hairLength: "✂️",
+    hat: "🧢",
+    glasses: "🕶️",
+    accessory: "✨",
+    background: "🖼️",
+    outfit: "👕"
+};
 
 function getProfileStore() {
     return window.MathsProfileStore || null;
@@ -38,6 +60,54 @@ function getCatalogItem(category, itemId) {
     return (profileStore?.AVATAR_SHOP?.[category] || []).find((item) => item.id === itemId) || null;
 }
 
+function getAvatarBaseImageSources(avatarTypeId) {
+    if (avatarTypeId === "type-photo-1") {
+        return ["assets/image/avatar.png", "assets/image/avata.png"];
+    }
+
+    if (avatarTypeId === "type-photo-2") {
+        return ["assets/image/avatar2.png"];
+    }
+
+    if (avatarTypeId === "type-photo-3") {
+        return ["assets/image/avatar3.png"];
+    }
+
+    if (avatarTypeId === "type-photo-4") {
+        return ["assets/image/avatar4.png"];
+    }
+
+    if (avatarTypeId === "type-photo-5") {
+        return ["assets/image/avatar5.png"];
+    }
+
+    if (avatarTypeId === "type-photo-6") {
+        return ["assets/image/avatar6.png"];
+    }
+
+    return [];
+}
+
+function getGlassesImageSources(glassesItem) {
+    if (glassesItem?.imagePath) return [glassesItem.imagePath];
+    return [];
+}
+
+function getHatImageSources(hatItem) {
+    if (hatItem?.imagePath) return [hatItem.imagePath];
+    return [];
+}
+
+function buildImageWithFallback(sources, className, altText) {
+    if (!Array.isArray(sources) || sources.length === 0) return "";
+    const firstSource = sources[0];
+    const fallbackSources = sources.slice(1);
+    const fallbackAttr = fallbackSources.length > 0
+        ? ` onerror="if(!this.dataset.fb){this.dataset.fb='1';this.src='${fallbackSources[0]}';}else{this.onerror=null;this.style.display='none';}"`
+        : "";
+    return `<img class="${className}" src="${firstSource}" alt="${altText}" loading="lazy"${fallbackAttr}>`;
+}
+
 function buildFigureHtml(profile, sizeClass = "large") {
     const avatar = profile?.avatar || {};
     const avatarType = getCatalogItem("avatarType", avatar.avatarType);
@@ -62,22 +132,38 @@ function buildFigureHtml(profile, sizeClass = "large") {
     const hairColorValue = hairColor?.color || "#6d4c41";
     const hairLengthLabel = hairLength?.glyph || "Short";
     const hatLabel = hat?.glyph || "";
+    const hatImageSources = getHatImageSources(hat);
     const glassesLabel = glasses?.glyph || "";
+    const glassesImageSources = getGlassesImageSources(glasses);
     const accessoryLabel = accessory?.glyph || "";
     const outfitColor = outfit?.color || "#38bdf8";
     const avatarTypeLabel = avatarType?.label || "Avatar";
     const bgStyle = background?.color || "linear-gradient(180deg,#bae6fd,#60a5fa)";
+    const baseImageSources = getAvatarBaseImageSources(avatar?.avatarType);
+    const hasBaseImage = baseImageSources.length > 0;
+    const baseImage = hasBaseImage
+        ? buildImageWithFallback(baseImageSources, "avatar-base-image", `${avatarTypeLabel} base`)
+        : "";
 
     return `<div class="avatar-figure ${sizeClass}" style="--avatar-bg:${bgStyle};--avatar-skin:${skinColor};--avatar-outfit:${outfitColor};--avatar-hair:${hairColorValue};--avatar-eye:${eyeColorValue};">
         <div class="avatar-figure-bg"></div>
         <div class="avatar-type-tag">${avatarTypeLabel}</div>
-        <div class="avatar-hair">${hairLengthLabel}</div>
+        ${baseImage}
+        ${hasBaseImage ? "" : `<div class="avatar-hair">${hairLengthLabel}</div>`}
         <div class="avatar-head">
             <div class="avatar-eyes">${eyeGlyph}</div>
             <div class="avatar-nose">${noseGlyph}</div>
             <div class="avatar-mouth">${mouthGlyph}</div>
-            ${hatLabel && hatLabel !== "None" ? `<div class="avatar-hat">${hatLabel}</div>` : ""}
-            ${glassesLabel && glassesLabel !== "None" ? `<div class="avatar-glasses">${glassesLabel}</div>` : ""}
+            ${hatLabel && hatLabel !== "None"
+                ? (hatImageSources.length > 0
+                    ? `<div class="avatar-hat avatar-hat-image-wrap">${buildImageWithFallback(hatImageSources, "avatar-hat-image", hat?.label || "Hat")}</div>`
+                    : `<div class="avatar-hat">${hatLabel}</div>`)
+                : ""}
+            ${glassesLabel && glassesLabel !== "None"
+                ? (glassesImageSources.length > 0
+                    ? `<div class="avatar-glasses avatar-glasses-image-wrap">${buildImageWithFallback(glassesImageSources, "avatar-glasses-image", glasses?.label || "Sunglasses")}</div>`
+                    : `<div class="avatar-glasses">${glassesLabel}</div>`)
+                : ""}
         </div>
         <div class="avatar-torso">
             <div class="avatar-arm avatar-arm-left"></div>
@@ -99,6 +185,20 @@ function renderAvatarPreview(profile) {
 
     if (cornerAvatarEl) {
         cornerAvatarEl.innerHTML = `<div class="shop-corner-title">Selected Avatar</div>${buildFigureHtml(profile, "small")}`;
+    }
+}
+
+function animateAvatarPreview() {
+    if (avatarPreviewEl) {
+        avatarPreviewEl.classList.remove("avatar-preview-pop");
+        void avatarPreviewEl.offsetWidth;
+        avatarPreviewEl.classList.add("avatar-preview-pop");
+    }
+
+    if (cornerAvatarEl) {
+        cornerAvatarEl.classList.remove("avatar-preview-pop");
+        void cornerAvatarEl.offsetWidth;
+        cornerAvatarEl.classList.add("avatar-preview-pop");
     }
 }
 
@@ -135,6 +235,7 @@ function equipItem(category, itemId) {
 
     saveState(state);
     renderAll();
+    animateAvatarPreview();
     setStatus("Item equipped.");
 }
 
@@ -175,6 +276,7 @@ function purchaseItem(category, itemId) {
     saveState(state);
     localStorage.setItem(profileStore.getScopedStorageKey("arcadeCoins"), String(profileStore.getPoints()));
     renderAll();
+    animateAvatarPreview();
     setStatus("Item purchased.");
 }
 
@@ -202,10 +304,22 @@ function setPreset(presetId) {
 
     saveState(state);
     renderAll();
+    animateAvatarPreview();
     setStatus(`Preset selected: ${preset.name}.`);
 }
 
 function buildItemVisual(category, item) {
+    if ((category === "glasses" || category === "hat") && item.imagePath) {
+        return buildImageWithFallback([item.imagePath], "shop-card-thumb", item.label || "Accessory");
+    }
+
+    if (category === "avatarType") {
+        const imageSources = getAvatarBaseImageSources(item.id);
+        if (imageSources.length > 0) {
+            return buildImageWithFallback(imageSources, "shop-card-thumb", item.label || "Avatar");
+        }
+    }
+
     if (item.color) {
         return `<span class="shop-card-swatch" style="background:${item.color}"></span>`;
     }
@@ -214,13 +328,25 @@ function buildItemVisual(category, item) {
     return `<span class="shop-card-glyph">${glyph}</span>`;
 }
 
-function buildItemCardHtml(category, item, isActive, priceLabel, mode) {
+function buildItemCardHtml(category, item, isActive, priceLabel, mode, options = {}) {
+    const isLocked = Boolean(options.isLocked);
     const activeClass = isActive ? "shop-item-active" : "";
+    const lockClass = isLocked ? "shop-item-locked" : "";
     const visual = buildItemVisual(category, item);
-    return `<button type="button" class="shop-item-btn ${activeClass}" title="${item.label}" data-action="${mode}" data-category="${category}" data-id="${item.id}">
+    const action = isLocked ? "locked" : mode;
+    return `<button type="button" class="shop-item-btn ${activeClass} ${lockClass}" title="${item.label}" data-action="${action}" data-category="${category}" data-id="${item.id}" ${isLocked ? "disabled" : ""}>
         ${visual}
         <span class="shop-card-price">${priceLabel}</span>
+        ${isLocked ? '<span class="shop-lock-icon">🔒</span>' : ""}
     </button>`;
+}
+
+function getCategoryLabel(category) {
+    return category.replace(/([A-Z])/g, " $1").replace(/^./, (x) => x.toUpperCase());
+}
+
+function getCategoryIcon(category) {
+    return CATEGORY_ICONS[category] || "•";
 }
 
 function renderCategoryTabs() {
@@ -228,13 +354,38 @@ function renderCategoryTabs() {
     if (!profileStore || !categoryTabsEl) return;
 
     const categories = Object.keys(profileStore.AVATAR_SHOP || {});
-    if (!categories.includes(activeCategory)) activeCategory = categories[0] || "eyes";
+    if (activeCategory && !categories.includes(activeCategory)) {
+        activeCategory = null;
+    }
 
     categoryTabsEl.innerHTML = categories.map((category) => {
         const selected = category === activeCategory ? "tab-active" : "";
-        const label = category.replace(/([A-Z])/g, " $1").replace(/^./, (x) => x.toUpperCase());
-        return `<button type="button" class="shop-tab-btn ${selected}" data-action="tab" data-category="${category}">${label}</button>`;
+        const label = getCategoryLabel(category);
+        const icon = getCategoryIcon(category);
+        return `<button type="button" class="shop-tab-btn ${selected}" data-action="tab" data-category="${category}"><span class="shop-tab-icon" aria-hidden="true">${icon}</span><span>${label}</span></button>`;
     }).join("");
+
+    if (categoryHeaderEl) {
+        categoryHeaderEl.classList.toggle("hidden", !activeCategory);
+    }
+
+    if (selectedCategoryEl) {
+        selectedCategoryEl.innerText = activeCategory
+            ? `Selected: ${getCategoryLabel(activeCategory)}`
+            : "Selected: -";
+    }
+
+    if (presetSectionEl) {
+        presetSectionEl.classList.toggle("hidden", Boolean(activeCategory));
+    }
+
+    if (wardrobeSectionEl) {
+        wardrobeSectionEl.classList.toggle("hidden", !activeCategory);
+    }
+
+    if (marketSectionEl) {
+        marketSectionEl.classList.toggle("hidden", !activeCategory);
+    }
 }
 
 function renderPresets(profile) {
@@ -243,8 +394,13 @@ function renderPresets(profile) {
 
     presetListEl.innerHTML = (profileStore.AVATAR_PRESETS || []).map((preset) => {
         const isActive = profile.avatar?.presetId === preset.id;
+        const avatarTypeId = preset.avatar?.avatarType || "";
+        const avatarTypeItem = getCatalogItem("avatarType", avatarTypeId);
+        const visual = avatarTypeItem
+            ? buildItemVisual("avatarType", avatarTypeItem)
+            : `<span class="shop-card-glyph">${preset.name.split(" ")[0]}</span>`;
         return `<button type="button" class="shop-item-btn ${isActive ? "shop-item-active" : ""}" data-action="preset" data-id="${preset.id}" title="${preset.name}">
-            <span class="shop-card-glyph">${preset.name.split(" ")[0]}</span>
+            ${visual}
             <span class="shop-card-price">Free</span>
         </button>`;
     }).join("");
@@ -252,7 +408,7 @@ function renderPresets(profile) {
 
 function renderWardrobe(profile) {
     const profileStore = getProfileStore();
-    if (!wardrobeEl || !profileStore || !profile) return;
+    if (!wardrobeEl || !profileStore || !profile || !activeCategory) return;
 
     const avatarKey = profileStore.SHOP_CATEGORY_TO_AVATAR_KEY[activeCategory];
     const selectedId = profile.avatar?.[avatarKey];
@@ -265,7 +421,7 @@ function renderWardrobe(profile) {
     }).join("");
 
     if (wardrobeTitleEl) {
-        const label = activeCategory.replace(/([A-Z])/g, " $1").replace(/^./, (x) => x.toUpperCase());
+        const label = getCategoryLabel(activeCategory);
         wardrobeTitleEl.innerText = `Wardrobe - ${label}`;
     }
 
@@ -274,16 +430,18 @@ function renderWardrobe(profile) {
 
 function renderMarket(profile) {
     const profileStore = getProfileStore();
-    if (!marketEl || !profileStore || !profile) return;
+    if (!marketEl || !profileStore || !profile || !activeCategory) return;
 
     const owned = profile.wardrobe?.[activeCategory] || [];
+    const points = profileStore.getPoints();
     const cards = (profileStore.AVATAR_SHOP[activeCategory] || []).map((item) => {
         if (owned.includes(item.id)) return "";
-        return buildItemCardHtml(activeCategory, item, false, `${item.cost} pts`, "buy");
+        const isLocked = Number(item.cost) > points;
+        return buildItemCardHtml(activeCategory, item, false, `${item.cost} pts`, "buy", { isLocked });
     }).join("");
 
     if (marketTitleEl) {
-        const label = activeCategory.replace(/([A-Z])/g, " $1").replace(/^./, (x) => x.toUpperCase());
+        const label = getCategoryLabel(activeCategory);
         marketTitleEl.innerText = `Shop - ${label}`;
     }
 
@@ -307,8 +465,13 @@ function renderAll() {
     renderAvatarPreview(active);
     renderCategoryTabs();
     renderPresets(active);
-    renderWardrobe(active);
-    renderMarket(active);
+    if (activeCategory) {
+        renderWardrobe(active);
+        renderMarket(active);
+    } else {
+        if (wardrobeEl) wardrobeEl.innerHTML = '<span class="results-empty">Choose a category to open your wardrobe.</span>';
+        if (marketEl) marketEl.innerHTML = '<span class="results-empty">Choose a category to open the shop.</span>';
+    }
 }
 
 function setupEvents() {
@@ -325,6 +488,13 @@ function setupEvents() {
             const button = event.target.closest("button[data-action='tab']");
             if (!button) return;
             activeCategory = button.dataset.category || activeCategory;
+            renderAll();
+        });
+    }
+
+    if (categoryBackBtn) {
+        categoryBackBtn.addEventListener("click", () => {
+            activeCategory = null;
             renderAll();
         });
     }

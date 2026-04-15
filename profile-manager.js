@@ -9,6 +9,120 @@
 
     const AVATAR_PRESETS = [
         {
+            id: "starter-photo-one",
+            name: "Photo Avatar 1",
+            avatar: {
+                avatarType: "type-photo-1",
+                eye: "eyes-classic",
+                eyeColor: "eye-color-brown",
+                nose: "nose-small",
+                mouth: "mouth-smile",
+                skin: "skin-peach",
+                hairColor: "hair-color-brown",
+                hairLength: "hair-length-none",
+                hat: "hat-none",
+                glasses: "glasses-none",
+                accessory: "acc-none",
+                background: "bg-sky",
+                outfit: "outfit-sky"
+            }
+        },
+        {
+            id: "starter-photo-two",
+            name: "Photo Avatar 2",
+            avatar: {
+                avatarType: "type-photo-2",
+                eye: "eyes-happy",
+                eyeColor: "eye-color-blue",
+                nose: "nose-button",
+                mouth: "mouth-grin",
+                skin: "skin-golden",
+                hairColor: "hair-color-black",
+                hairLength: "hair-length-none",
+                hat: "hat-none",
+                glasses: "glasses-none",
+                accessory: "acc-none",
+                background: "bg-forest",
+                outfit: "outfit-emerald"
+            }
+        },
+        {
+            id: "starter-photo-three",
+            name: "Photo Avatar 3",
+            avatar: {
+                avatarType: "type-photo-3",
+                eye: "eyes-wink",
+                eyeColor: "eye-color-green",
+                nose: "nose-small",
+                mouth: "mouth-smile",
+                skin: "skin-peach",
+                hairColor: "hair-color-brown",
+                hairLength: "hair-length-none",
+                hat: "hat-none",
+                glasses: "glasses-none",
+                accessory: "acc-none",
+                background: "bg-sunset",
+                outfit: "outfit-pink"
+            }
+        },
+        {
+            id: "starter-photo-four",
+            name: "Photo Avatar 4",
+            avatar: {
+                avatarType: "type-photo-4",
+                eye: "eyes-happy",
+                eyeColor: "eye-color-violet",
+                nose: "nose-button",
+                mouth: "mouth-grin",
+                skin: "skin-golden",
+                hairColor: "hair-color-black",
+                hairLength: "hair-length-none",
+                hat: "hat-none",
+                glasses: "glasses-none",
+                accessory: "acc-none",
+                background: "bg-neon",
+                outfit: "outfit-violet"
+            }
+        },
+        {
+            id: "starter-photo-five",
+            name: "Photo Avatar 5",
+            avatar: {
+                avatarType: "type-photo-5",
+                eye: "eyes-classic",
+                eyeColor: "eye-color-blue",
+                nose: "nose-tiny",
+                mouth: "mouth-cool",
+                skin: "skin-bronze",
+                hairColor: "hair-color-red",
+                hairLength: "hair-length-none",
+                hat: "hat-none",
+                glasses: "glasses-none",
+                accessory: "acc-none",
+                background: "bg-candy",
+                outfit: "outfit-sport"
+            }
+        },
+        {
+            id: "starter-photo-six",
+            name: "Photo Avatar 6",
+            avatar: {
+                avatarType: "type-photo-6",
+                eye: "eyes-star",
+                eyeColor: "eye-color-brown",
+                nose: "nose-small",
+                mouth: "mouth-wow",
+                skin: "skin-deep",
+                hairColor: "hair-color-black",
+                hairLength: "hair-length-none",
+                hat: "hat-none",
+                glasses: "glasses-none",
+                accessory: "acc-none",
+                background: "bg-forest",
+                outfit: "outfit-emerald"
+            }
+        },
+        {
             id: "starter-girl",
             name: "Girl Starter",
             avatar: {
@@ -88,6 +202,12 @@
 
     const AVATAR_SHOP = {
         avatarType: [
+            { id: "type-photo-1", label: "Photo Avatar 1", glyph: "Avatar 1", cost: 0 },
+            { id: "type-photo-2", label: "Photo Avatar 2", glyph: "Avatar 2", cost: 0 },
+            { id: "type-photo-3", label: "Photo Avatar 3", glyph: "Avatar 3", cost: 0 },
+            { id: "type-photo-4", label: "Photo Avatar 4", glyph: "Avatar 4", cost: 0 },
+            { id: "type-photo-5", label: "Photo Avatar 5", glyph: "Avatar 5", cost: 0 },
+            { id: "type-photo-6", label: "Photo Avatar 6", glyph: "Avatar 6", cost: 0 },
             { id: "type-girl", label: "Girl", glyph: "Girl", cost: 0 },
             { id: "type-boy", label: "Boy", glyph: "Boy", cost: 10 },
             { id: "type-dog", label: "Dog", glyph: "Dog", cost: 40 }
@@ -141,14 +261,17 @@
             { id: "hat-none", label: "No Hat", glyph: "None", cost: 0 },
             { id: "hat-cap", label: "Cap", glyph: "Cap", cost: 15 },
             { id: "hat-beanie", label: "Beanie", glyph: "Beanie", cost: 25 },
-            { id: "hat-crown", label: "Crown", glyph: "Crown", cost: 30 }
+            { id: "hat-crown", label: "Crown", glyph: "Crown", cost: 30 },
+            { id: "hat-photo-1", label: "Street Hat", glyph: "Street", imagePath: "assets/accessories/hat.png", cost: 35 },
+            { id: "hat-photo-2", label: "Pro Hat", glyph: "Pro", imagePath: "assets/accessories/hat2.png", cost: 45 }
         ],
         glasses: [
             { id: "glasses-none", label: "No Glasses", glyph: "None", cost: 0 },
             { id: "glasses-round", label: "Round Glasses", glyph: "Round", cost: 15 },
             { id: "glasses-square", label: "Square Glasses", glyph: "Square", cost: 25 },
-            { id: "glasses-sun", label: "Sunglasses", glyph: "Sunglasses", cost: 30 },
-            { id: "glasses-sun-color", label: "Colorful Premium Sunglasses", glyph: "Colorful", cost: 40 }
+            { id: "glasses-sun", label: "Sunglasses", glyph: "Sunglasses", imagePath: "assets/accessories/sunglasses.png", cost: 30 },
+            { id: "glasses-sun-color", label: "Colorful Premium Sunglasses", glyph: "Colorful", imagePath: "assets/accessories/sunglasses.png", cost: 40 },
+            { id: "glasses-sun-pro", label: "Mirror Sunglasses", glyph: "Mirror", imagePath: "assets/accessories/sunglasses2.png", cost: 50 }
         ],
         accessory: [
             { id: "acc-none", label: "No Accessory", glyph: "None", cost: 0 },

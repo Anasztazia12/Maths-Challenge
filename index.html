@@ -9,6 +9,8 @@
 </head>
 <body class="bg-home">
 
+    <aside id="home-corner-avatar" class="home-corner-avatar hidden" aria-label="Selected avatar"></aside>
+
     <div class="game-container home-container">
 
         <h1>Maths Challenge</h1>
@@ -17,6 +19,13 @@
         <section id="start-panel" class="auth-panel" aria-label="Account">
             <p class="auth-title">Start here</p>
             <p id="auth-user-label" class="auth-user-label">Not signed in</p>
+            <div class="auth-actions auth-entry-actions">
+                <button class="menu-btn" id="auth-register-btn" type="button">Registration</button>
+                <button class="menu-btn" id="auth-login-btn" type="button">Login</button>
+                <button class="menu-btn hidden" id="auth-reset-password-btn" type="button">Reset Password</button>
+                <button class="menu-btn special" id="auth-guest-btn" type="button">Continue as Guest</button>
+            </div>
+            <div id="auth-details-panel" class="hidden">
             <div class="auth-grid">
                 <input id="auth-email" type="email" placeholder="Email" autocomplete="email">
                 <input id="auth-password" type="password" placeholder="Password (min 6 chars)" autocomplete="current-password">
@@ -34,13 +43,20 @@
                     <input id="profile-name-2" type="text" placeholder="Profile 2 nickname" autocomplete="nickname">
                 </div>
             </div>
-            <div class="auth-actions">
-                <button class="menu-btn" id="auth-register-btn" type="button">Register</button>
-                <button class="menu-btn" id="auth-login-btn" type="button">Login</button>
-                <button class="menu-btn special" id="auth-guest-btn" type="button">Continue as Guest</button>
+            <div class="auth-actions auth-mode-actions">
+                <button class="menu-btn" id="auth-back-btn" type="button">Back</button>
             </div>
-            <div class="auth-actions auth-actions-single">
-                <button class="menu-btn" id="auth-reset-password-btn" type="button">Reset Password (Email Code)</button>
+            <div id="otp-panel" class="otp-panel hidden" aria-label="Email code login">
+                <p class="auth-title otp-title">Email Code Login</p>
+                <div class="auth-grid otp-grid">
+                    <input id="auth-otp-code" type="text" inputmode="numeric" placeholder="Enter email code" autocomplete="one-time-code">
+                </div>
+                <div class="auth-actions otp-actions">
+                    <button class="menu-btn" id="auth-send-otp-btn" type="button">Send Code</button>
+                    <button class="menu-btn special" id="auth-verify-otp-btn" type="button">Login With Code</button>
+                </div>
+                <p class="otp-note">Uses backend endpoint if configured.</p>
+            </div>
             </div>
             <p id="auth-status" class="auth-status"></p>
         </section>
@@ -105,14 +121,16 @@
                     Weekly Challenge ⭐
                 </button>
 
-                <button class="menu-btn home-menu-btn" onclick="location.href='shop.html'">
-                    Avatar Shop
+                <button class="menu-btn home-menu-btn avatar-shop-btn" id="home-avatar-shop-btn" onclick="location.href='shop.html'">
+                    <span class="avatar-shop-btn-icon" aria-hidden="true">🙂👤</span>
+                    <span>Avatar Shop</span>
                 </button>
 
             </div>
 
             <div class="auth-panel auth-session-panel">
                 <button class="menu-btn special" id="auth-logout-btn" type="button" disabled>Logout</button>
+                <button class="menu-btn danger" id="auth-delete-account-btn" type="button" disabled>Delete Account</button>
             </div>
 
             <div id="results-panel" class="auth-panel hidden">

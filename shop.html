@@ -22,20 +22,24 @@
 
         <section class="section shop-block">
             <h2>Category</h2>
+            <div class="shop-category-header hidden" id="shop-category-header">
+                <button class="menu-btn shop-back-btn" id="shop-category-back-btn" type="button">Back</button>
+                <p id="shop-selected-category" class="shop-selected-category">Selected: -</p>
+            </div>
             <div id="shop-category-tabs" class="shop-category-tabs"></div>
         </section>
 
-        <section class="section shop-block">
+        <section class="section shop-block" id="shop-preset-section">
             <h2>Base Avatars</h2>
             <div id="shop-preset-list" class="shop-list"></div>
         </section>
 
-        <section class="section shop-block">
+        <section class="section shop-block hidden" id="shop-wardrobe-section">
             <h2 id="shop-wardrobe-title">Wardrobe</h2>
             <div id="shop-wardrobe" class="shop-item-grid compact"></div>
         </section>
 
-        <section class="section shop-block">
+        <section class="section shop-block hidden" id="shop-market-section">
             <h2 id="shop-market-title">Shop</h2>
             <div id="shop-market" class="shop-item-grid compact"></div>
         </section>
