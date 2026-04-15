@@ -613,7 +613,7 @@
 
     function getAvatarBaseImageSources(avatarTypeId) {
         if (avatarTypeId === "type-photo-1") {
-            return ["assets/image/avatar.png", "assets/image/avata.png"];
+            return ["assets/image/avatar.png"];
         }
         if (avatarTypeId === "type-photo-2") {
             return ["assets/image/avatar2.png"];

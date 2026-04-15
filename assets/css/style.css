@@ -164,6 +164,13 @@ h1 {
     box-shadow: 0 0 18px rgba(126, 58, 242, 0.3);
 }
 
+.home-container .hamburger-menu-wrapper {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 40;
+}
+
 .home-corner-avatar {
     position: fixed;
     top: 10px;
@@ -2183,7 +2190,7 @@ body.bg-home #end-screen {
 
 /* Hamburger Menu */
 .hamburger-menu-wrapper {
-    position: fixed;
+    position: absolute;
     top: 12px;
     right: 12px;
     z-index: 40;
@@ -2219,9 +2226,9 @@ body.bg-home #end-screen {
 }
 
 .hamburger-panel {
-    position: fixed;
-    top: 60px;
-    right: 12px;
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
     background: rgba(30, 41, 59, 0.98);
     border: 1px solid rgba(148, 163, 184, 0.24);
     border-radius: 12px;
@@ -2419,7 +2426,6 @@ body.bg-home #end-screen {
         min-width: 0;
         width: 46%;
     }
-}
 
 @media (max-width: 860px) {
     body {

@@ -11,6 +11,20 @@
 
     <div class="game-container">
 
+        <div class="hamburger-menu-wrapper">
+            <button class="hamburger-btn" id="hamburger-btn" aria-label="Menu" aria-expanded="false">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <nav class="hamburger-panel hidden" id="hamburger-panel">
+                <button class="menu-item" id="menu-edit-profile-btn">Edit Profile Name</button>
+                <button class="menu-item" id="menu-results-btn">Results</button>
+                <button class="menu-item" id="menu-logout-btn">Logout</button>
+                <button class="menu-item danger" id="menu-delete-account-btn">Delete Account</button>
+            </nav>
+        </div>
+
         <h1>Maths Challenge</h1>
 
         <!-- Question counter -->
@@ -141,7 +155,7 @@
     <audio id="wrong-sound" src="wrong.mp3"></audio>
 
     <script src="profile-manager.js"></script>
-    <script src="register.js"></script>
+    <script src="hamburger.js"></script>
     <script src="session-guard.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <script src="game.js"></script>

@@ -208,6 +208,21 @@ function goBackToHome() {
     location.href = getBackToHomeUrl();
 }
 
+function consumeMenuActionFromUrl() {
+    try {
+        const url = new URL(window.location.href);
+        const action = (url.searchParams.get("action") || "").trim().toLowerCase();
+        if (!action) return "";
+
+        url.searchParams.delete("action");
+        const cleanUrl = `${url.pathname}${url.search}${url.hash}`;
+        window.history.replaceState({}, "", cleanUrl);
+        return action;
+    } catch {
+        return "";
+    }
+}
+
 function renderHomeCornerAvatar(profile) {
     if (!homeCornerAvatarEl || !profile?.avatar) return;
 
@@ -453,6 +468,27 @@ function openEditProfileNameDialog() {
     }
 }
 
+function runMenuAction(action) {
+    if (action === "results") {
+        openResultsPanel();
+        return;
+    }
+
+    if (action === "edit") {
+        openEditProfileNameDialog();
+        return;
+    }
+
+    if (action === "logout") {
+        handleLogout();
+        return;
+    }
+
+    if (action === "delete") {
+        showDeleteConfirmation();
+    }
+}
+
 function showDeleteConfirmation() {
     const confirmed = confirm("Are you sure you want to delete your account? This action cannot be undone.");
     if (confirmed) {
@@ -623,30 +659,99 @@ if (menuDeleteAccountBtn) {
     });
 }
 
+window.MathsMenuActions = {
+    edit: () => runMenuAction("edit"),
+    results: () => runMenuAction("results"),
+    logout: () => runMenuAction("logout"),
+    delete: () => runMenuAction("delete")
+};
+
+window.goBackToHome = goBackToHome;
+
 // ===== Initialization =====
 
-async function enforceManualStart() {
+function restoreGuestSession(profileStore) {
+    if (!profileStore) return false;
+
+    profileStore.setActiveAccountKey("guest");
+    const guestState = profileStore.loadAccountState("guest", {
+        accountKey: "guest",
+        profileCount: 1,
+        profileNames: ["Guest"]
+    });
+    renderProfileUi(guestState);
+    showMenuPanel();
+    return true;
+}
+
+function restoreAuthSession(profileStore, user) {
+    if (!profileStore || !user?.uid) return false;
+
+    profileStore.setActiveAccountKey(user.uid);
+    const accountState = profileStore.loadAccountState(user.uid, {
+        accountKey: user.uid,
+        email: user.email || "",
+        profileCount: 1,
+        profileNames: ["Player"]
+    });
+    renderProfileUi(accountState);
+    showMenuPanel();
+    return true;
+}
+
+async function initializeHomeState() {
     showStartPanel();
     showEntryActions();
-    clearSessionMode();
 
-    if (!firebaseReady || !auth) return;
+    const profileStore = getProfileStore();
+    const sessionMode = getSessionMode();
+
+    if (sessionMode === "guest") {
+        restoreGuestSession(profileStore);
+        const pendingAction = consumeMenuActionFromUrl();
+        if (pendingAction) runMenuAction(pendingAction);
+        return;
+    }
+
+    if (!firebaseReady || !auth) {
+        return;
+    }
 
     const rememberedEmail = auth.currentUser?.email || "";
     if (rememberedEmail) {
         localStorage.setItem(LAST_LOGIN_EMAIL_KEY, rememberedEmail);
     }
 
-    // Force explicit login click + submit; no automatic sign-in on page load.
-    if (auth.currentUser) {
-        try {
-            await signOut(auth);
-        } catch (error) {
-            console.error("Automatic sign-out for manual auth start failed", error);
-        }
+    if (sessionMode === "auth" && auth.currentUser) {
+        restoreAuthSession(profileStore, auth.currentUser);
+        const pendingAction = consumeMenuActionFromUrl();
+        if (pendingAction) runMenuAction(pendingAction);
+        return;
     }
+
+    if (sessionMode === "auth" && !auth.currentUser) {
+        clearSessionMode();
+    }
+
+    onAuthStateChanged(auth, (user) => {
+        if (getSessionMode() !== "auth") return;
+
+        if (user) {
+            restoreAuthSession(getProfileStore(), user);
+            const pendingAction = consumeMenuActionFromUrl();
+            if (pendingAction) runMenuAction(pendingAction);
+            return;
+        }
+
+        clearSessionMode();
+        showStartPanel();
+        showEntryActions();
+    });
+
+    const pendingAction = consumeMenuActionFromUrl();
+    if (pendingAction) runMenuAction(pendingAction);
 }
 
-void enforceManualStart();
+void initializeHomeState();
 
 export { renderHomeCornerAvatar };

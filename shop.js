@@ -129,11 +129,13 @@ function buildFigureHtml(profile, sizeClass = "large") {
         : "";
     const poseClass = avatar?.avatarType ? `pose-${avatar.avatarType}` : "";
 
+    if (hasBaseImage) {
+        return `<div class="avatar-figure ${sizeClass} ${poseClass}" style="--avatar-bg:${bgStyle};"><div class="avatar-figure-bg"></div>${baseImage}</div>`;
+    }
     return `<div class="avatar-figure ${sizeClass} ${poseClass}" style="--avatar-bg:${bgStyle};--avatar-skin:${skinColor};--avatar-outfit:${outfitColor};--avatar-hair:${hairColorValue};--avatar-eye:${eyeColorValue};">
         <div class="avatar-figure-bg"></div>
         <div class="avatar-type-tag">${avatarTypeLabel}</div>
-        ${baseImage}
-        ${hasBaseImage ? "" : `<div class="avatar-hair">${hairLengthLabel}</div>`}
+        <div class="avatar-hair">${hairLengthLabel}</div>
         <div class="avatar-head">
             <div class="avatar-eyes">${eyeGlyph}</div>
             <div class="avatar-nose">${noseGlyph}</div>

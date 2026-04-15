@@ -12,6 +12,20 @@
 
     <div class="game-container arcade-container">
 
+        <div class="hamburger-menu-wrapper">
+            <button class="hamburger-btn" id="hamburger-btn" aria-label="Menu" aria-expanded="false">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <nav class="hamburger-panel hidden" id="hamburger-panel">
+                <button class="menu-item" id="menu-edit-profile-btn">Edit Profile Name</button>
+                <button class="menu-item" id="menu-results-btn">Results</button>
+                <button class="menu-item" id="menu-logout-btn">Logout</button>
+                <button class="menu-item danger" id="menu-delete-account-btn">Delete Account</button>
+            </nav>
+        </div>
+
         <h1>Play Game</h1>
         <p class="subtitle">Pick one mode to start.</p>
 
@@ -111,7 +125,7 @@
 
     </div>
 
-    <script src="register.js"></script>
+    <script src="hamburger.js"></script>
     <script>
         const playChoicePanel = document.getElementById("play-choice-panel");
         const openQuizBtn = document.getElementById("open-quiz-btn");
