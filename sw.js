@@ -108,7 +108,7 @@ self.addEventListener("fetch", (event) => {
           }
           return networkResponse;
         })
-        .catch(() => caches.match(event.request).then((cached) => cached || caches.match("index.html")))
+        .catch(() => caches.match(event.request))
     );
     return;
   }
@@ -132,7 +132,7 @@ self.addEventListener("fetch", (event) => {
 
           return networkResponse;
         })
-        .catch(() => caches.match("index.html"));
+        .catch(() => caches.match(event.request));
     })
   );
 });

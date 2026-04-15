@@ -222,6 +222,70 @@
         updateHomeDailyNote();
     </script>
 
+    <script>
+        (function initAuthUiFallback() {
+            if (window.__authUiFallbackInit) return;
+            window.__authUiFallbackInit = true;
+
+            const byId = (id) => document.getElementById(id);
+            const entry = byId("auth-entry-actions");
+            const loginForm = byId("auth-login-form");
+            const resetForm = byId("auth-reset-form");
+            const verifyResetForm = byId("auth-verify-reset-form");
+            const registerForm = byId("auth-register-form");
+            const startPanel = byId("start-panel");
+            const menuPanel = byId("menu-panel");
+
+            function hideAll() {
+                entry?.classList.add("hidden");
+                loginForm?.classList.add("hidden");
+                resetForm?.classList.add("hidden");
+                verifyResetForm?.classList.add("hidden");
+                registerForm?.classList.add("hidden");
+            }
+
+            function showEntry() {
+                hideAll();
+                entry?.classList.remove("hidden");
+            }
+
+            function showLogin() {
+                hideAll();
+                loginForm?.classList.remove("hidden");
+            }
+
+            function showRegister() {
+                hideAll();
+                registerForm?.classList.remove("hidden");
+            }
+
+            function showReset() {
+                hideAll();
+                resetForm?.classList.remove("hidden");
+            }
+
+            function showVerifyReset() {
+                hideAll();
+                verifyResetForm?.classList.remove("hidden");
+            }
+
+            byId("auth-login-btn")?.addEventListener("click", showLogin);
+            byId("auth-register-btn")?.addEventListener("click", showRegister);
+            byId("auth-login-back-btn")?.addEventListener("click", showEntry);
+            byId("auth-register-back-btn")?.addEventListener("click", showEntry);
+            byId("auth-login-forgot-btn")?.addEventListener("click", showReset);
+            byId("auth-reset-back-btn")?.addEventListener("click", showLogin);
+            byId("auth-verify-back-btn")?.addEventListener("click", showReset);
+            byId("auth-reset-send-btn")?.addEventListener("click", showVerifyReset);
+
+            byId("auth-guest-btn")?.addEventListener("click", () => {
+                localStorage.setItem("mathsSessionMode", "guest");
+                startPanel?.classList.add("hidden");
+                menuPanel?.classList.remove("hidden");
+            });
+        })();
+    </script>
+
     <script type="module" src="firebase.js"></script>
     <script type="module" src="register.js"></script>
     <script src="sw-register.js"></script>
