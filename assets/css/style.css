@@ -848,8 +848,8 @@ h1 {
     top: var(--glasses-top);
     left: var(--glasses-left);
     transform: translateX(-50%);
-    padding: 2px 4px;
-    background: rgba(255, 255, 255, 0.65);
+    padding: 0;
+    background: transparent;
 }
 
 .avatar-glasses-image {

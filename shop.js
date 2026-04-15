@@ -67,31 +67,8 @@ function getCatalogItem(category, itemId) {
 }
 
 function getAvatarBaseImageSources(avatarTypeId) {
-    if (avatarTypeId === "type-photo-1") {
-        return ["assets/image/avatar.png", "assets/image/avata.png"];
-    }
-
-    if (avatarTypeId === "type-photo-2") {
-        return ["assets/image/avatar2.png"];
-    }
-
-    if (avatarTypeId === "type-photo-3") {
-        return ["assets/image/avatar3.png"];
-    }
-
-    if (avatarTypeId === "type-photo-4") {
-        return ["assets/image/avatar4.png"];
-    }
-
-    if (avatarTypeId === "type-photo-5") {
-        return ["assets/image/avatar5.png"];
-    }
-
-    if (avatarTypeId === "type-photo-6") {
-        return ["assets/image/avatar6.png"];
-    }
-
-    return [];
+    const profileStore = getProfileStore();
+    return profileStore?.getAvatarBaseImageSources?.(avatarTypeId) || [];
 }
 
 function getGlassesImageSources(glassesItem) {

@@ -64,15 +64,7 @@ const authRegisterStatusEl = document.getElementById("auth-register-status");
 
 // Profile UI
 const profileSummaryEl = document.getElementById("profile-summary");
-const profileAvatarPreviewEl = document.getElementById("profile-avatar-preview");
-const profileSelectEl = document.getElementById("profile-select");
 const profileResultsBtn = document.getElementById("profile-results-btn");
-const profileEditBtn = document.getElementById("profile-edit-btn");
-const editProfileNameOneInput = document.getElementById("edit-profile-name-1");
-const editProfileNameTwoInput = document.getElementById("edit-profile-name-2");
-const profileEditCancelBtn = document.getElementById("profile-edit-cancel-btn");
-const profileEditSaveBtn = document.getElementById("profile-edit-save-btn");
-const profileEditPanelEl = document.getElementById("profile-edit-panel");
 const resultsPanelEl = document.getElementById("results-panel");
 const resultsPanelTitleEl = document.getElementById("results-panel-title");
 const resultsListEl = document.getElementById("results-list");
@@ -216,37 +208,6 @@ function renderHomeCornerAvatar(profile) {
         });
     }
     homeCornerAvatarEl.classList.remove("hidden");
-}
-
-function renderAvatarPreview(profile) {
-    if (!profileAvatarPreviewEl || !profile) return;
-
-    const profileStore = getProfileStore();
-    if (!profileStore) return;
-
-    const avatarType = (profileStore.AVATAR_SHOP?.avatarType || []).find(item => item.id === profile.avatar?.avatarType);
-    const eyes = (profileStore.AVATAR_SHOP?.eyes || []).find(item => item.id === profile.avatar?.eye);
-    const eyeColor = (profileStore.AVATAR_SHOP?.eyeColor || []).find(item => item.id === profile.avatar?.eyeColor);
-    const nose = (profileStore.AVATAR_SHOP?.nose || []).find(item => item.id === profile.avatar?.nose);
-    const mouth = (profileStore.AVATAR_SHOP?.mouth || []).find(item => item.id === profile.avatar?.mouth);
-    const skin = (profileStore.AVATAR_SHOP?.skin || []).find(item => item.id === profile.avatar?.skin);
-    const hairColor = (profileStore.AVATAR_SHOP?.hairColor || []).find(item => item.id === profile.avatar?.hairColor);
-    const hairLength = (profileStore.AVATAR_SHOP?.hairLength || []).find(item => item.id === profile.avatar?.hairLength);
-    const hat = (profileStore.AVATAR_SHOP?.hat || []).find(item => item.id === profile.avatar?.hat);
-    const glasses = (profileStore.AVATAR_SHOP?.glasses || []).find(item => item.id === profile.avatar?.glasses);
-    const outfit = (profileStore.AVATAR_SHOP?.outfit || []).find(item => item.id === profile.avatar?.outfit);
-
-    profileAvatarPreviewEl.innerHTML = `<div class="avatar-mini-card">
-        <div class="avatar-mini-type">${avatarType?.glyph || "Kid"}</div>
-        <div class="avatar-mini-hair" style="background:${hairColor?.color || "#6d4c41"};">${hairLength?.glyph || "Short"}</div>
-        <div class="avatar-mini-head" style="background:${skin?.color || "#f9c9a4"};">
-            <div class="avatar-mini-eyes" style="color:${eyeColor?.color || "#111827"};">${eyes?.glyph || "• •"}</div>
-            <div class="avatar-mini-nose">${nose?.glyph || "ˇ"}</div>
-            <div class="avatar-mini-mouth">${mouth?.glyph || "⌣"}</div>
-        </div>
-        <div class="avatar-mini-gear">${hat?.glyph || "None"} • ${glasses?.glyph || "None"}</div>
-        <div class="avatar-mini-body" style="background:${outfit?.color || "#38bdf8"};"></div>
-    </div>`;
 }
 
 // ===== Auth Handlers =====
@@ -451,64 +412,11 @@ function renderProfileUi(accountState) {
         profileSummaryEl.innerText = `${profileContext.profileName} • ${profileCountText} • ${points} points`;
     }
 
-    renderAvatarPreview(profileContext.activeProfile);
     renderHomeCornerAvatar(profileContext.activeProfile);
-
-    if (profileSelectEl) {
-        profileSelectEl.innerHTML = "";
-        profileContext.profiles.forEach((profile) => {
-            const option = document.createElement("option");
-            option.value = profile.id;
-            option.innerText = profile.name;
-            profileSelectEl.appendChild(option);
-        });
-        profileSelectEl.value = profileContext.activeProfileId;
-        profileSelectEl.disabled = profileContext.profiles.length <= 1;
-    }
 
     if (resultsPanelTitleEl) {
         resultsPanelTitleEl.innerText = `Profile history: ${profileContext.profileName}`;
     }
-
-    if (editProfileNameOneInput) {
-        editProfileNameOneInput.value = profileContext.profiles[0]?.name || "";
-    }
-
-    if (editProfileNameTwoInput) {
-        editProfileNameTwoInput.value = profileContext.profiles[1]?.name || "";
-    }
-}
-
-function setSelectedProfile(profileId) {
-    const profileStore = getProfileStore();
-    if (!profileStore) return;
-
-    const accountState = profileStore.loadAccountState();
-    const nextState = profileStore.setActiveProfileId(profileId, accountState);
-    renderProfileUi(nextState);
-}
-
-function openProfileEditPanel() {
-    profileEditPanelEl?.classList.remove("hidden");
-}
-
-function closeProfileEditPanel() {
-    profileEditPanelEl?.classList.add("hidden");
-}
-
-function saveEditedProfileNames() {
-    const profileStore = getProfileStore();
-    if (!profileStore) return;
-
-    const accountState = profileStore.loadAccountState();
-    const profileNames = [
-        editProfileNameOneInput?.value.trim() || "",
-        editProfileNameTwoInput?.value.trim() || ""
-    ];
-
-    const nextState = profileStore.updateProfileNames(profileNames, accountState);
-    renderProfileUi(nextState);
-    closeProfileEditPanel();
 }
 
 function openResultsPanel() {
@@ -560,15 +468,7 @@ if (authRegisterPasswordConfirmToggleEl) {
     });
 }
 
-// Profile UI
-if (profileSelectEl) {
-    profileSelectEl.addEventListener("change", () => {
-        setSelectedProfile(profileSelectEl.value);
-    });
-}
-if (profileEditBtn) profileEditBtn.addEventListener("click", openProfileEditPanel);
-if (profileEditCancelBtn) profileEditCancelBtn.addEventListener("click", closeProfileEditPanel);
-if (profileEditSaveBtn) profileEditSaveBtn.addEventListener("click", saveEditedProfileNames);
+// Profile Results UI
 if (profileResultsBtn) profileResultsBtn.addEventListener("click", openResultsPanel);
 if (resultsRefreshBtn) resultsRefreshBtn.addEventListener("click", loadProfileResults);
 if (resultsCloseBtn) resultsCloseBtn.addEventListener("click", closeResultsPanel);
