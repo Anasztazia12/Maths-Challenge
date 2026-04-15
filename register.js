@@ -733,11 +733,6 @@ async function initializeHomeState() {
         showStartPanel();
         showEntryActions();
 
-        if (sessionMode === "guest") {
-            navigateToHome();
-            return;
-        }
-
         if (!firebaseReady || !auth) {
             return;
         }
@@ -747,21 +742,9 @@ async function initializeHomeState() {
             localStorage.setItem(LAST_LOGIN_EMAIL_KEY, rememberedEmail);
         }
 
-        if (sessionMode === "auth" && auth.currentUser) {
-            navigateToHome();
-            return;
-        }
-
-        if (!sessionMode && auth.currentUser) {
-            setSessionMode("auth");
-            navigateToHome();
-            return;
-        }
-
         onAuthStateChanged(auth, (user) => {
-            if (user) {
-                setSessionMode("auth");
-                navigateToHome();
+            if (!user && getSessionMode() === "auth") {
+                clearSessionMode();
             }
         });
         return;
