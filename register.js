@@ -70,10 +70,14 @@ const resultsPanelTitleEl = document.getElementById("results-panel-title");
 const resultsListEl = document.getElementById("results-list");
 const resultsRefreshBtn = document.getElementById("results-refresh-btn");
 const resultsCloseBtn = document.getElementById("results-close-btn");
+const resultsFilterAllBtn = document.getElementById("results-filter-all-btn");
+const resultsFilterCompletedBtn = document.getElementById("results-filter-completed-btn");
+const resultsFilterUnfinishedBtn = document.getElementById("results-filter-unfinished-btn");
 
 // ===== State =====
 let resetEmailForVerify = "";
 const LAST_LOGIN_EMAIL_KEY = "mathsLastLoginEmail";
+let currentResultsFilter = "all";
 
 // ===== Utility Functions =====
 
@@ -440,6 +444,29 @@ function closeResultsPanel() {
     resultsPanelEl?.classList.add("hidden");
 }
 
+function getResultCompletionStatus(result) {
+    return (result?.completionStatus || "completed").toLowerCase() === "completed"
+        ? "completed"
+        : "unfinished";
+}
+
+function updateResultsFilterButtons() {
+    const isAll = currentResultsFilter === "all";
+    const isCompleted = currentResultsFilter === "completed";
+    const isUnfinished = currentResultsFilter === "unfinished";
+
+    resultsFilterAllBtn?.classList.toggle("active", isAll);
+    resultsFilterCompletedBtn?.classList.toggle("active", isCompleted);
+    resultsFilterUnfinishedBtn?.classList.toggle("active", isUnfinished);
+}
+
+function setResultsFilter(filter) {
+    if (!["all", "completed", "unfinished"].includes(filter)) return;
+    currentResultsFilter = filter;
+    updateResultsFilterButtons();
+    loadProfileResults();
+}
+
 function openEditProfileNameDialog() {
     const profileName = prompt("Enter new profile name:");
     if (profileName && profileName.trim()) {
@@ -521,33 +548,63 @@ function loadProfileResults() {
         return;
     }
 
-    const sortedHistory = [...history].sort((a, b) => {
-        const dateA = new Date(a.timestamp || a.date || 0);
-        const dateB = new Date(b.timestamp || b.date || 0);
-        return dateB - dateA;
+    const getResultTime = (entry) => {
+        const numeric = Number(entry?.timestamp);
+        if (Number.isFinite(numeric) && numeric > 0) return numeric;
+
+        const isoDate = entry?.date || entry?.endedAt || entry?.createdAt;
+        const parsed = isoDate ? Date.parse(isoDate) : NaN;
+        if (Number.isFinite(parsed) && parsed > 0) return parsed;
+
+        return 0;
+    };
+
+    const sortedHistory = [...history].sort((a, b) => getResultTime(b) - getResultTime(a));
+
+    const filteredHistory = sortedHistory.filter((item) => {
+        if (currentResultsFilter === "all") return true;
+        return getResultCompletionStatus(item) === currentResultsFilter;
     });
 
-    resultsListEl.innerHTML = sortedHistory.map((result, index) => {
-        const date = new Date(result.timestamp || result.date || 0);
-        const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-        const timeStr = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-        const correct = result.correct || 0;
+    if (filteredHistory.length === 0) {
+        const label = currentResultsFilter === "all"
+            ? "results"
+            : `${currentResultsFilter} results`;
+        resultsListEl.innerHTML = `<p class='results-empty'>No ${label} for this profile yet.</p>`;
+        return;
+    }
+
+    resultsListEl.innerHTML = filteredHistory.map((result, index) => {
+        const timeValue = getResultTime(result);
+        const date = new Date(timeValue || Date.now());
+        const dateStr = date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+        const timeStr = date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+        const correct = result.correctCount || result.correct || 0;
         const total = result.total || 0;
-        const operation = result.op || result.operation || 'Quiz';
-        const mode = result.mode || 'Unknown';
+        const totalPlanned = result.totalPlanned || 20;
+        const operation = result.operationLabel || result.op || result.operation || "Quiz";
+        const mode = result.modeLabel || result.mode || "Unknown";
+        const completionStatus = getResultCompletionStatus(result);
+        const isCompleted = completionStatus === "completed";
+        const statusText = isCompleted ? "Completed" : "Unfinished";
+        const scoreText = isCompleted
+            ? `${correct}/${total} ✓`
+            : `${correct}/${total} of ${totalPlanned}`;
 
         return `<div class="results-item" data-index="${index}">
             <div class="results-item-header">
                 <div class="results-item-info">
-                    <span class="results-item-title">${operation.charAt(0).toUpperCase() + operation.slice(1)} - ${mode}</span>
+                    <span class="results-item-title">${operation} - ${mode} • ${statusText}</span>
                     <span class="results-item-date">${dateStr} ${timeStr}</span>
                 </div>
-                <div class="results-item-score">${correct}/${total} ✓</div>
+                <div class="results-item-score">${scoreText}</div>
             </div>
             <div class="results-item-detail hidden">
                 <p><strong>Operation:</strong> ${operation}</p>
                 <p><strong>Mode:</strong> ${mode}</p>
+                <p><strong>Status:</strong> ${statusText}</p>
                 <p><strong>Correct:</strong> ${correct} / ${total}</p>
+                <p><strong>Planned Questions:</strong> ${totalPlanned}</p>
                 <p><strong>Time:</strong> ${dateStr} ${timeStr}</p>
                 ${result.details ? `<p><strong>Details:</strong> ${result.details}</p>` : ''}
             </div>
@@ -600,6 +657,9 @@ if (authRegisterPasswordConfirmToggleEl) {
 // Profile Results UI
 if (resultsRefreshBtn) resultsRefreshBtn.addEventListener("click", loadProfileResults);
 if (resultsCloseBtn) resultsCloseBtn.addEventListener("click", closeResultsPanel);
+if (resultsFilterAllBtn) resultsFilterAllBtn.addEventListener("click", () => setResultsFilter("all"));
+if (resultsFilterCompletedBtn) resultsFilterCompletedBtn.addEventListener("click", () => setResultsFilter("completed"));
+if (resultsFilterUnfinishedBtn) resultsFilterUnfinishedBtn.addEventListener("click", () => setResultsFilter("unfinished"));
 
 window.MathsMenuActions = {
     edit: () => runMenuAction("edit"),
@@ -695,5 +755,6 @@ async function initializeHomeState() {
 }
 
 void initializeHomeState();
+updateResultsFilterButtons();
 
 export { renderHomeCornerAvatar };

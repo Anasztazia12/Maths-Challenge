@@ -447,6 +447,9 @@ let questionTimerId = null;
 let questionTimeRemainingMs = 0;
 let questionTimerExpectedEnd = 0;
 let timedTickLastSecond = null;
+let hasCompletedRun = false;
+let hasPersistedCurrentAttempt = false;
+let attemptStartedAt = new Date().toISOString();
 
 function getResultRating(correctCount, totalCount) {
     if (correctCount === totalCount && totalCount > 0) return "Excellent!";
@@ -941,6 +944,7 @@ function showEndScreen() {
     if (inGameBackBtn) inGameBackBtn.style.display = "none";
 
     if (endScreen) {
+        const endedAtIso = new Date().toISOString();
         const correctCount = questionResults.filter((item) => item.isCorrect).length;
         const total = questionResults.length;
         const rating = getResultRating(correctCount, total);
@@ -958,6 +962,12 @@ function showEndScreen() {
             total,
             rating,
             badge,
+            completionStatus: "completed",
+            completionReason: "completed-all-questions",
+            startedAt: attemptStartedAt,
+            endedAt: endedAtIso,
+            timestamp: Date.parse(endedAtIso),
+            date: endedAtIso,
             resultHeadline: getCertificateHeadline(correctCount, total, rating),
             operationLabel: getOperationLabel(op),
             difficultyLabel: getDifficultyLabel(diff),
@@ -972,6 +982,8 @@ function showEndScreen() {
             createdAtLabel: lastResultData.dateLabel,
             sessionMode: getSessionMode()
         });
+        hasCompletedRun = true;
+        hasPersistedCurrentAttempt = true;
 
         if (cloudSaveStatusEl) {
             cloudSaveStatusEl.innerText = getSessionMode() === "guest"
@@ -990,6 +1002,48 @@ function showEndScreen() {
 
         renderEndScreenFromData(lastResultData, playAgainTarget, backTarget);
     }
+}
+
+function persistUnfinishedAttempt(reason = "abandoned") {
+    if (hasCompletedRun || hasPersistedCurrentAttempt) return;
+
+    const hasProgress = currentQuestion > 0 || questionResults.length > 0;
+    if (!hasProgress) return;
+
+    const profileContext = getCurrentProfileContext();
+    const endedAtIso = new Date().toISOString();
+    const answeredCount = questionResults.length;
+    const correctCount = questionResults.filter((item) => item.isCorrect).length;
+    const totalPlanned = 20;
+    const badge = getBadgeLevel(correctCount, answeredCount || 1);
+
+    saveProfileResultLocally({
+        accountKey: profileContext.accountKey,
+        profileId: profileContext.activeProfileId,
+        profileName: profileContext.profileName,
+        studentName: studentNameInput?.value?.trim() || profileContext.profileName || "Player",
+        correctCount,
+        total: answeredCount,
+        totalPlanned,
+        answeredCount,
+        rating: "Unfinished",
+        badge,
+        completionStatus: "unfinished",
+        completionReason: reason,
+        startedAt: attemptStartedAt,
+        endedAt: endedAtIso,
+        timestamp: Date.parse(endedAtIso),
+        date: endedAtIso,
+        dateLabel: getCurrentDateLabel(),
+        operationLabel: getOperationLabel(op),
+        difficultyLabel: getDifficultyLabel(diff),
+        modeLabel: getModeLabel(mode),
+        tableInfoLabel: getTableInfoLabel(),
+        sessionMode: getSessionMode(),
+        results: [...questionResults]
+    });
+
+    hasPersistedCurrentAttempt = true;
 }
 
 function buildResultText(data) {
@@ -1468,6 +1522,7 @@ if (inGameBackBtn) {
             if (!shouldLeave) return;
         }
 
+        persistUnfinishedAttempt("left-via-back-button");
         stopQuestionTimer();
 
         if (isWeekly) {
@@ -1478,3 +1533,7 @@ if (inGameBackBtn) {
         location.href = getInGameBackTarget();
     };
 }
+
+window.addEventListener("pagehide", () => {
+    persistUnfinishedAttempt("pagehide");
+});
