@@ -191,15 +191,25 @@ function getAvatarBaseImageSources(avatarTypeId) {
     return [];
 }
 
+function getBackToHomeUrl() {
+    const sessionMode = localStorage.getItem("mathsSessionMode");
+    return sessionMode ? "index.html" : "index.html";
+}
+
+function goBackToHome() {
+    location.href = getBackToHomeUrl();
+}
+
 function renderHomeCornerAvatar(profile) {
     if (!homeCornerAvatarEl || !profile?.avatar) return;
 
     const imageSources = getAvatarBaseImageSources(profile.avatar.avatarType);
     const firstImage = imageSources[0] || "";
+    const profileName = profile.name || "Avatar";
 
     if (firstImage) {
         homeCornerAvatarEl.innerHTML = `
-            <div class="home-corner-avatar-title">Your Avatar</div>
+            <div class="home-corner-avatar-title">${profileName}</div>
             <div class="home-corner-avatar-card">
                 <img class="home-corner-avatar-img" src="${firstImage}" alt="Avatar" style="cursor: pointer;" id="corner-avatar-click">
             </div>`;
@@ -429,8 +439,54 @@ function closeResultsPanel() {
 }
 
 function loadProfileResults() {
-    // Placeholder for results loading
-    resultsListEl.innerHTML = "<p>No results yet. Play some games!</p>";
+    const profileStore = getProfileStore();
+    if (!profileStore) return;
+
+    const history = profileStore.getProfileHistory();
+    if (!history || history.length === 0) {
+        resultsListEl.innerHTML = "<p class='results-empty'>No results yet. Play some games!</p>";
+        return;
+    }
+
+    const sortedHistory = [...history].sort((a, b) => {
+        const dateA = new Date(a.timestamp || a.date || 0);
+        const dateB = new Date(b.timestamp || b.date || 0);
+        return dateB - dateA;
+    });
+
+    resultsListEl.innerHTML = sortedHistory.map((result, index) => {
+        const date = new Date(result.timestamp || result.date || 0);
+        const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const timeStr = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        const correct = result.correct || 0;
+        const total = result.total || 0;
+        const operation = result.op || result.operation || 'Quiz';
+        const mode = result.mode || 'Unknown';
+
+        return `<div class="results-item" data-index="${index}">
+            <div class="results-item-header">
+                <div class="results-item-info">
+                    <span class="results-item-title">${operation.charAt(0).toUpperCase() + operation.slice(1)} - ${mode}</span>
+                    <span class="results-item-date">${dateStr} ${timeStr}</span>
+                </div>
+                <div class="results-item-score">${correct}/${total} ✓</div>
+            </div>
+            <div class="results-item-detail hidden">
+                <p><strong>Operation:</strong> ${operation}</p>
+                <p><strong>Mode:</strong> ${mode}</p>
+                <p><strong>Correct:</strong> ${correct} / ${total}</p>
+                <p><strong>Time:</strong> ${dateStr} ${timeStr}</p>
+                ${result.details ? `<p><strong>Details:</strong> ${result.details}</p>` : ''}
+            </div>
+        </div>`;
+    }).join("");
+
+    document.querySelectorAll('.results-item').forEach((item) => {
+        item.addEventListener('click', () => {
+            const detail = item.querySelector('.results-item-detail');
+            detail?.classList.toggle('hidden');
+        });
+    });
 }
 
 // ===== Event Listeners =====

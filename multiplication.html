@@ -34,9 +34,10 @@
 
         <!-- Start buttons -->
         <button class="menu-btn special" onclick="startMultiplication()">Start ▶</button>
-        <button class="menu-btn" onclick="location.href='index.html'">⬅ Back</button>
+        <button class="menu-btn" onclick="goBackToHome()">⬅ Back</button>
     </div>
 
+    <script src="register.js"></script>
     <script>
         const tableButtons = document.getElementById("table-buttons");
         const selectedTables = new Set();
@@ -94,11 +95,16 @@
         renderTableButtons();
 
         function startMultiplication() {
+            const picked = Array.from(selectedTables).sort((a,b)=>a-b);
+            if (picked.length === 0) {
+                alert("Please select at least one times table before starting.");
+                return;
+            }
+
             const diff = "easy";
             const mode = getSelectedMode();
             const timeLimit = getSelectedTimeLimit(mode);
             const actualMode = mode === "timed-relaxed" ? "timed" : mode;
-            const picked = Array.from(selectedTables).sort((a,b)=>a-b);
             const tables = picked.join(",");
 
             const timeQuery = timeLimit ? `&time=${timeLimit}` : "";
