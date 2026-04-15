@@ -65,24 +65,13 @@ const authRegisterStatusEl = document.getElementById("auth-register-status");
 const authStatusEl = document.getElementById("auth-status");
 
 // Profile UI
-const profileResultsBtn = document.getElementById("profile-results-btn");
 const resultsPanelEl = document.getElementById("results-panel");
 const resultsPanelTitleEl = document.getElementById("results-panel-title");
 const resultsListEl = document.getElementById("results-list");
 const resultsRefreshBtn = document.getElementById("results-refresh-btn");
 const resultsCloseBtn = document.getElementById("results-close-btn");
 
-// Hamburger Menu Elements
-const hamburgerBtn = document.getElementById("hamburger-btn");
-const hamburgerPanel = document.getElementById("hamburger-panel");
-const menuEditProfileBtn = document.getElementById("menu-edit-profile-btn");
-const menuResultsBtn = document.getElementById("menu-results-btn");
-const menuLogoutBtn = document.getElementById("menu-logout-btn");
-const menuDeleteAccountBtn = document.getElementById("menu-delete-account-btn");
-const hamburgerWrapper = document.querySelector(".hamburger-menu-wrapper");
-
 // ===== State =====
-let currentAuthStep = "entry"; // entry, login, register, reset, verifyReset
 let resetEmailForVerify = "";
 const LAST_LOGIN_EMAIL_KEY = "mathsLastLoginEmail";
 
@@ -107,14 +96,11 @@ function clearSessionMode() {
 function showStartPanel() {
     startPanelEl?.classList.remove("hidden");
     menuPanelEl?.classList.add("hidden");
-    hamburgerPanel?.classList.add("hidden");
-    hamburgerWrapper?.classList.add("hidden");
 }
 
 function showMenuPanel() {
     startPanelEl?.classList.add("hidden");
     menuPanelEl?.classList.remove("hidden");
-    hamburgerWrapper?.classList.remove("hidden");
 }
 
 function hideAllAuthForms() {
@@ -128,7 +114,6 @@ function hideAllAuthForms() {
 function showEntryActions() {
     hideAllAuthForms();
     authEntryActionsEl?.classList.remove("hidden");
-    currentAuthStep = "entry";
 }
 
 function showLoginForm() {
@@ -138,7 +123,6 @@ function showLoginForm() {
     authLoginEmailEl.value = rememberedEmail;
     authLoginPasswordEl.value = "";
     authLoginStatusEl.textContent = "";
-    currentAuthStep = "login";
 }
 
 function showResetForm() {
@@ -146,7 +130,6 @@ function showResetForm() {
     authResetFormEl?.classList.remove("hidden");
     authResetEmailEl.value = "";
     authResetStatusEl.textContent = "";
-    currentAuthStep = "reset";
 }
 
 function showVerifyResetForm() {
@@ -156,7 +139,6 @@ function showVerifyResetForm() {
     authNewPasswordEl.value = "";
     authConfirmPasswordEl.value = "";
     authVerifyStatusEl.textContent = "";
-    currentAuthStep = "verifyReset";
 }
 
 function showRegisterForm() {
@@ -167,7 +149,6 @@ function showRegisterForm() {
     authRegisterPasswordEl.value = "";
     authRegisterPasswordConfirmEl.value = "";
     authRegisterStatusEl.textContent = "";
-    currentAuthStep = "register";
 }
 
 function togglePasswordVisibility(inputEl, btnEl) {
@@ -617,51 +598,8 @@ if (authRegisterPasswordConfirmToggleEl) {
 }
 
 // Profile Results UI
-if (profileResultsBtn) profileResultsBtn.addEventListener("click", openResultsPanel);
 if (resultsRefreshBtn) resultsRefreshBtn.addEventListener("click", loadProfileResults);
 if (resultsCloseBtn) resultsCloseBtn.addEventListener("click", closeResultsPanel);
-
-// Hamburger Menu
-if (hamburgerBtn) {
-    hamburgerBtn.addEventListener("click", () => {
-        hamburgerPanel?.classList.toggle("hidden");
-    });
-}
-
-document.addEventListener("click", (e) => {
-    const isHamburger = e.target.closest(".hamburger-menu-wrapper");
-    if (!isHamburger && !hamburgerPanel?.classList.contains("hidden")) {
-        hamburgerPanel?.classList.add("hidden");
-    }
-});
-
-if (menuResultsBtn) {
-    menuResultsBtn.addEventListener("click", () => {
-        hamburgerPanel?.classList.add("hidden");
-        openResultsPanel();
-    });
-}
-
-if (menuEditProfileBtn) {
-    menuEditProfileBtn.addEventListener("click", () => {
-        hamburgerPanel?.classList.add("hidden");
-        openEditProfileNameDialog();
-    });
-}
-
-if (menuLogoutBtn) {
-    menuLogoutBtn.addEventListener("click", () => {
-        hamburgerPanel?.classList.add("hidden");
-        handleLogout();
-    });
-}
-
-if (menuDeleteAccountBtn) {
-    menuDeleteAccountBtn.addEventListener("click", () => {
-        hamburgerPanel?.classList.add("hidden");
-        showDeleteConfirmation();
-    });
-}
 
 window.MathsMenuActions = {
     edit: () => runMenuAction("edit"),

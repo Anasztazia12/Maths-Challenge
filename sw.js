@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-04-15-accessories-v2";
+const CACHE_VERSION = "2026-04-15-auth-visibility-v3";
 const CACHE_NAME = `maths-challenge-${CACHE_VERSION}`;
 
 const CORE_ASSETS = [
@@ -73,7 +73,30 @@ self.addEventListener("fetch", (event) => {
     requestUrl.pathname === "/" ||
     requestUrl.pathname.endsWith("/");
 
+  const isScriptOrStyleRequest =
+    event.request.destination === "script" ||
+    event.request.destination === "style" ||
+    requestUrl.pathname.endsWith(".js") ||
+    requestUrl.pathname.endsWith(".css");
+
   if (isDocumentRequest) {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const responseClone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseClone);
+            });
+          }
+          return networkResponse;
+        })
+        .catch(() => caches.match(event.request).then((cached) => cached || caches.match("index.html")))
+    );
+    return;
+  }
+
+  if (isScriptOrStyleRequest) {
     event.respondWith(
       fetch(event.request)
         .then((networkResponse) => {

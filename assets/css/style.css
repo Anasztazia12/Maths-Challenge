@@ -164,13 +164,6 @@ h1 {
     box-shadow: 0 0 18px rgba(126, 58, 242, 0.3);
 }
 
-.home-container .hamburger-menu-wrapper {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    z-index: 40;
-}
-
 .home-corner-avatar {
     position: fixed;
     top: 10px;
