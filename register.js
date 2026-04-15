@@ -65,7 +65,6 @@ const authRegisterStatusEl = document.getElementById("auth-register-status");
 const authStatusEl = document.getElementById("auth-status");
 
 // Profile UI
-const profileSummaryEl = document.getElementById("profile-summary");
 const profileResultsBtn = document.getElementById("profile-results-btn");
 const resultsPanelEl = document.getElementById("results-panel");
 const resultsPanelTitleEl = document.getElementById("results-panel-title");
@@ -424,12 +423,6 @@ function renderProfileUi(accountState) {
 
     const state = profileStore.saveAccountState(accountState);
     const profileContext = profileStore.getActiveProfile(state);
-
-    if (profileSummaryEl) {
-        const profileCountText = profileContext.profileCount === 1 ? "1 profile" : `${profileContext.profileCount} profiles`;
-        const points = profileStore.getPoints();
-        profileSummaryEl.innerText = `${profileContext.profileName} • ${profileCountText} • ${points} points`;
-    }
 
     renderHomeCornerAvatar(profileContext.activeProfile);
 
