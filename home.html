@@ -29,7 +29,7 @@
                 </nav>
             </div>
 
-            <p id="home-daily-note" class="subtitle home-daily-note">Your Weekly Challenge is ready. Complete up to 10 tasks this week, and you can finish all 10 today if you want ⭐</p>
+            <p id="home-daily-note" class="subtitle home-daily-note">Your 2 daily challenges are waiting for you in Weekly Challenge ⭐</p>
 
             <div class="menu-buttons home-menu-buttons">
                 <button class="menu-btn home-menu-btn" onclick="location.href='game.html'">Play Game</button>
@@ -116,28 +116,7 @@
         function updateHomeDailyNote() {
             const noteEl = document.getElementById("home-daily-note");
             if (!noteEl) return;
-
-            const progress = getSafeWeeklyProgress();
-            const completed = progress.completed;
-            const todayKey = getCurrentDayKey();
-            const todayCount = Math.max(0, Math.min(DAILY_LIMIT, Number(progress.byDay?.[todayKey] || 0)));
-
-            if (completed >= WEEKLY_TOTAL_TASKS) {
-                noteEl.innerText = "Weekly Challenge complete! You finished 10/10 tasks this week. 🏆";
-                return;
-            }
-
-            if (todayCount >= DAILY_LIMIT) {
-                noteEl.innerText = `Great job! You completed ${todayCount}/${DAILY_LIMIT} tasks today.`;
-                return;
-            }
-
-            if (todayCount > 0) {
-                noteEl.innerText = `You completed ${todayCount}/${DAILY_LIMIT} tasks today. Keep going in Weekly Challenge ⭐`;
-                return;
-            }
-
-            noteEl.innerText = "Your Weekly Challenge is ready. Complete up to 10 tasks this week, and you can finish all 10 today if you want ⭐";
+            noteEl.innerText = "Your 2 daily challenges are waiting for you in Weekly Challenge ⭐";
         }
 
         updateHomeDailyNote();
