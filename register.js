@@ -164,6 +164,22 @@ function mergePreferredProfileNames(baseState, preferredState) {
     };
 }
 
+function deriveAccountDisplayName(user, cloudData, fallbackState) {
+    const cloudUsername = String(cloudData?.username || "").trim();
+    if (cloudUsername) return cloudUsername;
+
+    const stateName = String(fallbackState?.profiles?.[0]?.name || "").trim();
+    if (stateName && !isDefaultProfileName(stateName, 0)) return stateName;
+
+    const email = String(user?.email || "").trim();
+    if (!email.includes("@")) return "";
+
+    const localPart = email.split("@")[0].trim();
+    if (!localPart) return "";
+
+    return localPart.slice(0, 24);
+}
+
 function openProfileNameDialog(initialName, onSave) {
     const existingDialog = document.getElementById("profile-name-dialog");
     if (existingDialog) existingDialog.remove();
@@ -509,6 +525,19 @@ async function syncAuthDataFromCloud(profileStore, user) {
             }
         } else if (cloudData?.username && state.profiles?.[0] && (!state.profiles[0].name || state.profiles[0].name === "Player")) {
             state = profileStore.setProfileName(String(cloudData.username).trim(), state, state.profiles[0].id);
+        }
+
+        const accountDisplayName = deriveAccountDisplayName(user, cloudData, state);
+        if (accountDisplayName && Array.isArray(state.profiles) && state.profiles.length > 0) {
+            const primaryProfile = state.profiles[0];
+            if (primaryProfile && isDefaultProfileName(primaryProfile.name, 0)) {
+                state = profileStore.setProfileName(accountDisplayName, state, primaryProfile.id);
+            }
+
+            const activeIndex = state.profiles.findIndex((profile) => profile.id === state.activeProfileId);
+            if (activeIndex >= 0 && isDefaultProfileName(state.profiles[activeIndex]?.name, activeIndex)) {
+                state = profileStore.setProfileName(accountDisplayName, state, state.profiles[activeIndex].id);
+            }
         }
 
         const activeProfileId = state.activeProfileId || state.profiles?.[0]?.id;

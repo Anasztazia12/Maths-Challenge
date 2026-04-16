@@ -419,7 +419,7 @@ function calculateGoldReward(correctCount, totalCount) {
 
 function updateTaskGoldInfo() {
     if (!taskGoldInfoEl) return;
-    taskGoldInfoEl.innerText = `Available gold: ${formatGold(getAvailableGoldForTask())}`;
+    taskGoldInfoEl.innerText = `Available gold: ${formatGold(getAvailableGoldForTask())} • You earn based on your result`;
 }
 
 function showGoldToast(message, isError = false, durationMs = 2300) {
@@ -1101,7 +1101,7 @@ async function showEndScreen() {
         hasCompletedRun = true;
         hasPersistedCurrentAttempt = true;
 
-        showGoldToast(`You got ${formatGold(reward.earnedGold)} gold!`, false, 2400);
+        showGoldToast(`Available gold: ${formatGold(reward.availableGold)} • You earned: ${formatGold(reward.earnedGold)}`, false, 2400);
         await new Promise((resolve) => window.setTimeout(resolve, 2400));
         const walletGold = await addGoldToWallet(reward.earnedGold);
 
@@ -1623,7 +1623,7 @@ if (getSessionMode() === "auth") {
 }
 
 updateTaskGoldInfo();
-showGoldToast(`Available gold for this task: ${formatGold(getAvailableGoldForTask())}`, false, 2000);
+showGoldToast(`Available gold: ${formatGold(getAvailableGoldForTask())} • You earned: 0 (start task)`, false, 2000);
 
 // Initial display setup
 if (endScreen) endScreen.classList.add("hidden");
