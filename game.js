@@ -32,6 +32,7 @@ function randomFromTables() {
 // DOM elements
 const questionEl = document.getElementById("question");
 const counterEl = document.getElementById("counter");
+const taskGoldInfoEl = document.getElementById("task-gold-info");
 const timerWrapEl = document.getElementById("timer-wrap");
 const timerLabelEl = document.getElementById("timer-label");
 const timerBarEl = document.getElementById("timer-bar");
@@ -351,35 +352,79 @@ function getCertificateHeadline(correctCount, totalCount, rating) {
     return `${rating} Result: ${correctCount}/${totalCount}`;
 }
 
-function calculateRewardPoints(correctCount, totalCount) {
-    const safeCorrect = Math.max(0, Number(correctCount) || 0);
-    const safeTotal = Math.max(1, Number(totalCount) || 1);
-    const errors = Math.max(0, safeTotal - safeCorrect);
-    const isPerfectTimedTable6 = op === "multiplication" && isTimedMode && QUESTION_TIME_SECONDS === 6 && errors === 0;
+function formatGold(value) {
+    const safe = Math.max(0, Number(value) || 0);
+    if (Math.abs(safe - Math.round(safe)) < 0.0001) return String(Math.round(safe));
+    return safe.toFixed(1);
+}
 
-    if (isPerfectTimedTable6) return 15;
-
-    const isVeryGood = errors <= 2;
-    const isMediumHardGood = ["medium", "hard"].includes(diff) && errors <= 5;
-
-    if (isVeryGood || isMediumHardGood) return 10;
-
+function getAvailableGoldForTask() {
+    if (diff === "hard") return 20;
+    if (diff === "medium") return 10;
     return 5;
 }
 
-function addRewardPoints(correctCount, totalCount) {
+function getAccuracyPercent(correctCount, totalCount) {
+    const safeCorrect = Math.max(0, Number(correctCount) || 0);
+    const safeTotal = Math.max(1, Number(totalCount) || 1);
+    return Math.max(0, Math.min(100, (safeCorrect / safeTotal) * 100));
+}
+
+function calculateGoldReward(correctCount, totalCount) {
+    const availableGold = getAvailableGoldForTask();
+    const accuracyPercent = getAccuracyPercent(correctCount, totalCount);
+    const earnsFullGold = accuracyPercent >= 97;
+    const rawEarned = earnsFullGold
+        ? availableGold
+        : (availableGold * accuracyPercent) / 100;
+    const earnedGold = Math.max(0, Math.round(rawEarned * 10) / 10);
+
+    return {
+        availableGold,
+        accuracyPercent,
+        earnedGold,
+        earnsFullGold
+    };
+}
+
+function updateTaskGoldInfo() {
+    if (!taskGoldInfoEl) return;
+    taskGoldInfoEl.innerText = `Available gold: ${formatGold(getAvailableGoldForTask())}`;
+}
+
+function showGoldToast(message, isError = false, durationMs = 2300) {
+    let toast = document.getElementById("gold-reward-toast");
+    if (!toast) {
+        toast = document.createElement("div");
+        toast.id = "gold-reward-toast";
+        toast.className = "gold-reward-toast hidden";
+        document.body.appendChild(toast);
+    }
+
+    toast.innerText = message;
+    toast.classList.remove("hidden", "save-status-error");
+    toast.classList.toggle("save-status-error", Boolean(isError));
+
+    window.setTimeout(() => {
+        toast.classList.add("hidden");
+    }, Math.max(600, durationMs));
+}
+
+function addGoldToWallet(amount) {
     const profileStore = getProfileStore();
-    const gained = calculateRewardPoints(correctCount, totalCount);
+    const gained = Math.max(0, Math.round((Number(amount) || 0) * 10) / 10);
 
     if (!profileStore) {
         const current = Math.max(0, Number(localStorage.getItem(getScopedStorageKey("arcadeCoins")) || 0));
-        localStorage.setItem(getScopedStorageKey("arcadeCoins"), String(current + gained));
-        return gained;
+        const next = Math.round((current + gained) * 10) / 10;
+        localStorage.setItem(getScopedStorageKey("arcadeCoins"), String(next));
+        return next;
     }
 
     profileStore.addPoints(gained);
-    localStorage.setItem(getScopedStorageKey("arcadeCoins"), String(profileStore.getPoints()));
-    return gained;
+    const nextPoints = Math.round((Number(profileStore.getPoints()) || 0) * 10) / 10;
+    localStorage.setItem(getScopedStorageKey("arcadeCoins"), String(nextPoints));
+    return nextPoints;
 }
 
 // Sounds
@@ -866,6 +911,9 @@ function renderEndScreenFromData(data, playAgainTarget, backTarget) {
     const total = Number(data.total) || 0;
     const rating = data.rating || getResultRating(correctCount, total);
     const badge = data.badge || getBadgeLevel(correctCount, total);
+    const availableGold = Number(data.availableGold || 0);
+    const earnedGold = Number(data.earnedGold || 0);
+    const accuracyPercent = Number(data.accuracyPercent || getAccuracyPercent(correctCount, total));
     const rows = Array.isArray(data.results) ? data.results : [];
 
     if (endTitle) endTitle.innerText = isTimedMode ? "Time's up!" : "Done!";
@@ -875,7 +923,7 @@ function renderEndScreenFromData(data, playAgainTarget, backTarget) {
             : `You finished all ${total} questions. Done ${correctCount}/${total}.`;
     }
     if (resultSummaryEl) {
-        resultSummaryEl.innerText = `Your result: ${correctCount}/${total} • Correct answers: ${correctCount}/${total} • ${rating}`;
+        resultSummaryEl.innerText = `Your result: ${correctCount}/${total} • Accuracy: ${accuracyPercent.toFixed(1)}% • Gold earned: ${formatGold(earnedGold)} / ${formatGold(availableGold)} • ${rating}`;
     }
     if (resultBadgeEl) {
         resultBadgeEl.innerText = badge.label || "Practice Badge";
@@ -923,7 +971,7 @@ function loadSavedWeeklyResultData() {
 }
 
 // End screen
-function showEndScreen() {
+async function showEndScreen() {
     stopQuestionTimer();
     const profileContext = getCurrentProfileContext();
 
@@ -950,8 +998,7 @@ function showEndScreen() {
         const rating = getResultRating(correctCount, total);
         const badge = getBadgeLevel(correctCount, total);
         const studentName = studentNameInput?.value?.trim() || profileContext.profileName || "Player";
-
-        const gainedPoints = addRewardPoints(correctCount, total);
+        const reward = calculateGoldReward(correctCount, total);
 
         lastResultData = {
             accountKey: profileContext.accountKey,
@@ -974,6 +1021,9 @@ function showEndScreen() {
             modeLabel: getModeLabel(mode),
             tableInfoLabel: getTableInfoLabel(),
             dateLabel: getCurrentDateLabel(),
+            availableGold: reward.availableGold,
+            earnedGold: reward.earnedGold,
+            accuracyPercent: reward.accuracyPercent,
             results: [...questionResults]
         };
 
@@ -985,10 +1035,14 @@ function showEndScreen() {
         hasCompletedRun = true;
         hasPersistedCurrentAttempt = true;
 
+        showGoldToast(`You got ${formatGold(reward.earnedGold)} gold!`, false, 2400);
+        await new Promise((resolve) => window.setTimeout(resolve, 2400));
+        const walletGold = addGoldToWallet(reward.earnedGold);
+
         if (cloudSaveStatusEl) {
             cloudSaveStatusEl.innerText = getSessionMode() === "guest"
-                ? `Guest mode: cloud save is disabled. You earned ${gainedPoints} points.`
-                : `Cloud save will sync to your account if you are signed in. You earned ${gainedPoints} points.`;
+                ? `Guest mode: cloud save is disabled. From ${formatGold(reward.availableGold)} available gold, you earned ${formatGold(reward.earnedGold)} (${reward.accuracyPercent.toFixed(1)}%). Wallet gold: ${formatGold(walletGold)}.`
+                : `From ${formatGold(reward.availableGold)} available gold, you earned ${formatGold(reward.earnedGold)} (${reward.accuracyPercent.toFixed(1)}%). Wallet gold: ${formatGold(walletGold)}. Cloud save will sync to your account.`;
             cloudSaveStatusEl.classList.remove("save-status-error");
         }
 
@@ -1484,6 +1538,9 @@ if (studentNameInput) {
 if (studentNameInput) {
     studentNameInput.value = getCurrentProfileContext().profileName || "";
 }
+
+updateTaskGoldInfo();
+showGoldToast(`Available gold for this task: ${formatGold(getAvailableGoldForTask())}`, false, 2000);
 
 // Initial display setup
 if (endScreen) endScreen.classList.add("hidden");
