@@ -569,23 +569,30 @@
         return value;
     }
 
+    function toWholePoints(value) {
+        return Math.max(0, Math.round(Number(value) || 0));
+    }
+
     function getPoints(options = {}) {
-        return Math.max(0, Number(localStorage.getItem(getScopedStorageKey("pointsBalance", options)) || DEFAULT_POINTS));
+        const scopedKey = getScopedStorageKey("pointsBalance", options);
+        const current = toWholePoints(localStorage.getItem(scopedKey));
+        localStorage.setItem(scopedKey, String(current));
+        return current;
     }
 
     function setPoints(value, options = {}) {
-        const safeValue = Math.max(0, Number(value) || 0);
+        const safeValue = toWholePoints(value);
         localStorage.setItem(getScopedStorageKey("pointsBalance", options), String(safeValue));
         return safeValue;
     }
 
     function addPoints(amount, options = {}) {
-        const safeAmount = Math.max(0, Number(amount) || 0);
+        const safeAmount = toWholePoints(amount);
         return setPoints(getPoints(options) + safeAmount, options);
     }
 
     function spendPoints(amount, options = {}) {
-        const safeAmount = Math.max(0, Number(amount) || 0);
+        const safeAmount = toWholePoints(amount);
         const balance = getPoints(options);
         if (balance < safeAmount) return false;
         setPoints(balance - safeAmount, options);

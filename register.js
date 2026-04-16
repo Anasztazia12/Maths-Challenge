@@ -386,6 +386,25 @@ async function sendEmailNotification(email, subject, message) {
     console.log(`Email sent to ${email}: ${subject} - ${message}`);
 }
 
+function waitForAuthUser(timeoutMs = 1500) {
+    if (!firebaseReady || !auth) return Promise.resolve(null);
+    if (auth.currentUser) return Promise.resolve(auth.currentUser);
+
+    return new Promise((resolve) => {
+        let unsubscribe = null;
+        const timeoutId = setTimeout(() => {
+            if (unsubscribe) unsubscribe();
+            resolve(auth.currentUser || null);
+        }, timeoutMs);
+
+        unsubscribe = onAuthStateChanged(auth, (user) => {
+            clearTimeout(timeoutId);
+            if (unsubscribe) unsubscribe();
+            resolve(user || null);
+        });
+    });
+}
+
 // ===== Avatar Functions =====
 
 function getAvatarBaseImageSources(avatarTypeId) {
@@ -667,6 +686,9 @@ function renderProfileUi(accountState) {
 
 function openResultsPanel() {
     resultsPanelEl?.classList.remove("hidden");
+    if (resultsListEl) {
+        resultsListEl.innerHTML = "<p class='results-empty'>Loading results...</p>";
+    }
     loadProfileResults();
 }
 
@@ -779,8 +801,10 @@ async function loadProfileResults() {
     const profileStore = getProfileStore();
     if (!profileStore) return;
 
-    if (firebaseReady && auth?.currentUser) {
-        await syncAuthDataFromCloud(profileStore, auth.currentUser);
+    const currentUser = await waitForAuthUser();
+
+    if (firebaseReady && currentUser) {
+        await syncAuthDataFromCloud(profileStore, currentUser);
     }
 
     const history = profileStore.getProfileHistory();

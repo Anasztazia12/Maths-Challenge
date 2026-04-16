@@ -17,7 +17,7 @@
     function getGoldValue(profileStore) {
         const localGold = Math.max(0, Number(localStorage.getItem(getScopedKey("arcadeCoins")) || 0));
         const profileGold = Math.max(0, Number(profileStore?.getPoints?.() || 0));
-        return Math.max(localGold, profileGold);
+        return Math.max(0, Math.round(Math.max(localGold, profileGold)));
     }
 
     function ensureWidget() {

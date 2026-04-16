@@ -150,27 +150,7 @@ function buildFigureHtml(profile, sizeClass = "large") {
     const poseClass = avatar?.avatarType ? `pose-${avatar.avatarType}` : "";
 
     if (hasBaseImage) {
-        return `<div class="avatar-figure ${sizeClass} ${poseClass}" style="--avatar-bg:${bgStyle};--avatar-skin:${skinColor};--avatar-hair:${hairColorValue};--avatar-eye:${eyeColorValue};">
-            <div class="avatar-figure-bg"></div>
-            ${baseImage}
-            <div class="avatar-skin-tint" aria-hidden="true"></div>
-            <div class="avatar-photo-hair" aria-hidden="true"></div>
-            <div class="avatar-photo-eyes" aria-hidden="true">
-                <span class="avatar-photo-eye-dot"></span>
-                <span class="avatar-photo-eye-dot"></span>
-            </div>
-            ${hatLabel && hatLabel !== "None"
-                ? (hatImageSources.length > 0
-                    ? `<div class="avatar-hat avatar-hat-image-wrap">${buildImageWithFallback(hatImageSources, "avatar-hat-image", hat?.label || "Hat")}</div>`
-                    : `<div class="avatar-hat">${hatLabel}</div>`)
-                : ""}
-            ${glassesLabel && glassesLabel !== "None"
-                ? (glassesImageSources.length > 0
-                    ? `<div class="avatar-glasses avatar-glasses-image-wrap">${buildImageWithFallback(glassesImageSources, "avatar-glasses-image", glasses?.label || "Sunglasses")}</div>`
-                    : `<div class="avatar-glasses">${glassesLabel}</div>`)
-                : ""}
-            ${accessoryLabel && accessoryLabel !== "None" ? `<div class="avatar-photo-accessory">${accessoryLabel}</div>` : ""}
-        </div>`;
+        return `<div class="avatar-figure ${sizeClass} ${poseClass}" style="--avatar-bg:${bgStyle};"><div class="avatar-figure-bg"></div>${baseImage}</div>`;
     }
     return `<div class="avatar-figure ${sizeClass} ${poseClass}" style="--avatar-bg:${bgStyle};--avatar-skin:${skinColor};--avatar-outfit:${outfitColor};--avatar-hair:${hairColorValue};--avatar-eye:${eyeColorValue};">
         <div class="avatar-figure-bg"></div>

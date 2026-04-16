@@ -353,9 +353,7 @@ function getCertificateHeadline(correctCount, totalCount, rating) {
 }
 
 function formatGold(value) {
-    const safe = Math.max(0, Number(value) || 0);
-    if (Math.abs(safe - Math.round(safe)) < 0.0001) return String(Math.round(safe));
-    return safe.toFixed(1);
+    return String(Math.max(0, Math.round(Number(value) || 0)));
 }
 
 function getAvailableGoldForTask() {
@@ -377,7 +375,7 @@ function calculateGoldReward(correctCount, totalCount) {
     const rawEarned = earnsFullGold
         ? availableGold
         : (availableGold * accuracyPercent) / 100;
-    const earnedGold = Math.max(0, Math.round(rawEarned * 10) / 10);
+    const earnedGold = Math.max(0, Math.round(rawEarned));
 
     return {
         availableGold,
@@ -412,17 +410,17 @@ function showGoldToast(message, isError = false, durationMs = 2300) {
 
 function addGoldToWallet(amount) {
     const profileStore = getProfileStore();
-    const gained = Math.max(0, Math.round((Number(amount) || 0) * 10) / 10);
+    const gained = Math.max(0, Math.round(Number(amount) || 0));
 
     if (!profileStore) {
-        const current = Math.max(0, Number(localStorage.getItem(getScopedStorageKey("arcadeCoins")) || 0));
-        const next = Math.round((current + gained) * 10) / 10;
+        const current = Math.max(0, Math.round(Number(localStorage.getItem(getScopedStorageKey("arcadeCoins")) || 0)));
+        const next = current + gained;
         localStorage.setItem(getScopedStorageKey("arcadeCoins"), String(next));
         return next;
     }
 
     profileStore.addPoints(gained);
-    const nextPoints = Math.round((Number(profileStore.getPoints()) || 0) * 10) / 10;
+    const nextPoints = Math.max(0, Math.round(Number(profileStore.getPoints()) || 0));
     localStorage.setItem(getScopedStorageKey("arcadeCoins"), String(nextPoints));
     return nextPoints;
 }
