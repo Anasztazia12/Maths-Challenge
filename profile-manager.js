@@ -248,6 +248,8 @@
             { id: "type-photo-6", label: "Photo Avatar 6", glyph: "Avatar 6", cost: 0 },
             { id: "type-photo-7", label: "Photo Avatar 7", glyph: "Avatar 7", cost: 0 },
             { id: "type-photo-8", label: "Photo Avatar 8", glyph: "Avatar 8", cost: 0 },
+            { id: "type-photo-9", label: "Photo Avatar 9", glyph: "Avatar 9", cost: 50 },
+            { id: "type-photo-10", label: "Photo Avatar 10", glyph: "Avatar 10", cost: 65 },
             { id: "type-girl", label: "Girl", glyph: "Girl", cost: 0 },
             { id: "type-boy", label: "Boy", glyph: "Boy", cost: 10 },
             { id: "type-dog", label: "Dog", glyph: "Dog", cost: 40 }
@@ -334,7 +336,13 @@
             { id: "bg-aurora", label: "Aurora", color: "radial-gradient(circle at 20% 20%,rgba(255,255,255,0.6) 0 3px,transparent 4px),radial-gradient(circle at 70% 30%,rgba(255,255,255,0.6) 0 2px,transparent 3px),linear-gradient(135deg,#34d399 0%,#06b6d4 40%,#8b5cf6 100%)", cost: 55 },
             { id: "bg-confetti", label: "Confetti", color: "repeating-radial-gradient(circle at 20% 20%,rgba(255,255,255,0.9) 0 2px,transparent 3px 14px),linear-gradient(135deg,#f472b6 0%,#fb7185 45%,#f59e0b 100%)", cost: 45 },
             { id: "bg-dots", label: "Polka Dots", color: "radial-gradient(circle at 15% 20%,rgba(255,255,255,0.88) 0 2px,transparent 3px),radial-gradient(circle at 55% 60%,rgba(255,255,255,0.88) 0 2px,transparent 3px),linear-gradient(135deg,#f9a8d4 0%,#c084fc 100%)", cost: 35 },
-            { id: "bg-stripes", label: "Candy Stripes", color: "repeating-linear-gradient(45deg,rgba(255,255,255,0.3) 0 10px,rgba(255,255,255,0) 10px 20px),linear-gradient(135deg,#fde68a 0%,#f97316 100%)", cost: 35 }
+            { id: "bg-stripes", label: "Candy Stripes", color: "repeating-linear-gradient(45deg,rgba(255,255,255,0.3) 0 10px,rgba(255,255,255,0) 10px 20px),linear-gradient(135deg,#fde68a 0%,#f97316 100%)", cost: 35 },
+            { id: "bg-lava", label: "Lava", color: "radial-gradient(circle at 25% 30%,rgba(255,255,255,0.35) 0 8%,transparent 9%),linear-gradient(135deg,#7f1d1d 0%,#dc2626 55%,#f97316 100%)", cost: 55 },
+            { id: "bg-royal", label: "Royal", color: "linear-gradient(145deg,#312e81 0%,#4f46e5 45%,#7c3aed 100%)", cost: 30 },
+            { id: "bg-mint-grid", label: "Mint Grid", color: "repeating-linear-gradient(0deg,rgba(255,255,255,0.22) 0 1px,transparent 1px 18px),repeating-linear-gradient(90deg,rgba(255,255,255,0.22) 0 1px,transparent 1px 18px),linear-gradient(135deg,#34d399 0%,#10b981 100%)", cost: 40 },
+            { id: "bg-night-city", label: "Night City", color: "linear-gradient(180deg,#0f172a 0%,#1e1b4b 55%,#334155 100%)", cost: 45 },
+            { id: "bg-sakura", label: "Sakura", color: "radial-gradient(circle at 18% 28%,rgba(255,255,255,0.8) 0 2px,transparent 3px),radial-gradient(circle at 70% 64%,rgba(255,255,255,0.75) 0 2px,transparent 3px),linear-gradient(135deg,#fecdd3 0%,#f9a8d4 55%,#fb7185 100%)", cost: 35 },
+            { id: "bg-citrus", label: "Citrus", color: "linear-gradient(120deg,#fde047 0%,#f59e0b 40%,#84cc16 100%)", cost: 20 }
         ],
         outfit: [
             { id: "outfit-sky", label: "Sky Hoodie", color: "#38bdf8", cost: 0 },
@@ -674,6 +682,12 @@
         }
         if (avatarTypeId === "type-photo-8") {
             return ["assets/image/avatar8.png"];
+        }
+        if (avatarTypeId === "type-photo-9") {
+            return ["assets/image/avatar9.png"];
+        }
+        if (avatarTypeId === "type-photo-10") {
+            return ["assets/image/avatar10.png"];
         }
         if (avatarTypeId === "type-photo-2") {
             return ["assets/image/avatar2.png"];
