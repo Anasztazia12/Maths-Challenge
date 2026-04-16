@@ -10,7 +10,7 @@ function getScopedKey(baseKey) {
 // Load saved weekly progress (with safe fallback)
 const WEEKLY_TOTAL_TASKS = 10;
 const DAILY_RECOMMENDED = 2;
-const DAILY_MAX = 4;
+const DAILY_MAX = WEEKLY_TOTAL_TASKS;
 
 const savedWeeklyProgress = JSON.parse(localStorage.getItem(getScopedKey("weeklyProgress")) || "null");
 const legacyWeeklyCurrent = Number(localStorage.getItem(getScopedKey("weeklyCurrent")) || 0);
@@ -93,6 +93,7 @@ const trophyPopup = document.getElementById("trophy-popup");
 const trophy = document.getElementById("trophy");
 const weeklyDoneBtn = document.getElementById("weekly-done-btn");
 const weeklyCloseWinBtn = document.getElementById("weekly-close-win-btn");
+const weeklyResultBackBtn = document.getElementById("weekly-result-back-btn");
 const weeklyModalBackdrop = document.getElementById("weekly-modal-backdrop");
 const weeklyResultPanel = document.getElementById("weekly-result-panel");
 const weeklyResultText = document.getElementById("weekly-result-text");
@@ -112,7 +113,7 @@ function syncWeeklyModalState() {
 
 function buildWeeklyResultText() {
     const weekKey = localStorage.getItem(getScopedKey("weeklyWeekKey")) || getCurrentWeekKey();
-    return `Done!! You completed ${weeklyProgress.completed}/${WEEKLY_TOTAL_TASKS} tasks in ${weekKey}. Recommended is ${DAILY_RECOMMENDED} tasks/day (you can do up to ${DAILY_MAX} to work ahead), and next week the challenge resets automatically.`;
+    return `Done!! You completed ${weeklyProgress.completed}/${WEEKLY_TOTAL_TASKS} tasks in ${weekKey}. Recommended is ${DAILY_RECOMMENDED} tasks/day, but you can complete all ${WEEKLY_TOTAL_TASKS} in one day if you want. Next week the challenge resets automatically.`;
 }
 
 function addWeeklyBonusPoints(points) {
@@ -125,7 +126,10 @@ function addWeeklyBonusPoints(points) {
 }
 
 function getDailyBonusTarget(taskCount) {
-    if (taskCount >= 4) return 30;
+    if (taskCount >= 10) return 50;
+    if (taskCount >= 8) return 40;
+    if (taskCount >= 6) return 30;
+    if (taskCount >= 4) return 20;
     if (taskCount >= 2) return 10;
     return 0;
 }
@@ -235,6 +239,12 @@ if (weeklyResultOkBtn) {
     });
 }
 
+if (weeklyResultBackBtn) {
+    weeklyResultBackBtn.addEventListener("click", () => {
+        closeWeeklyResultPanel();
+    });
+}
+
 if (weeklyModalBackdrop) {
     weeklyModalBackdrop.addEventListener("click", () => {
         if (isVisible(weeklyResultPanel)) {
@@ -292,7 +302,7 @@ function startWeeklyTask() {
     }
 
     if(todayCount >= DAILY_MAX) {
-        alert("You already completed 4 tasks today. Come back tomorrow for the next ones!");
+        alert("You already completed all 10 tasks today. Come back tomorrow for the next ones!");
         return;
     }
 

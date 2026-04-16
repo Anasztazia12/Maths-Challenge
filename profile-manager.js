@@ -123,6 +123,44 @@
             }
         },
         {
+            id: "starter-photo-seven",
+            name: "Photo Avatar 7",
+            avatar: {
+                avatarType: "type-photo-7",
+                eye: "eyes-classic",
+                eyeColor: "eye-color-blue",
+                nose: "nose-small",
+                mouth: "mouth-smile",
+                skin: "skin-peach",
+                hairColor: "hair-color-brown",
+                hairLength: "hair-length-none",
+                hat: "hat-none",
+                glasses: "glasses-none",
+                accessory: "acc-none",
+                background: "bg-sky",
+                outfit: "outfit-sky"
+            }
+        },
+        {
+            id: "starter-photo-eight",
+            name: "Photo Avatar 8",
+            avatar: {
+                avatarType: "type-photo-8",
+                eye: "eyes-happy",
+                eyeColor: "eye-color-green",
+                nose: "nose-button",
+                mouth: "mouth-grin",
+                skin: "skin-golden",
+                hairColor: "hair-color-black",
+                hairLength: "hair-length-none",
+                hat: "hat-none",
+                glasses: "glasses-none",
+                accessory: "acc-none",
+                background: "bg-neon",
+                outfit: "outfit-violet"
+            }
+        },
+        {
             id: "starter-girl",
             name: "Girl Starter",
             avatar: {
@@ -208,6 +246,8 @@
             { id: "type-photo-4", label: "Photo Avatar 4", glyph: "Avatar 4", cost: 0 },
             { id: "type-photo-5", label: "Photo Avatar 5", glyph: "Avatar 5", cost: 0 },
             { id: "type-photo-6", label: "Photo Avatar 6", glyph: "Avatar 6", cost: 0 },
+            { id: "type-photo-7", label: "Photo Avatar 7", glyph: "Avatar 7", cost: 0 },
+            { id: "type-photo-8", label: "Photo Avatar 8", glyph: "Avatar 8", cost: 0 },
             { id: "type-girl", label: "Girl", glyph: "Girl", cost: 0 },
             { id: "type-boy", label: "Boy", glyph: "Boy", cost: 10 },
             { id: "type-dog", label: "Dog", glyph: "Dog", cost: 40 }
@@ -636,6 +676,12 @@
         }
         if (avatarTypeId === "type-photo-6") {
             return ["assets/image/avatar6.png"];
+        }
+        if (avatarTypeId === "type-photo-7") {
+            return ["assets/image/avatar7.png"];
+        }
+        if (avatarTypeId === "type-photo-8") {
+            return ["assets/image/avatar8.png"];
         }
         return [];
     }
