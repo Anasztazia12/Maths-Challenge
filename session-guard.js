@@ -26,6 +26,17 @@ function ensureSessionBadge() {
     badge.dataset.mode = mode;
     badge.innerText = mode === "guest" ? "Guest mode" : "Signed in";
     document.body.appendChild(badge);
+
+    // Keep auth badge briefly visible, then remove so it does not cover UI controls on mobile.
+    if (mode === "auth") {
+        window.setTimeout(() => {
+            if (!badge.isConnected) return;
+            badge.classList.add("session-badge-fade");
+            window.setTimeout(() => {
+                if (badge.isConnected) badge.remove();
+            }, 450);
+        }, 10000);
+    }
 }
 
 function ensureProfileContext() {

@@ -206,7 +206,7 @@ h1 {
 .player-corner-widget {
     position: fixed;
     top: 10px;
-    right: 10px;
+    left: 10px;
     z-index: 31;
     width: 120px;
     padding: 6px;
@@ -865,9 +865,81 @@ h1 {
     filter: drop-shadow(0 6px 14px rgba(2, 8, 23, 0.35));
 }
 
+.avatar-skin-tint {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    background: var(--avatar-skin);
+    opacity: 0.12;
+    mix-blend-mode: multiply;
+    pointer-events: none;
+}
+
+.avatar-photo-hair {
+    position: absolute;
+    z-index: 4;
+    top: 4%;
+    left: 14%;
+    right: 14%;
+    height: 12%;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--avatar-hair) 86%, #111827 14%);
+    box-shadow: 0 2px 8px rgba(2, 8, 23, 0.25);
+    pointer-events: none;
+}
+
+.avatar-photo-eyes {
+    position: absolute;
+    z-index: 4;
+    top: 38%;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 16px;
+    pointer-events: none;
+}
+
+.avatar-photo-eye-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--avatar-eye);
+    border: 1px solid rgba(255, 255, 255, 0.75);
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.45);
+}
+
+.avatar-photo-accessory {
+    position: absolute;
+    z-index: 5;
+    left: 50%;
+    bottom: 7%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    font-weight: 800;
+    color: #0f172a;
+    background: rgba(255, 255, 255, 0.88);
+    border-radius: 999px;
+    padding: 2px 8px;
+    pointer-events: none;
+}
+
 .avatar-figure.small .avatar-base-image {
     width: 76%;
     bottom: 8px;
+}
+
+.avatar-figure.small .avatar-photo-eyes {
+    gap: 10px;
+}
+
+.avatar-figure.small .avatar-photo-eye-dot {
+    width: 6px;
+    height: 6px;
+}
+
+.avatar-figure.small .avatar-photo-accessory {
+    font-size: 9px;
+    padding: 2px 6px;
 }
 
 .avatar-eyes,
@@ -1055,6 +1127,13 @@ h1 {
     gap: 8px;
 }
 
+#shop-preset-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+}
+
 .shop-category-card {
     padding: 8px;
     border-radius: 10px;
@@ -1149,6 +1228,22 @@ h1 {
     line-height: 1;
 }
 
+.shop-corner-avatar .avatar-figure {
+    width: 100%;
+    min-height: auto;
+    aspect-ratio: 1 / 1;
+}
+
+.shop-corner-avatar .avatar-base-image {
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-height: none;
+    transform: none;
+    object-fit: contain;
+    padding: 6px;
+}
+
 .session-badge {
     position: fixed;
     top: 14px;
@@ -1162,6 +1257,12 @@ h1 {
     color: #0f172a;
     background: linear-gradient(90deg, #fef08a, #facc15);
     box-shadow: 0 10px 22px rgba(15, 23, 42, 0.25);
+}
+
+.session-badge.session-badge-fade {
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
 }
 
 .session-badge[data-mode="guest"] {
@@ -2685,7 +2786,7 @@ body.bg-home #end-screen {
     .player-corner-widget {
         width: 106px;
         top: 8px;
-        right: 8px;
+        left: 8px;
     }
 
     .player-corner-avatar {

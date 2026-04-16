@@ -79,7 +79,11 @@ function getVisibleCatalogItems(category) {
 
 function getVisiblePresets() {
     const profileStore = getProfileStore();
-    return (profileStore?.AVATAR_PRESETS || []).filter((preset) => !HIDDEN_PRESET_IDS.has(preset.id));
+    return (profileStore?.AVATAR_PRESETS || []).filter((preset) => {
+        if (HIDDEN_PRESET_IDS.has(preset.id)) return false;
+        if (preset?.avatar?.avatarType === "type-girl") return false;
+        return true;
+    });
 }
 
 function getAvatarBaseImageSources(avatarTypeId) {
@@ -146,7 +150,27 @@ function buildFigureHtml(profile, sizeClass = "large") {
     const poseClass = avatar?.avatarType ? `pose-${avatar.avatarType}` : "";
 
     if (hasBaseImage) {
-        return `<div class="avatar-figure ${sizeClass} ${poseClass}" style="--avatar-bg:${bgStyle};"><div class="avatar-figure-bg"></div>${baseImage}</div>`;
+        return `<div class="avatar-figure ${sizeClass} ${poseClass}" style="--avatar-bg:${bgStyle};--avatar-skin:${skinColor};--avatar-hair:${hairColorValue};--avatar-eye:${eyeColorValue};">
+            <div class="avatar-figure-bg"></div>
+            ${baseImage}
+            <div class="avatar-skin-tint" aria-hidden="true"></div>
+            <div class="avatar-photo-hair" aria-hidden="true"></div>
+            <div class="avatar-photo-eyes" aria-hidden="true">
+                <span class="avatar-photo-eye-dot"></span>
+                <span class="avatar-photo-eye-dot"></span>
+            </div>
+            ${hatLabel && hatLabel !== "None"
+                ? (hatImageSources.length > 0
+                    ? `<div class="avatar-hat avatar-hat-image-wrap">${buildImageWithFallback(hatImageSources, "avatar-hat-image", hat?.label || "Hat")}</div>`
+                    : `<div class="avatar-hat">${hatLabel}</div>`)
+                : ""}
+            ${glassesLabel && glassesLabel !== "None"
+                ? (glassesImageSources.length > 0
+                    ? `<div class="avatar-glasses avatar-glasses-image-wrap">${buildImageWithFallback(glassesImageSources, "avatar-glasses-image", glasses?.label || "Sunglasses")}</div>`
+                    : `<div class="avatar-glasses">${glassesLabel}</div>`)
+                : ""}
+            ${accessoryLabel && accessoryLabel !== "None" ? `<div class="avatar-photo-accessory">${accessoryLabel}</div>` : ""}
+        </div>`;
     }
     return `<div class="avatar-figure ${sizeClass} ${poseClass}" style="--avatar-bg:${bgStyle};--avatar-skin:${skinColor};--avatar-outfit:${outfitColor};--avatar-hair:${hairColorValue};--avatar-eye:${eyeColorValue};">
         <div class="avatar-figure-bg"></div>
@@ -190,7 +214,7 @@ function renderAvatarPreview(profile) {
     }
 
     if (cornerAvatarEl) {
-        cornerAvatarEl.innerHTML = `<div class="shop-corner-title">Selected Avatar</div>${buildFigureHtml(profile, "small")}`;
+        cornerAvatarEl.innerHTML = `<div class="shop-corner-title">Selected Avatar</div>${buildFigureHtml(profile, "large")}`;
     }
 }
 
