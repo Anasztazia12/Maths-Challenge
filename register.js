@@ -131,6 +131,110 @@ function showTransientAuthBadge() {
     }, 2800);
 }
 
+function isDefaultProfileName(name, index = 0) {
+    const trimmedName = String(name || "").trim();
+    if (!trimmedName) return true;
+
+    const normalizedName = trimmedName.toLowerCase();
+    if (normalizedName === "player" || normalizedName === "guest") return true;
+
+    return normalizedName === `profile ${index + 1}` || normalizedName === `profile${index + 1}`;
+}
+
+function mergePreferredProfileNames(baseState, preferredState) {
+    if (!baseState || !Array.isArray(baseState.profiles)) return baseState;
+    if (!preferredState || !Array.isArray(preferredState.profiles)) return baseState;
+
+    const mergedProfiles = baseState.profiles.map((profile, index) => {
+        const preferredProfile = preferredState.profiles[index];
+        const preferredName = String(preferredProfile?.name || "").trim();
+        if (!isDefaultProfileName(preferredName, index)) {
+            return {
+                ...profile,
+                name: preferredName
+            };
+        }
+
+        return profile;
+    });
+
+    return {
+        ...baseState,
+        profiles: mergedProfiles
+    };
+}
+
+function openProfileNameDialog(initialName, onSave) {
+    const existingDialog = document.getElementById("profile-name-dialog");
+    if (existingDialog) existingDialog.remove();
+
+    const overlay = document.createElement("div");
+    overlay.id = "profile-name-dialog";
+    overlay.style.cssText = "position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(2,6,23,0.72);backdrop-filter:blur(8px);";
+
+    const panel = document.createElement("div");
+    panel.style.cssText = "width:min(92vw,380px);border-radius:18px;padding:18px 16px 16px;background:rgba(15,23,42,0.96);border:1px solid rgba(186,230,253,0.22);box-shadow:0 24px 50px rgba(2,8,23,0.5);color:#e2e8f0;";
+
+    panel.innerHTML = `
+        <div style="font-size:18px;font-weight:900;margin-bottom:8px;">Edit profile name</div>
+        <div style="font-size:13px;line-height:1.4;color:#cbd5e1;margin-bottom:12px;">Choose the name shown in your profile and game screens.</div>
+        <input id="profile-name-dialog-input" type="text" autocomplete="nickname" maxlength="24" style="width:100%;box-sizing:border-box;border-radius:12px;border:1px solid rgba(148,163,184,0.35);background:rgba(15,23,42,0.9);color:#f8fafc;padding:12px 14px;font-size:15px;outline:none;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;">
+            <button id="profile-name-dialog-cancel" type="button" class="menu-btn" style="margin-top:0;">Cancel</button>
+            <button id="profile-name-dialog-save" type="button" class="menu-btn special" style="margin-top:0;">Save</button>
+        </div>
+    `;
+
+    overlay.appendChild(panel);
+    document.body.appendChild(overlay);
+
+    const input = panel.querySelector("#profile-name-dialog-input");
+    const cancelBtn = panel.querySelector("#profile-name-dialog-cancel");
+    const saveBtn = panel.querySelector("#profile-name-dialog-save");
+
+    input.value = String(initialName || "").trim();
+    if (!input.value) input.value = "Player";
+
+    const closeDialog = () => {
+        overlay.remove();
+        document.removeEventListener("keydown", handleKeyDown);
+    };
+
+    const handleKeyDown = (event) => {
+        if (event.key === "Escape") {
+            closeDialog();
+        }
+        if (event.key === "Enter") {
+            event.preventDefault();
+            saveBtn.click();
+        }
+    };
+
+    cancelBtn.addEventListener("click", closeDialog);
+    overlay.addEventListener("click", (event) => {
+        if (event.target === overlay) closeDialog();
+    });
+    saveBtn.addEventListener("click", async () => {
+        const nextName = input.value.trim();
+        if (!nextName) {
+            setStatusMessage(authStatusEl, "Profile name is required.", true);
+            input.focus();
+            return;
+        }
+
+        try {
+            await onSave(nextName);
+            closeDialog();
+        } catch (error) {
+            setStatusMessage(authStatusEl, error?.message || "Profile name update failed.", true);
+        }
+    });
+
+    document.addEventListener("keydown", handleKeyDown);
+    window.setTimeout(() => input.focus(), 0);
+    window.setTimeout(() => input.select(), 0);
+}
+
 function showStartPanel() {
     startPanelEl?.classList.remove("hidden");
     menuPanelEl?.classList.add("hidden");
@@ -296,6 +400,11 @@ async function saveAccountStateToCloud(user, accountState) {
     if (!firebaseReady || !db || !user?.uid || !accountState) return;
 
     const primaryName = accountState.profiles?.[0]?.name || "Player";
+    const activeProfileId = accountState.activeProfileId || accountState.profiles?.[0]?.id || "";
+    const profileStore = getProfileStore();
+    const pointsBalance = profileStore && activeProfileId
+        ? Math.max(0, Math.round(Number(profileStore.getPoints({ accountKey: user.uid, profileId: activeProfileId })) || 0))
+        : 0;
 
     await setDoc(
         doc(db, "users", user.uid, "profile", "main"),
@@ -304,11 +413,24 @@ async function saveAccountStateToCloud(user, accountState) {
             email: user.email || accountState.email || "",
             username: primaryName,
             accountState,
+            pointsBalance,
             updatedAt: serverTimestamp(),
             lastLoginAt: serverTimestamp()
         },
         { merge: true }
     );
+}
+
+function getLegacyProfileIdsForSync(userUid, activeProfileId) {
+    const ids = new Set([
+        String(activeProfileId || "").trim(),
+        `${userUid}-profile-1`,
+        "profile-1",
+        "guest-profile-1"
+    ]);
+
+    ids.delete("");
+    return [...ids];
 }
 
 async function loadCloudResults(user, profileId) {
@@ -357,6 +479,8 @@ async function loadCloudResults(user, profileId) {
 async function syncAuthDataFromCloud(profileStore, user) {
     if (!profileStore || !user?.uid) return null;
 
+    const hadLocalStateBeforeSync = Boolean(localStorage.getItem(profileStore.getAccountStorageKey(user.uid)));
+
     let state = profileStore.loadAccountState(user.uid, {
         accountKey: user.uid,
         email: user.email || "",
@@ -372,13 +496,16 @@ async function syncAuthDataFromCloud(profileStore, user) {
         if (cloudData?.accountState && typeof cloudData.accountState === "object") {
             const localUpdatedAt = toMillis(state.updatedAt);
             const cloudUpdatedAt = toMillis(cloudData.accountState.updatedAt) || toMillis(cloudData.updatedAt);
+            const cloudState = {
+                ...cloudData.accountState,
+                accountKey: user.uid,
+                email: user.email || cloudData.email || state.email || ""
+            };
 
-            if (cloudUpdatedAt > localUpdatedAt) {
-                state = profileStore.setAccountState({
-                    ...cloudData.accountState,
-                    accountKey: user.uid,
-                    email: user.email || cloudData.email || state.email || ""
-                });
+            const shouldPreferCloud = !hadLocalStateBeforeSync || cloudUpdatedAt >= localUpdatedAt;
+
+            if (shouldPreferCloud) {
+                state = profileStore.setAccountState(mergePreferredProfileNames(cloudState, state));
             }
         } else if (cloudData?.username && state.profiles?.[0] && (!state.profiles[0].name || state.profiles[0].name === "Player")) {
             state = profileStore.setProfileName(String(cloudData.username).trim(), state, state.profiles[0].id);
@@ -386,7 +513,18 @@ async function syncAuthDataFromCloud(profileStore, user) {
 
         const activeProfileId = state.activeProfileId || state.profiles?.[0]?.id;
         if (activeProfileId) {
-            const cloudResults = await loadCloudResults(user, activeProfileId);
+            const profileIdsToCheck = getLegacyProfileIdsForSync(user.uid, activeProfileId);
+            let cloudResults = [];
+
+            for (const profileId of profileIdsToCheck) {
+                try {
+                    const resultSlice = await loadCloudResults(user, profileId);
+                    cloudResults = mergeUniqueResults(cloudResults, resultSlice, 300);
+                } catch (error) {
+                    console.warn("Cloud results read failed for profile", profileId, error);
+                }
+            }
+
             const localResults = profileStore.getProfileHistory({
                 accountKey: user.uid,
                 profileId: activeProfileId
@@ -396,6 +534,22 @@ async function syncAuthDataFromCloud(profileStore, user) {
                 accountKey: user.uid,
                 profileId: activeProfileId
             });
+
+            const cloudPoints = Math.max(0, Math.round(Number(cloudData?.pointsBalance) || 0));
+            const localPoints = Math.max(0, Math.round(Number(profileStore.getPoints({
+                accountKey: user.uid,
+                profileId: activeProfileId
+            })) || 0));
+            const mergedPoints = Math.max(localPoints, cloudPoints);
+
+            profileStore.setPoints(mergedPoints, {
+                accountKey: user.uid,
+                profileId: activeProfileId
+            });
+            localStorage.setItem(
+                profileStore.getScopedStorageKey("arcadeCoins", { accountKey: user.uid, profileId: activeProfileId }),
+                String(mergedPoints)
+            );
         }
 
         await saveAccountStateToCloud(user, state);
@@ -748,25 +902,30 @@ function setResultsFilter(filter) {
 }
 
 function openEditProfileNameDialog() {
-    const profileName = prompt("Enter new profile name:");
-    if (profileName && profileName.trim()) {
-        const profileStore = getProfileStore();
-        if (!profileStore) return;
-        
-        const accountState = profileStore.loadAccountState();
-        const activeProfileId = accountState.activeProfileId || accountState.profiles?.[0]?.id || null;
-        const updated = profileStore.setProfileName(profileName.trim(), accountState, activeProfileId);
+    const profileStore = getProfileStore();
+    if (!profileStore) return;
+
+    const accountKey = auth?.currentUser?.uid || profileStore.getActiveAccountKey();
+    if (accountKey) {
+        profileStore.setActiveAccountKey(accountKey);
+    }
+
+    const accountState = profileStore.loadAccountState(accountKey);
+    const activeProfile = profileStore.getActiveProfile(accountState)?.activeProfile;
+    const currentName = activeProfile?.name || "Player";
+
+    openProfileNameDialog(currentName, async (nextName) => {
+        const updated = profileStore.setProfileName(nextName, accountState, activeProfile?.id || accountState.activeProfileId || null);
         renderProfileUi(updated);
 
         if (firebaseReady && auth?.currentUser) {
-            saveAccountStateToCloud(auth.currentUser, updated)
-                .then(() => setStatusMessage(authStatusEl, "Profile name updated and synced!", false))
-                .catch(() => setStatusMessage(authStatusEl, "Profile name updated locally, cloud sync failed.", true));
+            await saveAccountStateToCloud(auth.currentUser, updated);
+            setStatusMessage(authStatusEl, "Profile name updated and synced!", false);
             return;
         }
 
         setStatusMessage(authStatusEl, "Profile name updated!", false);
-    }
+    });
 }
 
 function runMenuAction(action) {

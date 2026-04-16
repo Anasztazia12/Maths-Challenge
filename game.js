@@ -101,6 +101,38 @@ function getCurrentProfileContext() {
     return profileStore.getCurrentProfileContext();
 }
 
+function getStableAuthProfileContext(user) {
+    const profileStore = getProfileStore();
+    if (!profileStore || !user?.uid) {
+        return getCurrentProfileContext();
+    }
+
+    profileStore.setActiveAccountKey(user.uid);
+    const state = profileStore.loadAccountState(user.uid, {
+        accountKey: user.uid,
+        email: user.email || "",
+        profileCount: 1,
+        profileNames: ["Player"]
+    });
+    const context = profileStore.getActiveProfile(state);
+
+    return {
+        accountKey: context.accountKey,
+        activeProfileId: context.activeProfileId,
+        profileName: context.profileName,
+        profileCount: context.profileCount
+    };
+}
+
+async function waitForAuthenticatedUser(auth, timeoutMs = 2500) {
+    const startedAt = Date.now();
+    while (Date.now() - startedAt < timeoutMs) {
+        if (auth?.currentUser) return auth.currentUser;
+        await new Promise((resolve) => window.setTimeout(resolve, 150));
+    }
+    return auth?.currentUser || null;
+}
+
 function getScopedStorageKey(baseKey) {
     const profileStore = getProfileStore();
     if (!profileStore) return baseKey;
@@ -408,9 +440,27 @@ function showGoldToast(message, isError = false, durationMs = 2300) {
     }, Math.max(600, durationMs));
 }
 
-function addGoldToWallet(amount) {
+async function addGoldToWallet(amount) {
     const profileStore = getProfileStore();
     const gained = Math.max(0, Math.round(Number(amount) || 0));
+
+    if (getSessionMode() === "auth") {
+        try {
+            const sdk = await getCloudSaveSdk();
+            const user = sdk?.auth ? await waitForAuthenticatedUser(sdk.auth, 1500) : null;
+            if (user?.uid && profileStore) {
+                const context = getStableAuthProfileContext(user);
+                const nextPoints = profileStore.addPoints(gained, {
+                    accountKey: context.accountKey,
+                    profileId: context.activeProfileId
+                });
+                localStorage.setItem(getScopedStorageKey("arcadeCoins"), String(nextPoints));
+                return nextPoints;
+            }
+        } catch (error) {
+            console.warn("Auth points scope fallback", error);
+        }
+    }
 
     if (!profileStore) {
         const current = Math.max(0, Math.round(Number(localStorage.getItem(getScopedStorageKey("arcadeCoins")) || 0)));
@@ -592,7 +642,6 @@ async function getCloudSaveSdk() {
 }
 
 async function saveResultToCloud(data) {
-    const profileContext = getCurrentProfileContext();
     const sessionMode = getSessionMode();
 
     if (sessionMode === "guest") {
@@ -606,11 +655,13 @@ async function saveResultToCloud(data) {
         return;
     }
 
-    const user = sdk.auth.currentUser;
+    const user = await waitForAuthenticatedUser(sdk.auth, 3000);
     if (!user) {
         setCloudSaveStatus("Sign in to save results to cloud.");
         return;
     }
+
+    const profileContext = getStableAuthProfileContext(user);
 
     try {
         const basePayload = {
@@ -649,6 +700,23 @@ async function saveResultToCloud(data) {
                 },
                 totalQuizzes: sdk.increment(1),
                 totalCorrectAnswers: sdk.increment(data.correctCount || 0)
+            },
+            { merge: true }
+        );
+
+        const profileStore = getProfileStore();
+        const currentPoints = profileStore
+            ? Math.max(0, Math.round(Number(profileStore.getPoints({ accountKey: user.uid, profileId: profileContext.activeProfileId })) || 0))
+            : 0;
+
+        await sdk.setDoc(
+            sdk.doc(sdk.db, "users", user.uid, "profile", "main"),
+            {
+                uid: user.uid,
+                email: user.email || "",
+                username: profileContext.profileName || data.studentName || "Player",
+                pointsBalance: currentPoints,
+                updatedAt: sdk.serverTimestamp()
             },
             { merge: true }
         );
@@ -1035,7 +1103,7 @@ async function showEndScreen() {
 
         showGoldToast(`You got ${formatGold(reward.earnedGold)} gold!`, false, 2400);
         await new Promise((resolve) => window.setTimeout(resolve, 2400));
-        const walletGold = addGoldToWallet(reward.earnedGold);
+        const walletGold = await addGoldToWallet(reward.earnedGold);
 
         if (cloudSaveStatusEl) {
             cloudSaveStatusEl.innerText = getSessionMode() === "guest"
@@ -1044,7 +1112,7 @@ async function showEndScreen() {
             cloudSaveStatusEl.classList.remove("save-status-error");
         }
 
-        saveResultToCloud(lastResultData);
+        await saveResultToCloud(lastResultData);
 
         if (isWeekly) {
             const weeklyResultUrl = `play.html?${replayQuery}&weekly=1&showWeeklyResult=1`;
@@ -1535,6 +1603,23 @@ if (studentNameInput) {
 
 if (studentNameInput) {
     studentNameInput.value = getCurrentProfileContext().profileName || "";
+}
+
+if (getSessionMode() === "auth") {
+    void (async () => {
+        try {
+            const sdk = await getCloudSaveSdk();
+            const user = sdk?.auth ? await waitForAuthenticatedUser(sdk.auth, 2500) : null;
+            if (!user?.uid) return;
+
+            const profileContext = getStableAuthProfileContext(user);
+            if (studentNameInput && (!studentNameInput.value || studentNameInput.value.trim().toLowerCase() === "player")) {
+                studentNameInput.value = profileContext.profileName || "";
+            }
+        } catch (error) {
+            console.warn("Auth profile bootstrap failed", error);
+        }
+    })();
 }
 
 updateTaskGoldInfo();

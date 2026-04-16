@@ -29,7 +29,7 @@
                 </nav>
             </div>
 
-            <p id="home-daily-note" class="subtitle home-daily-note">Your daily 2 tasks are waiting for you in Weekly Challenge ⭐</p>
+            <p id="home-daily-note" class="subtitle home-daily-note">Your Weekly Challenge is ready. Complete up to 10 tasks this week, and you can finish all 10 today if you want ⭐</p>
 
             <div class="menu-buttons home-menu-buttons">
                 <button class="menu-btn home-menu-btn" onclick="location.href='game.html'">Play Game</button>
@@ -67,7 +67,7 @@
     <script src="session-guard.js"></script>
     <script>
         const WEEKLY_TOTAL_TASKS = 10;
-        const DAILY_LIMIT = 2;
+        const DAILY_LIMIT = WEEKLY_TOTAL_TASKS;
 
         function getCurrentDayKey() {
             const now = new Date();
@@ -128,16 +128,16 @@
             }
 
             if (todayCount >= DAILY_LIMIT) {
-                noteEl.innerText = `Great job! Today is done (${todayCount}/${DAILY_LIMIT}). Come back tomorrow for the next tasks.`;
+                noteEl.innerText = `Great job! You completed ${todayCount}/${DAILY_LIMIT} tasks today.`;
                 return;
             }
 
-            if (todayCount === 1) {
-                noteEl.innerText = "You completed 1/2 tasks today. One more is waiting in Weekly Challenge ⭐";
+            if (todayCount > 0) {
+                noteEl.innerText = `You completed ${todayCount}/${DAILY_LIMIT} tasks today. Keep going in Weekly Challenge ⭐`;
                 return;
             }
 
-            noteEl.innerText = "Your weekly challenge is ready. You can do 2 tasks a day, or finish all 10 in one day if you want ⭐";
+            noteEl.innerText = "Your Weekly Challenge is ready. Complete up to 10 tasks this week, and you can finish all 10 today if you want ⭐";
         }
 
         updateHomeDailyNote();

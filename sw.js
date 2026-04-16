@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-04-15-auth-visibility-v4";
+const CACHE_VERSION = "2026-04-16-cloud-sync-fix-v5";
 const CACHE_NAME = `maths-challenge-${CACHE_VERSION}`;
 
 const CORE_ASSETS = [

@@ -113,7 +113,7 @@ function syncWeeklyModalState() {
 
 function buildWeeklyResultText() {
     const weekKey = localStorage.getItem(getScopedKey("weeklyWeekKey")) || getCurrentWeekKey();
-    return `Done!! You completed ${weeklyProgress.completed}/${WEEKLY_TOTAL_TASKS} tasks in ${weekKey}. Recommended is ${DAILY_RECOMMENDED} tasks/day, but you can complete all ${WEEKLY_TOTAL_TASKS} in one day if you want. Next week the challenge resets automatically.`;
+    return `Done!! You completed ${weeklyProgress.completed}/${WEEKLY_TOTAL_TASKS} tasks in ${weekKey}. You can finish all ${WEEKLY_TOTAL_TASKS} tasks in one day if you want. Next week the challenge resets automatically.`;
 }
 
 function addWeeklyBonusPoints(points) {
@@ -166,7 +166,7 @@ function updateProgressUI() {
     const todayCount = Math.max(0, Math.min(DAILY_MAX, Number(weeklyProgress.byDay?.[dayKey] || 0)));
     
     // Weekly progress text
-    if(progressText) progressText.innerText = `Weekly progress: ${completed}/${WEEKLY_TOTAL_TASKS} • Today: ${todayCount}/${DAILY_MAX} (recommended ${DAILY_RECOMMENDED})`;
+    if(progressText) progressText.innerText = `Weekly progress: ${completed}/${WEEKLY_TOTAL_TASKS} • Today: ${todayCount}/${DAILY_MAX}`;
     
     // Star progress (10 tasks = full 100%)
     if(starProgress) {
