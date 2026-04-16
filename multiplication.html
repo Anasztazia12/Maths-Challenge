@@ -35,6 +35,7 @@
                 <button class="menu-btn" id="clear-all-btn" type="button">Clear</button>
             </div>
         </div>
+        <p id="multiplication-status" class="save-status"></p>
 
         <!-- Game mode selection -->
         <div class="section">
@@ -54,8 +55,15 @@
     <script src="hamburger.js"></script>
     <script>
         const tableButtons = document.getElementById("table-buttons");
+        const multiplicationStatusEl = document.getElementById("multiplication-status");
         const selectedTables = new Set();
         const ALL_TABLES = [1,2,3,4,5,6,7,8,9,10,11,12];
+
+        function setMultiplicationStatus(message, isError = false) {
+            if (!multiplicationStatusEl) return;
+            multiplicationStatusEl.innerText = message || "";
+            multiplicationStatusEl.classList.toggle("save-status-error", Boolean(isError));
+        }
 
         function renderTableButtons() {
             tableButtons.innerHTML = "";
@@ -111,10 +119,11 @@
         function startMultiplication() {
             const picked = Array.from(selectedTables).sort((a,b)=>a-b);
             if (picked.length === 0) {
-                alert("Please select at least one times table before starting.");
+                setMultiplicationStatus("Please select at least one number before starting.", true);
                 return;
             }
 
+            setMultiplicationStatus("");
             const diff = "easy";
             const mode = getSelectedMode();
             const timeLimit = getSelectedTimeLimit(mode);

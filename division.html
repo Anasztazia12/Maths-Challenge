@@ -35,6 +35,7 @@
                 <button class="menu-btn" id="clear-all-btn" type="button">Clear</button>
             </div>
         </div>
+        <p id="division-status" class="save-status"></p>
 
         <!-- Game mode selection -->
         <div class="section">
@@ -52,8 +53,15 @@
     <script src="hamburger.js"></script>
     <script>
         const tableButtons = document.getElementById("table-buttons");
+        const divisionStatusEl = document.getElementById("division-status");
         const selectedTables = new Set();
         const ALL_TABLES = [1,2,3,4,5,6,7,8,9,10,11,12];
+
+        function setDivisionStatus(message, isError = false) {
+            if (!divisionStatusEl) return;
+            divisionStatusEl.innerText = message || "";
+            divisionStatusEl.classList.toggle("save-status-error", Boolean(isError));
+        }
 
         function renderTableButtons() {
             tableButtons.innerHTML = "";
@@ -104,6 +112,12 @@
             const diff = "easy";
             const mode = getSelectedMode();
             const picked = Array.from(selectedTables).sort((a,b)=>a-b);
+            if (picked.length === 0) {
+                setDivisionStatus("Please select at least one number before starting.", true);
+                return;
+            }
+
+            setDivisionStatus("");
             const tables = picked.join(",");
 
             location.href = `play.html?mode=${mode}&op=division&diff=${diff}&tables=${tables}`;
