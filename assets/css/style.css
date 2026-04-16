@@ -2368,6 +2368,9 @@ body.bg-home #end-screen {
     border: 1px solid rgba(148, 163, 184, 0.24);
     border-radius: 12px;
     min-width: 200px;
+    max-width: min(92vw, 260px);
+    max-height: min(72vh, 460px);
+    overflow-y: auto;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
     overflow: hidden;
 }
@@ -2776,5 +2779,92 @@ body.bg-home #end-screen {
     .player-corner-avatar {
         width: 62px;
         height: 62px;
+    }
+}
+
+@media (max-width: 520px) {
+    body {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .game-container,
+    body.play-screen .game-container,
+    .shop-container {
+        width: min(96vw, 420px);
+        padding: 12px 10px;
+    }
+
+    h1 {
+        font-size: 22px;
+    }
+
+    .subtitle {
+        font-size: 13px;
+    }
+
+    .hamburger-menu-wrapper {
+        top: 8px;
+        right: 8px;
+    }
+
+    .hamburger-btn {
+        width: 38px;
+        height: 38px;
+    }
+
+    .hamburger-panel {
+        min-width: 180px;
+        max-width: 90vw;
+    }
+
+    .home-menu-buttons {
+        gap: 8px;
+    }
+
+    .home-menu-btn {
+        min-height: 48px;
+        font-size: 15px;
+    }
+
+    .shop-category-tabs {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    #shop-preset-list {
+        gap: 6px;
+    }
+
+    .shop-item-btn {
+        width: 72px;
+        min-height: 64px;
+    }
+
+    .shop-avatar-preview {
+        min-height: 220px;
+    }
+
+    .shop-avatar-preview .avatar-figure {
+        width: min(86vw, 240px);
+    }
+
+    .player-corner-widget {
+        width: 96px;
+        top: calc(46px + env(safe-area-inset-top, 0px));
+        right: 6px;
+    }
+
+    .player-corner-avatar {
+        width: 50px;
+        height: 50px;
+    }
+
+    .player-corner-gold {
+        font-size: 10px;
+    }
+
+    .gold-reward-toast {
+        font-size: 13px;
+        padding: 9px 12px;
     }
 }
