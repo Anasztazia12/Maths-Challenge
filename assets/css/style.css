@@ -40,6 +40,7 @@ body {
     padding-left: 4vw;
     box-sizing: border-box;
     color: white;
+    overflow-x: hidden;
 }
 
 body.modal-open {
@@ -2565,7 +2566,7 @@ body.bg-home #end-screen {
     body {
         align-items: flex-start;
         justify-content: flex-start;
-        padding: 14px 8px 20px 3vw;
+        padding: calc(14px + env(safe-area-inset-top, 0px)) 8px calc(20px + env(safe-area-inset-bottom, 0px)) 3vw;
     }
 
     body.bg-home {
@@ -2672,6 +2673,32 @@ body.bg-home #end-screen {
 
     #trophy {
         font-size: 50px;
+    }
+
+    .player-corner-widget {
+        top: calc(54px + env(safe-area-inset-top, 0px));
+        right: 8px;
+    }
+
+    .player-corner-avatar {
+        width: 56px;
+        height: 56px;
+    }
+
+    .player-corner-gold {
+        font-size: 11px;
+    }
+
+    .task-gold-info {
+        font-size: 12px;
+        margin-top: -2px;
+    }
+
+    .gold-reward-toast {
+        max-width: calc(100vw - 20px);
+        text-align: center;
+        line-height: 1.25;
+        bottom: calc(12px + env(safe-area-inset-bottom, 0px));
     }
 }
 
