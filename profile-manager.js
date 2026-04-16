@@ -323,11 +323,18 @@
             { id: "acc-scarf", label: "Scarf", glyph: "Scarf", cost: 30 }
         ],
         background: [
-            { id: "bg-sky", label: "Sky", color: "linear-gradient(180deg,#bae6fd,#60a5fa)", cost: 0 },
-            { id: "bg-forest", label: "Forest", color: "linear-gradient(180deg,#86efac,#22c55e)", cost: 10 },
-            { id: "bg-sunset", label: "Sunset", color: "linear-gradient(180deg,#fdba74,#f97316)", cost: 20 },
-            { id: "bg-neon", label: "Neon", color: "linear-gradient(180deg,#c4b5fd,#7c3aed)", cost: 30 },
-            { id: "bg-candy", label: "Candy", color: "linear-gradient(180deg,#f9a8d4,#ec4899)", cost: 40 }
+            { id: "bg-sky", label: "Sky", color: "linear-gradient(180deg,#e0f2fe 0%,#60a5fa 100%)", cost: 0 },
+            { id: "bg-forest", label: "Forest", color: "linear-gradient(180deg,#dcfce7 0%,#22c55e 100%)", cost: 10 },
+            { id: "bg-sunset", label: "Sunset", color: "linear-gradient(135deg,#fdba74 0%,#f97316 52%,#ef4444 100%)", cost: 20 },
+            { id: "bg-neon", label: "Neon", color: "repeating-linear-gradient(135deg,rgba(255,255,255,0.24) 0 10px,rgba(255,255,255,0) 10px 20px),linear-gradient(135deg,#c4b5fd 0%,#7c3aed 100%)", cost: 30 },
+            { id: "bg-candy", label: "Candy", color: "radial-gradient(circle at 20% 20%,rgba(255,255,255,0.72) 0 10%,transparent 11%),linear-gradient(135deg,#f9a8d4 0%,#ec4899 100%)", cost: 40 },
+            { id: "bg-rainbow", label: "Rainbow", color: "linear-gradient(90deg,#ef4444 0%,#f59e0b 17%,#facc15 34%,#22c55e 51%,#06b6d4 68%,#3b82f6 84%,#8b5cf6 100%)", cost: 50 },
+            { id: "bg-galaxy", label: "Galaxy", color: "radial-gradient(circle at 15% 20%,rgba(255,255,255,0.85) 0 2px,transparent 3px),radial-gradient(circle at 75% 35%,rgba(255,255,255,0.68) 0 1.5px,transparent 2.5px),linear-gradient(135deg,#0f172a 0%,#312e81 55%,#6d28d9 100%)", cost: 60 },
+            { id: "bg-ocean", label: "Ocean", color: "repeating-linear-gradient(135deg,rgba(255,255,255,0.16) 0 12px,rgba(255,255,255,0) 12px 24px),linear-gradient(180deg,#67e8f9 0%,#0ea5e9 100%)", cost: 25 },
+            { id: "bg-aurora", label: "Aurora", color: "radial-gradient(circle at 20% 20%,rgba(255,255,255,0.6) 0 3px,transparent 4px),radial-gradient(circle at 70% 30%,rgba(255,255,255,0.6) 0 2px,transparent 3px),linear-gradient(135deg,#34d399 0%,#06b6d4 40%,#8b5cf6 100%)", cost: 55 },
+            { id: "bg-confetti", label: "Confetti", color: "repeating-radial-gradient(circle at 20% 20%,rgba(255,255,255,0.9) 0 2px,transparent 3px 14px),linear-gradient(135deg,#f472b6 0%,#fb7185 45%,#f59e0b 100%)", cost: 45 },
+            { id: "bg-dots", label: "Polka Dots", color: "radial-gradient(circle at 15% 20%,rgba(255,255,255,0.88) 0 2px,transparent 3px),radial-gradient(circle at 55% 60%,rgba(255,255,255,0.88) 0 2px,transparent 3px),linear-gradient(135deg,#f9a8d4 0%,#c084fc 100%)", cost: 35 },
+            { id: "bg-stripes", label: "Candy Stripes", color: "repeating-linear-gradient(45deg,rgba(255,255,255,0.3) 0 10px,rgba(255,255,255,0) 10px 20px),linear-gradient(135deg,#fde68a 0%,#f97316 100%)", cost: 35 }
         ],
         outfit: [
             { id: "outfit-sky", label: "Sky Hoodie", color: "#38bdf8", cost: 0 },

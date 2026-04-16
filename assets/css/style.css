@@ -198,7 +198,7 @@ h1 {
     top: 10px;
     left: 10px;
     z-index: 30;
-    width: 112px;
+    width: 124px;
     padding: 4px;
     border-radius: 0;
     background: transparent;
@@ -222,8 +222,8 @@ h1 {
 }
 
 .home-corner-avatar-img {
-    width: 74px;
-    height: 74px;
+    width: 82px;
+    height: 82px;
     object-fit: contain;
     filter: drop-shadow(0 6px 12px rgba(2, 8, 23, 0.35));
 }
@@ -1230,6 +1230,13 @@ h1 {
     gap: 5px;
 }
 
+.shop-item-btn.shop-item-bg {
+    width: 102px;
+    min-height: 92px;
+    gap: 6px;
+    padding: 7px 5px;
+}
+
 .shop-item-btn:hover {
     border-color: rgba(251, 191, 36, 0.75);
 }
@@ -1254,6 +1261,28 @@ h1 {
     border: 1px solid rgba(255, 255, 255, 0.35);
 }
 
+.shop-card-swatch-background {
+    width: 56px;
+    height: 36px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.15), 0 2px 6px rgba(15, 23, 42, 0.2);
+    background-size: cover;
+    background-position: center;
+}
+
+.shop-item-bg-label {
+    font-size: 9px;
+    font-weight: 800;
+    line-height: 1.1;
+    text-align: center;
+    color: #e2e8f0;
+    max-width: 92px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .shop-card-price {
     font-size: 10px;
     font-weight: 800;
@@ -1267,7 +1296,8 @@ h1 {
 }
 
 .shop-item-active .shop-card-price,
-.shop-item-active .shop-card-glyph {
+.shop-item-active .shop-card-glyph,
+.shop-item-active .shop-item-bg-label {
     color: #111827;
 }
 
@@ -2351,15 +2381,15 @@ body.bg-home #end-screen {
     }
 
     .home-corner-avatar {
-        width: 88px;
-        padding: 6px;
+        width: 72px;
+        padding: 4px;
         top: 8px;
         left: 8px;
     }
 
     .home-corner-avatar-img {
-        width: 54px;
-        height: 54px;
+        width: 44px;
+        height: 44px;
     }
 
     .auth-entry-actions {
@@ -2420,6 +2450,24 @@ body.bg-home #end-screen {
 
     .result-tool-buttons {
         gap: 8px;
+    }
+}
+
+@media (min-width: 1100px) {
+    .home-corner-avatar {
+        width: 144px;
+        padding: 6px;
+        top: 12px;
+        left: 12px;
+    }
+
+    .home-corner-avatar-img {
+        width: 94px;
+        height: 94px;
+    }
+
+    .home-corner-avatar-title {
+        font-size: 12px;
     }
 }
 
@@ -2940,6 +2988,21 @@ body.bg-home #end-screen {
     .shop-item-btn {
         width: 72px;
         min-height: 64px;
+    }
+
+    .shop-item-btn.shop-item-bg {
+        width: 94px;
+        min-height: 84px;
+    }
+
+    .shop-card-swatch-background {
+        width: 50px;
+        height: 32px;
+    }
+
+    .shop-item-bg-label {
+        max-width: 84px;
+        font-size: 8px;
     }
 
     .shop-avatar-preview {

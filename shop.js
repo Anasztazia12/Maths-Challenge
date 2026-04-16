@@ -18,6 +18,8 @@ const statusEl = document.getElementById("shop-status");
 
 let activeCategory = null;
 let previewAvatar = null;
+const GUEST_ACCOUNT_KEY = "guest";
+const ACCOUNT_STATE_PREFIX = "mathsAccountState:";
 
 const HIDDEN_AVATAR_TYPE_IDS = new Set(["type-boy", "type-girl", "type-dog"]);
 const HIDDEN_PRESET_IDS = new Set(["starter-boy", "starter-girl", "starter-dog"]);
@@ -54,10 +56,65 @@ function setStatus(message, isError = false) {
     statusEl.classList.toggle("save-status-error", Boolean(isError));
 }
 
+function getSessionMode() {
+    return localStorage.getItem("mathsSessionMode") || "";
+}
+
+function findNonGuestAccountKey(profileStore) {
+    if (!profileStore) return "";
+
+    for (let index = 0; index < localStorage.length; index += 1) {
+        const storageKey = localStorage.key(index) || "";
+        if (!storageKey.startsWith(ACCOUNT_STATE_PREFIX)) continue;
+
+        const encodedAccountKey = storageKey.slice(ACCOUNT_STATE_PREFIX.length);
+        let accountKey = "";
+
+        try {
+            accountKey = decodeURIComponent(encodedAccountKey);
+        } catch {
+            continue;
+        }
+
+        if (!accountKey || accountKey === GUEST_ACCOUNT_KEY) continue;
+
+        const state = profileStore.loadAccountState(accountKey);
+        if (state?.accountKey && state.accountKey !== GUEST_ACCOUNT_KEY) {
+            return state.accountKey;
+        }
+    }
+
+    return "";
+}
+
+function resolveAccountKey(profileStore) {
+    if (!profileStore) return GUEST_ACCOUNT_KEY;
+
+    const activeAccountKey = profileStore.getActiveAccountKey?.() || GUEST_ACCOUNT_KEY;
+    if (activeAccountKey && activeAccountKey !== GUEST_ACCOUNT_KEY) {
+        return activeAccountKey;
+    }
+
+    if (getSessionMode() !== "auth") {
+        return activeAccountKey || GUEST_ACCOUNT_KEY;
+    }
+
+    const fallbackAccountKey = findNonGuestAccountKey(profileStore);
+    if (fallbackAccountKey) {
+        profileStore.setActiveAccountKey(fallbackAccountKey);
+        return fallbackAccountKey;
+    }
+
+    return activeAccountKey || GUEST_ACCOUNT_KEY;
+}
+
 function getCurrentState() {
     const profileStore = getProfileStore();
     if (!profileStore) return null;
-    return profileStore.loadAccountState();
+
+    const accountKey = resolveAccountKey(profileStore);
+    profileStore.setActiveAccountKey(accountKey);
+    return profileStore.loadAccountState(accountKey);
 }
 
 function getActiveProfile(state) {
@@ -215,7 +272,17 @@ function animateAvatarPreview() {
 function saveState(state) {
     const profileStore = getProfileStore();
     if (!profileStore) return null;
-    return profileStore.setAccountState(state);
+
+    const accountKey = resolveAccountKey(profileStore);
+    const nextState = {
+        ...state,
+        accountKey: state?.accountKey && state.accountKey !== GUEST_ACCOUNT_KEY
+            ? state.accountKey
+            : accountKey
+    };
+
+    profileStore.setActiveAccountKey(nextState.accountKey);
+    return profileStore.setAccountState(nextState);
 }
 
 function previewItem(category, itemId) {
@@ -359,7 +426,8 @@ function buildItemVisual(category, item) {
     }
 
     if (item.color) {
-        return `<span class="shop-card-swatch" style="background:${item.color}"></span>`;
+        const swatchClass = category === "background" ? "shop-card-swatch shop-card-swatch-background" : "shop-card-swatch";
+        return `<span class="${swatchClass}" style="background:${item.color}"></span>`;
     }
 
     const glyph = item.glyph || item.label || "*";
@@ -370,10 +438,15 @@ function buildItemCardHtml(category, item, isActive, priceLabel, mode, options =
     const isLocked = Boolean(options.isLocked);
     const activeClass = isActive ? "shop-item-active" : "";
     const lockClass = isLocked ? "shop-item-locked" : "";
+    const categoryClass = category === "background" ? "shop-item-bg" : "";
     const visual = buildItemVisual(category, item);
     const action = isLocked ? "preview" : mode;
-    return `<button type="button" class="shop-item-btn ${activeClass} ${lockClass}" title="${item.label}" data-action="${action}" data-category="${category}" data-id="${item.id}">
+    const nameLine = category === "background"
+        ? `<span class="shop-item-bg-label">${item.label}</span>`
+        : "";
+    return `<button type="button" class="shop-item-btn ${categoryClass} ${activeClass} ${lockClass}" title="${item.label}" data-action="${action}" data-category="${category}" data-id="${item.id}">
         ${visual}
+        ${nameLine}
         <span class="shop-card-price">${priceLabel}</span>
         ${isLocked ? '<span class="shop-lock-icon">🔒</span>' : ""}
     </button>`;
@@ -479,7 +552,8 @@ function renderMarket(profile) {
     const cards = getVisibleCatalogItems(activeCategory).map((item) => {
         if (owned.includes(item.id)) return "";
         const isLocked = Number(item.cost) > points;
-        return buildItemCardHtml(activeCategory, item, false, `${item.cost} pts`, "buy", { isLocked });
+        const currencyLabel = activeCategory === "background" ? "Gold" : "pts";
+        return buildItemCardHtml(activeCategory, item, false, `${item.cost} ${currencyLabel}`, "buy", { isLocked });
     }).join("");
 
     if (marketTitleEl) {
