@@ -1217,16 +1217,6 @@ h1 {
     box-shadow: 0 10px 22px rgba(15, 23, 42, 0.25);
 }
 
-.session-badge.session-badge-fade {
-    opacity: 0;
-    transform: translateY(-8px);
-    transition: opacity 0.4s ease, transform 0.4s ease;
-}
-
-.session-badge[data-mode="guest"] {
-    background: linear-gradient(90deg, #bae6fd, #22d3ee);
-}
-
 .home-menu-buttons {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -2694,7 +2684,8 @@ body.bg-home #end-screen {
 
     .player-corner-widget {
         top: calc(54px + env(safe-area-inset-top, 0px));
-        right: 8px;
+        right: auto;
+        left: 8px;
     }
 
     .player-corner-avatar {
@@ -2787,7 +2778,8 @@ body.bg-home #end-screen {
     .player-corner-widget {
         width: 106px;
         top: 8px;
-        right: 8px;
+        right: auto;
+        left: 8px;
     }
 
     .player-corner-avatar {
@@ -2865,7 +2857,8 @@ body.bg-home #end-screen {
     .player-corner-widget {
         width: 96px;
         top: calc(46px + env(safe-area-inset-top, 0px));
-        right: 6px;
+        right: auto;
+        left: 6px;
     }
 
     .player-corner-avatar {

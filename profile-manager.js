@@ -662,6 +662,12 @@
         if (avatarTypeId === "type-photo-1") {
             return ["assets/image/avatar.png"];
         }
+        if (avatarTypeId === "type-photo-7") {
+            return ["assets/image/avatar7.png"];
+        }
+        if (avatarTypeId === "type-photo-8") {
+            return ["assets/image/avatar8.png"];
+        }
         if (avatarTypeId === "type-photo-2") {
             return ["assets/image/avatar2.png"];
         }

@@ -86,6 +86,7 @@ const AUTH_VIEW_HASHES = new Set(["login", "register", "reset", "verify"]);
 // ===== State =====
 let resetEmailForVerify = "";
 const LAST_LOGIN_EMAIL_KEY = "mathsLastLoginEmail";
+const AUTH_BADGE_PENDING_KEY = "mathsAuthBadgePending";
 let currentResultsFilter = "all";
 
 // ===== Utility Functions =====
@@ -104,6 +105,30 @@ function setSessionMode(mode) {
 
 function clearSessionMode() {
     localStorage.removeItem("mathsSessionMode");
+}
+
+function queueAuthBadge() {
+    sessionStorage.setItem(AUTH_BADGE_PENDING_KEY, "1");
+}
+
+function clearAuthBadgeQueue() {
+    sessionStorage.removeItem(AUTH_BADGE_PENDING_KEY);
+}
+
+function showTransientAuthBadge() {
+    const badgeId = "session-badge";
+    const existingBadge = document.getElementById(badgeId);
+    if (existingBadge) existingBadge.remove();
+
+    const badge = document.createElement("div");
+    badge.id = badgeId;
+    badge.className = "session-badge";
+    badge.innerText = "Signed in";
+    document.body.appendChild(badge);
+
+    window.setTimeout(() => {
+        if (badge.isConnected) badge.remove();
+    }, 2800);
 }
 
 function showStartPanel() {
@@ -480,6 +505,7 @@ async function handleLogin() {
         authLoginSubmitBtnEl.disabled = true;
         const result = await signInWithEmailAndPassword(auth, email, password);
         localStorage.setItem(LAST_LOGIN_EMAIL_KEY, email);
+        queueAuthBadge();
 
         const profileStore = getProfileStore();
         if (profileStore) {
@@ -594,6 +620,7 @@ async function handleRegister() {
         authRegisterSubmitBtnEl.disabled = true;
         const result = await createUserWithEmailAndPassword(auth, email, password);
         localStorage.setItem(LAST_LOGIN_EMAIL_KEY, email);
+        queueAuthBadge();
 
         // Save user profile
         await setDoc(doc(db, "users", result.user.uid, "profile", "main"), {
@@ -660,6 +687,7 @@ async function handleLogout() {
         console.error("Logout error:", error);
     }
     clearSessionMode();
+    clearAuthBadgeQueue();
     if (isHomeDashboardPage) {
         location.replace("index.html");
         return;
@@ -966,34 +994,29 @@ async function initializeHomeState() {
     const sessionMode = getSessionMode();
 
     if (isAuthPage) {
-        if (sessionMode === "auth" && auth?.currentUser) {
-            location.replace("home.html");
-            return;
-        }
-
         showStartPanel();
         syncAuthViewFromHash();
 
+        // Always require explicit login from the auth page.
+        clearSessionMode();
+        clearAuthBadgeQueue();
+
         if (!firebaseReady || !auth) {
             return;
+        }
+
+        if (auth.currentUser) {
+            try {
+                await signOut(auth);
+            } catch (error) {
+                console.error("Auth-page signout error:", error);
+            }
         }
 
         const rememberedEmail = auth.currentUser?.email || "";
         if (rememberedEmail) {
             localStorage.setItem(LAST_LOGIN_EMAIL_KEY, rememberedEmail);
         }
-
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                setSessionMode("auth");
-                location.replace("home.html");
-                return;
-            }
-
-            if (getSessionMode() === "auth") {
-                clearSessionMode();
-            }
-        });
 
         window.addEventListener("hashchange", syncAuthViewFromHash);
         return;
@@ -1027,6 +1050,10 @@ async function initializeHomeState() {
 
     if (auth.currentUser) {
         await restoreAuthSession(profileStore, auth.currentUser);
+        if (sessionStorage.getItem(AUTH_BADGE_PENDING_KEY) === "1") {
+            clearAuthBadgeQueue();
+            showTransientAuthBadge();
+        }
         runPendingActionOnce();
         return;
     }
@@ -1035,6 +1062,10 @@ async function initializeHomeState() {
         if (user) {
             setSessionMode("auth");
             await restoreAuthSession(getProfileStore(), user);
+            if (sessionStorage.getItem(AUTH_BADGE_PENDING_KEY) === "1") {
+                clearAuthBadgeQueue();
+                showTransientAuthBadge();
+            }
             runPendingActionOnce();
             return;
         }
