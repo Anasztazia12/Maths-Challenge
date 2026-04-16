@@ -1312,6 +1312,18 @@ h1 {
     line-height: 1;
 }
 
+.shop-item-not-available {
+    display: block;
+    font-size: 11px;
+    color: #ef4444;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    height: 18px;
+    line-height: 1.25;
+    white-space: normal;
+}
+
 .shop-corner-avatar .avatar-figure {
     width: 100%;
     min-height: auto;

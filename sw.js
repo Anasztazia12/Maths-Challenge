@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-04-16-pwa-install-feedback-v6";
+const CACHE_VERSION = "2026-04-16-shop-backgrounds-v7";
 const CACHE_NAME = `maths-challenge-${CACHE_VERSION}`;
 
 const CORE_ASSETS = [
@@ -24,12 +24,15 @@ const CORE_ASSETS = [
   "assets/image/pophunters.webp",
   "assets/image/icon.png",
   "assets/image/avatar.png",
-  "assets/image/avata.png",
   "assets/image/avatar2.png",
   "assets/image/avatar3.png",
   "assets/image/avatar4.png",
   "assets/image/avatar5.png",
   "assets/image/avatar6.png",
+  "assets/image/avatar7.png",
+  "assets/image/avatar8.png",
+  "assets/image/avatar9.png",
+  "assets/image/avatar10.png",
   "assets/accessories/hat.png",
   "assets/accessories/hat2.png",
   "assets/accessories/hat3.png",

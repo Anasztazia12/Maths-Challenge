@@ -444,10 +444,12 @@ function buildItemCardHtml(category, item, isActive, priceLabel, mode, options =
     const nameLine = category === "background"
         ? `<span class="shop-item-bg-label">${item.label}</span>`
         : "";
+    const lockedLabel = isLocked ? `<span class="shop-item-not-available">Not Available</span>` : "";
     return `<button type="button" class="shop-item-btn ${categoryClass} ${activeClass} ${lockClass}" title="${item.label}" data-action="${action}" data-category="${category}" data-id="${item.id}">
         ${visual}
         ${nameLine}
         <span class="shop-card-price">${priceLabel}</span>
+        ${lockedLabel}
         ${isLocked ? '<span class="shop-lock-icon">🔒</span>' : ""}
     </button>`;
 }
