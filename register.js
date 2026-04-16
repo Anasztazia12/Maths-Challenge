@@ -368,6 +368,15 @@ function setStatusMessage(element, message, isError = false) {
     element.style.color = isError ? "#fca5a5" : "#fde68a";
 }
 
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
 function toMillis(value) {
     if (!value) return 0;
     if (typeof value === "number") return Number.isFinite(value) ? value : 0;
@@ -913,6 +922,26 @@ function getResultCompletionStatus(result) {
         : "unfinished";
 }
 
+function buildResultQuestionRows(result) {
+    const rows = Array.isArray(result?.results) ? result.results : [];
+    if (!rows.length) {
+        return "<p class='results-detail-empty'>No detailed question log for this test.</p>";
+    }
+
+    return rows.map((item, itemIndex) => {
+        const questionIndex = Number(item?.index) || (itemIndex + 1);
+        const expression = item?.expression ? `${item.expression} = ${item.correctAnswer}` : `Question ${questionIndex}`;
+        const answerText = item?.isCorrect
+            ? "Correct"
+            : `Your answer: ${item?.userAnswerLabel ?? "(no answer)"}`;
+
+        return `<div class="results-question-row ${item?.isCorrect ? "results-question-correct" : "results-question-wrong"}">
+            <span class="results-question-title">${escapeHtml(`${questionIndex}. ${expression}`)}</span>
+            <strong class="results-question-answer">${escapeHtml(answerText)}</strong>
+        </div>`;
+    }).join("");
+}
+
 function updateResultsFilterButtons() {
     const isAll = currentResultsFilter === "all";
     const isCompleted = currentResultsFilter === "completed";
@@ -1071,23 +1100,27 @@ async function loadProfileResults() {
         const scoreText = isCompleted
             ? `${correct}/${total} ✓`
             : `${correct}/${total} of ${totalPlanned}`;
+        const detailedRows = buildResultQuestionRows(result);
 
         return `<div class="results-item" data-index="${index}">
             <div class="results-item-header">
                 <div class="results-item-info">
-                    <span class="results-item-title">${operation} - ${mode} • ${statusText}</span>
-                    <span class="results-item-date">${dateStr} ${timeStr}</span>
+                    <span class="results-item-title">${escapeHtml(`${operation} - ${mode} • ${statusText}`)}</span>
+                    <span class="results-item-date">${escapeHtml(`${dateStr} ${timeStr}`)}</span>
                 </div>
-                <div class="results-item-score">${scoreText}</div>
+                <div class="results-item-score">${escapeHtml(scoreText)}</div>
             </div>
             <div class="results-item-detail hidden">
-                <p><strong>Operation:</strong> ${operation}</p>
-                <p><strong>Mode:</strong> ${mode}</p>
-                <p><strong>Status:</strong> ${statusText}</p>
-                <p><strong>Correct:</strong> ${correct} / ${total}</p>
-                <p><strong>Planned Questions:</strong> ${totalPlanned}</p>
-                <p><strong>Time:</strong> ${dateStr} ${timeStr}</p>
-                ${result.details ? `<p><strong>Details:</strong> ${result.details}</p>` : ''}
+                <p><strong>Operation:</strong> ${escapeHtml(operation)}</p>
+                <p><strong>Mode:</strong> ${escapeHtml(mode)}</p>
+                <p><strong>Status:</strong> ${escapeHtml(statusText)}</p>
+                <p><strong>Correct:</strong> ${escapeHtml(String(correct))} / ${escapeHtml(String(total))}</p>
+                <p><strong>Planned Questions:</strong> ${escapeHtml(String(totalPlanned))}</p>
+                <p><strong>Time:</strong> ${escapeHtml(`${dateStr} ${timeStr}`)}</p>
+                ${result.details ? `<p><strong>Details:</strong> ${escapeHtml(result.details)}</p>` : ""}
+                <div class="results-question-list">
+                    ${detailedRows}
+                </div>
             </div>
         </div>`;
     }).join("");
