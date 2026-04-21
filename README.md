@@ -55,12 +55,14 @@ Maths Challenge is a browser-based math learning and practice project for childr
 
 This project can register/login users and save quiz results per user (UID based).
 
-1. Open `firebase.js` and replace all `REPLACE_WITH_...` values with your Firebase project config.
-2. In Firebase Console -> Authentication -> Sign-in method, enable `Email/Password`.
-3. In Firebase Console -> Authentication -> Settings -> Authorized domains, add:
-5    - your GitHub Pages domain (`yourname.github.io`)
-    - `localhost` for local testing
-4. In Firebase Console -> Firestore Database -> Rules, use:
+1. Copy `firebase.local.example.js` to `firebase.local.js`.
+2. Open `firebase.local.js` and replace all `REPLACE_WITH_...` values with your Firebase project config.
+3. In Firebase Console -> Authentication -> Sign-in method, enable `Email/Password`.
+4. In Firebase Console -> Authentication -> Settings -> Authorized domains, add:
+   - your GitHub Pages domain (`yourname.github.io`)
+   - `localhost` for local testing
+5. `firebase.local.js` is ignored by git, so API keys and local config stay out of the repository.
+6. In Firebase Console -> Firestore Database -> Rules, use:
 
 ```text
 rules_version = '2';

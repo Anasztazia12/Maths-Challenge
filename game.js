@@ -202,6 +202,44 @@ function clearAnswerInput() {
     answerInput.value = "";
 }
 
+function isInputModeActive() {
+    if (!inputContainer || !answerInput) return false;
+    if (!(mode === "input" || isTimedMode)) return false;
+    return inputContainer.style.display !== "none";
+}
+
+function isTypingIntoAnotherField(target) {
+    if (!(target instanceof HTMLElement)) return false;
+    if (target === answerInput) return false;
+    return Boolean(target.closest("input, textarea, select, [contenteditable='true']"));
+}
+
+function handleAnswerKeyboardInput(event) {
+    if (!isInputModeActive()) return;
+    if (event.defaultPrevented || event.ctrlKey || event.altKey || event.metaKey) return;
+    if (isTypingIntoAnotherField(event.target)) return;
+
+    if (/^\d$/.test(event.key)) {
+        event.preventDefault();
+        unlockQuizAudio();
+        appendDigitToInput(event.key);
+        return;
+    }
+
+    if (event.key === "Backspace" || event.key === "Delete") {
+        event.preventDefault();
+        unlockQuizAudio();
+        removeLastDigitFromInput();
+        return;
+    }
+
+    if (event.key === "Enter") {
+        event.preventDefault();
+        unlockQuizAudio();
+        checkAnswer(Number(answerInput?.value || 0));
+    }
+}
+
 function setAnswerInputWrongState(isActive) {
     if (!answerInput) return;
     answerInput.classList.toggle("answer-input-wrong", Boolean(isActive));
@@ -1553,6 +1591,8 @@ if (quizKeypad) {
         appendDigitToInput(key);
     });
 }
+
+window.addEventListener("keydown", handleAnswerKeyboardInput);
 
 window.addEventListener("pointerdown", unlockQuizAudio, { once: true });
 window.addEventListener("touchstart", unlockQuizAudio, { once: true });

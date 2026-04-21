@@ -1,0 +1,17 @@
+.venv/
+
+# Optional local environment and secret config files
+.env
+.env.*
+!.env.example
+firebase.local.js
+serviceAccount*.json
+firebase-adminsdk*.json
+*.pem
+*.p12
+*.key
+
+# Local tooling output
+*.log
+Thumbs.db
+.DS_Store
