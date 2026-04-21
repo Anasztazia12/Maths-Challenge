@@ -44,14 +44,6 @@
         </div>
         <p id="division-status" class="save-status"></p>
 
-        <!-- Game mode selection -->
-        <div class="section">
-            <h2>Game Mode</h2>
-            <div id="mode-buttons" class="mode-buttons" data-selected="input">
-                <button type="button" class="mode-btn" data-value="timed">Timed (20s / question)</button>
-            </div>
-        </div>
-
         <!-- Start buttons -->
         <button class="menu-btn special" onclick="startDivision()">Start ▶</button>
         <button class="menu-btn" onclick="goBackOnePage()">⬅ Back</button>
@@ -98,26 +90,10 @@
             renderTableButtons();
         };
 
-        const modeButtonsWrap = document.getElementById("mode-buttons");
-        const modeButtons = modeButtonsWrap ? modeButtonsWrap.querySelectorAll(".mode-btn") : [];
-
-        modeButtons.forEach((button) => {
-            button.addEventListener("click", () => {
-                modeButtonsWrap.dataset.selected = button.dataset.value;
-                modeButtons.forEach((btn) => btn.classList.remove("selected"));
-                button.classList.add("selected");
-            });
-        });
-
-        function getSelectedMode() {
-            return modeButtonsWrap?.dataset.selected || "input";
-        }
-
         renderTableButtons();
 
         function startDivision() {
             const diff = "easy";
-            const mode = getSelectedMode();
             const picked = Array.from(selectedTables).sort((a,b)=>a-b);
             if (picked.length === 0) {
                 setDivisionStatus("Please select at least one number before starting.", true);
@@ -127,7 +103,7 @@
             setDivisionStatus("");
             const tables = picked.join(",");
 
-            location.href = `play.html?mode=${mode}&op=division&diff=${diff}&tables=${tables}`;
+            location.href = `play.html?mode=input&op=division&diff=${diff}&tables=${tables}`;
         }
     </script>
     <script src="profile-manager.js"></script>
