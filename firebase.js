@@ -14,6 +14,9 @@ const placeholderFirebaseConfig = {
 
 async function loadFirebaseConfig() {
     try {
+        const host = window.location.hostname || "";
+        if (host.endsWith("github.io")) return null;
+
         const localConfigResponse = await fetch("./firebase.local.js", {
             method: "HEAD",
             cache: "no-store"
