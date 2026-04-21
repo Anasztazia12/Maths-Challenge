@@ -1,6 +1,5 @@
 // PWA Install Handler
 (function () {
-  let deferredPrompt = null;
   let feedbackTimerId = null;
 
   const installBtn = document.getElementById("menu-install-btn");
@@ -86,30 +85,10 @@
   setInstalledBadgeState(isStandaloneMode());
   setInstallVisible(true);
 
-  // Capture and store install event when browser provides it.
-  window.addEventListener("beforeinstallprompt", (event) => {
-    event.preventDefault();
-    deferredPrompt = event;
-    setInstallVisible(true);
-  });
-
   installBtn.addEventListener("click", async () => {
     if (isStandaloneMode()) {
       setInstalledBadgeState(true);
       showFeedback("App is already installed on this device.", false);
-      return;
-    }
-
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      deferredPrompt = null;
-
-      if (outcome === "accepted") {
-        showFeedback("Installation started. Check your home screen/app list.", false);
-      } else {
-        showFeedback("Installation canceled.", true);
-      }
       return;
     }
 

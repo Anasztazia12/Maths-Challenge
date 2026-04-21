@@ -51,6 +51,15 @@ Maths Challenge is a browser-based math learning and practice project for childr
 
 > **Note:** The service worker now fetches updated HTML, JS, and CSS directly, so the latest changes should appear without a hard refresh.
 
+## 5.1 Screenshots
+
+<!-- markdownlint-disable MD033 -->
+<p align="center">
+    <img src="assets/image/screenshot1.png" alt="Maths Challenge home screen" width="48%" />
+    <img src="assets/image/screenshot2.png" alt="Maths Challenge gameplay screen" width="48%" />
+</p>
+<!-- markdownlint-enable MD033 -->
+
 ## 6. Firebase Auth + Cloud Save Setup
 
 This project can register/login users and save quiz results per user (UID based).

@@ -14,6 +14,12 @@ const placeholderFirebaseConfig = {
 
 async function loadFirebaseConfig() {
     try {
+        const localConfigResponse = await fetch("./firebase.local.js", {
+            method: "HEAD",
+            cache: "no-store"
+        });
+        if (!localConfigResponse.ok) return null;
+
         const localConfigModule = await import("./firebase.local.js");
         return localConfigModule.firebaseConfig ?? localConfigModule.default ?? null;
     } catch (error) {
@@ -41,8 +47,6 @@ if (!hasPlaceholderConfig(firebaseConfig)) {
     } catch (error) {
         console.error("Firebase initialization failed.", error);
     }
-} else {
-    console.warn("Firebase is not configured yet. Create firebase.local.js from firebase.local.example.js before using auth/database.");
 }
 
 export { app, auth, db, firebaseReady };
