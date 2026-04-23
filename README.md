@@ -64,14 +64,24 @@ Maths Challenge is a browser-based math learning and practice project for childr
 
 This project can register/login users and save quiz results per user (UID based).
 
-1. Copy `firebase.local.example.js` to `firebase.local.js`.
+1. For local development, copy `firebase.local.example.js` to `firebase.local.js`.
 2. Open `firebase.local.js` and replace all `REPLACE_WITH_...` values with your Firebase project config.
-3. In Firebase Console -> Authentication -> Sign-in method, enable `Email/Password`.
-4. In Firebase Console -> Authentication -> Settings -> Authorized domains, add:
+3. For GitHub Pages, add a repository secret named `FIREBASE_WEB_CONFIG_JSON` with your Firebase web config JSON.
+4. The workflow `.github/workflows/deploy-pages.yml` generates `firebase.public.js` during deploy, so secrets are not stored in the repository.
+5. In Firebase Console -> Authentication -> Sign-in method, enable `Email/Password`.
+6. In Firebase Console -> Authentication -> Settings -> Authorized domains, add:
    - your GitHub Pages domain (`yourname.github.io`)
    - `localhost` for local testing
-5. `firebase.local.js` is ignored by git, so API keys and local config stay out of the repository.
-6. In Firebase Console -> Firestore Database -> Rules, use:
+7. `firebase.local.js` and generated `firebase.public.js` are ignored by git.
+8. In Firebase Console -> Firestore Database -> Rules, use:
+
+`FIREBASE_WEB_CONFIG_JSON` example value:
+
+```json
+{"apiKey":"AIza...","authDomain":"your-project.firebaseapp.com","projectId":"your-project","storageBucket":"your-project.appspot.com","messagingSenderId":"1234567890","appId":"1:1234567890:web:abc123","measurementId":"G-XXXXXXX"}
+```
+
+Do not put service account keys into this secret. This must be the client-side Firebase web config only.
 
 ```text
 rules_version = '2';

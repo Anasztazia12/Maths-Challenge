@@ -12,22 +12,36 @@ const placeholderFirebaseConfig = {
     measurementId: "REPLACE_WITH_MEASUREMENT_ID"
 };
 
-async function loadFirebaseConfig() {
-    try {
-        const host = window.location.hostname || "";
-        if (host.endsWith("github.io")) return null;
+function isLocalEnvironment() {
+    const host = window.location.hostname || "";
+    const protocol = window.location.protocol || "";
+    return protocol === "file:" || host === "localhost" || host === "127.0.0.1" || host === "::1";
+}
 
-        const localConfigResponse = await fetch("./firebase.local.js", {
+async function tryLoadModuleConfig(path) {
+    try {
+        const response = await fetch(path, {
             method: "HEAD",
             cache: "no-store"
         });
-        if (!localConfigResponse.ok) return null;
+        if (!response.ok) return null;
 
-        const localConfigModule = await import("./firebase.local.js");
-        return localConfigModule.firebaseConfig ?? localConfigModule.default ?? null;
+        const configModule = await import(path);
+        return configModule.firebaseConfig ?? configModule.default ?? null;
     } catch (error) {
         return null;
     }
+}
+
+async function loadFirebaseConfig() {
+    const runtimeConfig = window.__FIREBASE_CONFIG__ ?? null;
+    if (runtimeConfig) return runtimeConfig;
+
+    const publicConfig = await tryLoadModuleConfig("./firebase.public.js");
+    if (publicConfig) return publicConfig;
+
+    if (!isLocalEnvironment()) return null;
+    return await tryLoadModuleConfig("./firebase.local.js");
 }
 
 const firebaseConfig = (await loadFirebaseConfig()) ?? placeholderFirebaseConfig;
