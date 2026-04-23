@@ -1,10 +1,10 @@
-# Maths Challenge 
+# Maths Challenge
 
 Maths Challenge – A Fun Practice App for Kids
 Maths Challenge is a simple, child‑friendly web app designed to help primary school students practise essential arithmetic skills. It focuses on the four core operations — addition, subtraction, multiplication, and division — and offers multiple difficulty levels so children can learn at their own pace.
 The app was originally created for my own child, who needed a fun and motivating way to prepare for the Year 4 multiplication tables check (MTC). After seeing how much it helped, several classmates also started using it, which inspired me to improve and publish it.
 
-### Purpose of the App 🎯
+## Purpose of the App 🎯
 
 Many children struggle with:
 
