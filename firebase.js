@@ -3,13 +3,13 @@ import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-aut
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const placeholderFirebaseConfig = {
-    apiKey: "REPLACE_WITH_API_KEY",
-    authDomain: "REPLACE_WITH_AUTH_DOMAIN",
-    projectId: "REPLACE_WITH_PROJECT_ID",
-    storageBucket: "REPLACE_WITH_STORAGE_BUCKET",
-    messagingSenderId: "REPLACE_WITH_MESSAGING_SENDER_ID",
-    appId: "REPLACE_WITH_APP_ID",
-    measurementId: "REPLACE_WITH_MEASUREMENT_ID"
+    apiKey: "AIzaSyAc8wfh2Ps4ayv52Furp--ZBdvVaV9K3RE",
+    authDomain: "maths-challenge-23693.firebaseapp.com",
+    projectId: "maths-challenge-23693",
+    storageBucket: "maths-challenge-23693.firebasestorage.app",
+    messagingSenderId: "406061577561",
+    appId: "1:406061577561:web:f70b8f89529743e3e34848",
+    measurementId: "G-SQXN2TCNLM"
 };
 
 function isLocalEnvironment() {
