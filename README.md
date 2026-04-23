@@ -1,4 +1,78 @@
-# Maths Challenge – Project Plan
+# Maths Challenge 
+
+Maths Challenge – A Fun Practice App for Kids
+Maths Challenge is a simple, child‑friendly web app designed to help primary school students practise essential arithmetic skills. It focuses on the four core operations — addition, subtraction, multiplication, and division — and offers multiple difficulty levels so children can learn at their own pace.
+The app was originally created for my own child, who needed a fun and motivating way to prepare for the Year 4 multiplication tables check (MTC). After seeing how much it helped, several classmates also started using it, which inspired me to improve and publish it.
+
+### Purpose of the App 🎯
+
+Many children struggle with:
+
+- slow recall of multiplication facts
+- difficulty staying focused during practice
+- anxiety around timed tests
+- lack of engaging tools for daily revision
+
+Maths Challenge solves these problems by providing:
+
+- short, repeatable practice sessions
+- instant feedback
+- optional timed challenges
+- a clean, distraction‑free interface
+- difficulty levels that grow with the child
+The goal is to make maths practice simple, fun, and confidence‑building.
+
+### Key Features ✨
+
+✔ Six operation types
+
+- Addition
+- Subtraction
+- Multiplication
+- Division
+- Mixed practise
+- Weekly Challenge
+
+✔ Difficulty levels
+Children can choose from multiple difficulty settings, allowing them to progress gradually.
+
+✔ Multiplication practice modes
+Two modes are available:
+
+- Input mode – the child types the answer
+- Timed mode – 6‑second or 12‑second challenges to simulate the Year 4 MTC environment
+This helps them build both accuracy and speed.
+
+✔ Clean, child‑friendly UI
+Designed to be simple enough for young learners to use independently.
+
+✔ Motivating and repeatable
+Short sessions encourage daily practice without overwhelming the child.
+
+### Who is it for? 👦
+
+- Primary school children (especially Year 3–4)
+- Students preparing for the Year 4 Multiplication Tables Check
+- Kids who need extra practice with basic arithmetic
+- Parents and teachers looking for a simple, free practice tool
+
+### Why this app is useful 💡
+
+- Helps build confidence in maths
+- Supports school curriculum expectations
+- Encourages independent practice
+- Reduces test anxiety by simulating real timed conditions
+- Works on any device (phone, tablet, laptop)
+
+### Tech Stack 🛠️
+
+- HTML, CSS, JavaScript
+- Firebase (optional, if you use login or progress tracking)
+- GitHub Pages for hosting
+
+### Motivation 📌
+
+This project started as a personal tool for my own child, but it quickly proved useful for other children as well. It shows how a simple idea can solve a real problem and help kids learn in a fun, stress‑free way.
 
 **Current Version:** v1.0.0
 
