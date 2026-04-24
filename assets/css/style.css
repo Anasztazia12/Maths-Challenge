@@ -237,8 +237,8 @@ h1 {
     top: 10px;
     right: 10px;
     z-index: 31;
-    width: 120px;
-    padding: 6px;
+    width: 144px;
+    padding: 8px;
     border-radius: 12px;
     background: rgba(2, 6, 23, 0.72);
     border: 1px solid rgba(186, 230, 253, 0.22);
@@ -260,8 +260,8 @@ h1 {
 }
 
 .player-corner-avatar {
-    width: 72px;
-    height: 72px;
+    width: 96px;
+    height: 96px;
     object-fit: contain;
     filter: drop-shadow(0 6px 12px rgba(2, 8, 23, 0.35));
 }
@@ -2845,8 +2845,8 @@ body.bg-home #end-screen {
     }
 
     .player-corner-avatar {
-        width: 56px;
-        height: 56px;
+        width: 72px;
+        height: 72px;
     }
 
     .player-corner-gold {
@@ -2932,15 +2932,15 @@ body.bg-home #end-screen {
     }
 
     .player-corner-widget {
-        width: 106px;
+        width: 128px;
         top: 8px;
         right: auto;
         left: 8px;
     }
 
     .player-corner-avatar {
-        width: 62px;
-        height: 62px;
+        width: 80px;
+        height: 80px;
     }
 }
 
@@ -3026,15 +3026,15 @@ body.bg-home #end-screen {
     }
 
     .player-corner-widget {
-        width: 96px;
+        width: 116px;
         top: calc(46px + env(safe-area-inset-top, 0px));
         right: auto;
         left: 6px;
     }
 
     .player-corner-avatar {
-        width: 50px;
-        height: 50px;
+        width: 64px;
+        height: 64px;
     }
 
     .player-corner-gold {
