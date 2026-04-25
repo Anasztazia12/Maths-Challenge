@@ -195,8 +195,8 @@ h1 {
 
 .home-corner-avatar {
     position: absolute;
-    top: 6px;
-    left: 10px;
+    top: -2px;
+    left: 4px;
     z-index: 30;
     display: inline-block;
     width: fit-content;
@@ -2455,8 +2455,8 @@ body.bg-home #end-screen {
     .home-corner-avatar {
         width: fit-content;
         padding: 0;
-        top: 4px;
-        left: 8px;
+        top: -2px;
+        left: 4px;
         background: transparent;
         border: none;
         box-shadow: none;
@@ -2532,8 +2532,8 @@ body.bg-home #end-screen {
     .home-corner-avatar {
         width: fit-content;
         padding: 0;
-        top: 8px;
-        left: 12px;
+        top: 0;
+        left: 6px;
     }
 
     .home-corner-avatar-img {
