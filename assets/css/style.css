@@ -194,13 +194,25 @@ h1 {
 }
 
 .home-corner-avatar {
-    position: fixed;
-    top: 10px;
+    position: absolute;
+    top: 6px;
     left: 10px;
     z-index: 30;
-    width: 124px;
-    padding: 4px;
+    display: inline-block;
+    width: fit-content;
+    padding: 0;
     border-radius: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+.home-corner-avatar-card {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
     background: transparent;
     border: none;
     box-shadow: none;
@@ -211,21 +223,17 @@ h1 {
     font-weight: 800;
     margin-bottom: 4px;
     color: #e2e8f0;
-    text-align: center;
-}
-
-.home-corner-avatar-card {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 70px;
 }
 
 .home-corner-avatar-img {
-    width: 82px;
-    height: 82px;
+    width: 110px;
+    height: 110px;
     object-fit: contain;
-    filter: drop-shadow(0 6px 12px rgba(2, 8, 23, 0.35));
+    filter: drop-shadow(0 8px 14px rgba(2, 8, 23, 0.45));
+}
+
+body.bg-home .home-corner-avatar-title {
+    display: none;
 }
 
 .home-corner-avatar-emoji {
@@ -233,17 +241,19 @@ h1 {
 }
 
 .player-corner-widget {
-    position: fixed;
-    top: 10px;
-    right: 10px;
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    right: auto;
     z-index: 31;
-    width: 144px;
-    padding: 8px;
-    border-radius: 12px;
-    background: rgba(2, 6, 23, 0.72);
-    border: 1px solid rgba(186, 230, 253, 0.22);
-    box-shadow: 0 10px 22px rgba(2, 8, 23, 0.45);
-    text-align: center;
+    display: inline-block;
+    width: fit-content;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    text-align: left;
 }
 
 .player-corner-name {
@@ -260,10 +270,15 @@ h1 {
 }
 
 .player-corner-avatar {
-    width: 96px;
-    height: 96px;
+    width: 110px;
+    height: 110px;
     object-fit: contain;
     filter: drop-shadow(0 6px 12px rgba(2, 8, 23, 0.35));
+}
+
+.player-corner-name,
+.player-corner-gold {
+    display: none;
 }
 
 .player-corner-gold {
@@ -271,6 +286,48 @@ h1 {
     font-size: 12px;
     font-weight: 900;
     color: #fde68a;
+}
+
+body.play-screen .player-corner-widget {
+    position: absolute;
+    inset: 8px auto auto 8px;
+    width: auto;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+body.play-screen .player-corner-avatar-wrap {
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+body.play-screen .player-corner-name,
+body.play-screen .player-corner-gold {
+    display: none;
+}
+
+body.play-screen .player-corner-avatar {
+    width: 110px;
+    height: 110px;
+    filter: drop-shadow(0 8px 14px rgba(2, 8, 23, 0.45));
+}
+
+@media (max-width: 520px) {
+    body.play-screen .player-corner-widget {
+        inset: 6px auto auto 6px;
+    }
+
+    body.play-screen .player-corner-avatar {
+        width: 100px;
+        height: 100px;
+    }
 }
 
 .home-daily-note {
@@ -2393,15 +2450,15 @@ body.bg-home #end-screen {
     }
 
     .home-corner-avatar {
-        width: 72px;
-        padding: 4px;
-        top: 8px;
+        width: fit-content;
+        padding: 0;
+        top: 4px;
         left: 8px;
     }
 
     .home-corner-avatar-img {
-        width: 44px;
-        height: 44px;
+        width: 70px;
+        height: 70px;
     }
 
     .auth-entry-actions {
@@ -2467,15 +2524,15 @@ body.bg-home #end-screen {
 
 @media (min-width: 1100px) {
     .home-corner-avatar {
-        width: 144px;
-        padding: 6px;
-        top: 12px;
+        width: fit-content;
+        padding: 0;
+        top: 8px;
         left: 12px;
     }
 
     .home-corner-avatar-img {
-        width: 94px;
-        height: 94px;
+        width: 112px;
+        height: 112px;
     }
 
     .home-corner-avatar-title {
@@ -2839,14 +2896,16 @@ body.bg-home #end-screen {
     }
 
     .player-corner-widget {
-        top: calc(54px + env(safe-area-inset-top, 0px));
+        top: 8px;
         right: auto;
         left: 8px;
+        width: auto;
+        padding: 0;
     }
 
     .player-corner-avatar {
-        width: 72px;
-        height: 72px;
+        width: 92px;
+        height: 92px;
     }
 
     .player-corner-gold {
@@ -2932,15 +2991,16 @@ body.bg-home #end-screen {
     }
 
     .player-corner-widget {
-        width: 128px;
-        top: 8px;
+        width: auto;
+        top: 6px;
         right: auto;
         left: 8px;
+        padding: 0;
     }
 
     .player-corner-avatar {
-        width: 80px;
-        height: 80px;
+        width: 98px;
+        height: 98px;
     }
 }
 
@@ -3026,15 +3086,16 @@ body.bg-home #end-screen {
     }
 
     .player-corner-widget {
-        width: 116px;
-        top: calc(46px + env(safe-area-inset-top, 0px));
+        width: auto;
+        top: 6px;
         right: auto;
         left: 6px;
+        padding: 0;
     }
 
     .player-corner-avatar {
-        width: 64px;
-        height: 64px;
+        width: 82px;
+        height: 82px;
     }
 
     .player-corner-gold {

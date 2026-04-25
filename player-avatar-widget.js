@@ -20,6 +20,12 @@
         return Math.max(0, Math.round(Math.max(localGold, profileGold)));
     }
 
+    function getWidgetHostElement() {
+        const gameContainer = document.querySelector(".game-container");
+        if (gameContainer) return gameContainer;
+        return document.body;
+    }
+
     function ensureWidget() {
         const profileStore = getProfileStore();
         if (!profileStore) return null;
@@ -34,7 +40,11 @@
             container = document.createElement("aside");
             container.id = "player-corner-widget";
             container.className = "player-corner-widget";
-            document.body.appendChild(container);
+        }
+
+        const hostElement = getWidgetHostElement();
+        if (container.parentElement !== hostElement) {
+            hostElement.appendChild(container);
         }
 
         const avatarSrc = getCurrentAvatarSource(profileStore, activeProfile);
