@@ -322,6 +322,9 @@ body.play-screen .player-corner-avatar {
 @media (max-width: 520px) {
     body.play-screen .player-corner-widget {
         inset: 6px auto auto 6px;
+        background: transparent;
+        border: none;
+        box-shadow: none;
     }
 
     body.play-screen .player-corner-avatar {
@@ -2454,11 +2457,14 @@ body.bg-home #end-screen {
         padding: 0;
         top: 4px;
         left: 8px;
+        background: transparent;
+        border: none;
+        box-shadow: none;
     }
 
     .home-corner-avatar-img {
-        width: 70px;
-        height: 70px;
+        width: 100px;
+        height: 100px;
     }
 
     .auth-entry-actions {
