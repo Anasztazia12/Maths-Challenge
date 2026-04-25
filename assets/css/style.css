@@ -241,7 +241,7 @@ body.bg-home .home-corner-avatar-title {
 }
 
 .player-corner-widget {
-    position: absolute;
+    position: fixed;
     top: 8px;
     left: 8px;
     right: auto;
@@ -289,7 +289,7 @@ body.bg-home .home-corner-avatar-title {
 }
 
 body.play-screen .player-corner-widget {
-    position: absolute;
+    position: fixed;
     inset: 8px auto auto 8px;
     width: auto;
     margin: 0;
@@ -321,7 +321,7 @@ body.play-screen .player-corner-avatar {
 
 @media (max-width: 520px) {
     body.play-screen .player-corner-widget {
-        inset: 6px auto auto 6px;
+        inset: 4px auto auto 4px;
         background: transparent;
         border: none;
         box-shadow: none;
@@ -3093,10 +3093,15 @@ body.bg-home #end-screen {
 
     .player-corner-widget {
         width: auto;
-        top: 6px;
+        top: 4px;
         right: auto;
-        left: 6px;
+        left: 4px;
         padding: 0;
+    }
+
+    body.bg-home .player-corner-widget {
+        top: 2px;
+        left: 2px;
     }
 
     .player-corner-avatar {
