@@ -122,9 +122,10 @@ Maths Challenge is a browser-based math learning and practice project for childr
 ## 5. Usage
 
 1. Open **index.html** in your browser.
-2. Choose a mode from the main menu: play a quiz, try Math Runner, or practice a specific operation.
-3. For the Weekly Challenge, complete up to 2 tasks per day to reach 10 for the week and earn a trophy.
-4. Review your results and export a certificate if desired.
+2. Choose between - Continue as a guest - or  -Registration
+3. Choose a mode from the main menu: play a quiz, try Math Runner, or practice a specific operation.
+4. For the Weekly Challenge, complete up to 2 tasks per day to reach 10 for the week and earn a trophy.
+5. Review your results and export a certificate if desired.
 
 > **Note:** The service worker now fetches updated HTML, JS, and CSS directly, so the latest changes should appear without a hard refresh.
 
@@ -151,48 +152,6 @@ This project can register/login users and save quiz results per user (UID based)
    - `localhost` for local testing
 7. `firebase.local.js` and generated `firebase.public.js` are ignored by git.
 8. In Firebase Console -> Firestore Database -> Rules, use:
-
-`FIREBASE_WEB_CONFIG_JSON` example value:
-
-```json
-{"apiKey":"AIza...","authDomain":"your-project.firebaseapp.com","projectId":"your-project","storageBucket":"your-project.appspot.com","messagingSenderId":"1234567890","appId":"1:1234567890:web:abc123","measurementId":"G-XXXXXXX"}
-```
-
-Do not put service account keys into this secret. This must be the client-side Firebase web config only.
-
-```text
-rules_version = '2';
-service cloud.firestore {
-    match /databases/{database}/documents {
-        match /users/{userId}/{document=**} {
-            allow read, write: if request.auth != null && request.auth.uid == userId;
-        }
-    }
-}
-```
-
-Data structure used by the app:
-
-- `users/{uid}/profile/main` for profile/login metadata
-- `users/{uid}/profiles/{profileId}/quizResults/{autoId}` for profile-specific quiz summaries
-
-## 7. Email Code (OTP) Login Backend Contract
-
-Frontend UI now includes email-code login, but it requires backend endpoints to send and verify OTP.
-
-Required endpoints:
-
-- `POST /api/auth/send-login-code`
-- body: `{ "email": "user@example.com" }`
-- response: `{ "ok": true, "message": "Code sent" }`
-
-- `POST /api/auth/verify-login-code`
-- body: `{ "email": "user@example.com", "code": "123456" }`
-- response: `{ "ok": true, "customToken": "<firebase-custom-token>" }`
-
-The `customToken` must be generated on the server with Firebase Admin SDK and is consumed by `signInWithCustomToken` on the client.
-
-If these endpoints are not available, the app shows a clear status error and falls back to normal email/password or Firebase password reset email.
 
 ---
 
