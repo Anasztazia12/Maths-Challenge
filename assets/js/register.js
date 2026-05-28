@@ -48,15 +48,6 @@ const authResetBackBtnEl = document.getElementById("auth-reset-back-btn");
 const authResetSendBtnEl = document.getElementById("auth-reset-send-btn");
 const authResetStatusEl = document.getElementById("auth-reset-status");
 
-// Verify reset form
-const authVerifyResetFormEl = document.getElementById("auth-verify-reset-form");
-const authVerifyCodeEl = document.getElementById("auth-verify-code");
-const authNewPasswordEl = document.getElementById("auth-new-password");
-const authConfirmPasswordEl = document.getElementById("auth-confirm-password");
-const authVerifyBackBtnEl = document.getElementById("auth-verify-back-btn");
-const authVerifySubmitBtnEl = document.getElementById("auth-verify-submit-btn");
-const authVerifyStatusEl = document.getElementById("auth-verify-status");
-
 // Register form
 const authRegisterFormEl = document.getElementById("auth-register-form");
 const authRegisterEmailEl = document.getElementById("auth-register-email");
@@ -81,10 +72,9 @@ const resultsFilterCompletedBtn = document.getElementById("results-filter-comple
 const resultsFilterUnfinishedBtn = document.getElementById("results-filter-unfinished-btn");
 const isAuthPage = Boolean(startPanelEl && authEntryActionsEl);
 const isHomeDashboardPage = Boolean(menuPanelEl) && !isAuthPage;
-const AUTH_VIEW_HASHES = new Set(["login", "register", "reset", "verify"]);
+const AUTH_VIEW_HASHES = new Set(["login", "register", "reset"]);
 
 // ===== State =====
-let resetEmailForVerify = "";
 const LAST_LOGIN_EMAIL_KEY = "mathsLastLoginEmail";
 const AUTH_BADGE_PENDING_KEY = "mathsAuthBadgePending";
 let currentResultsFilter = "all";
@@ -265,7 +255,6 @@ function hideAllAuthForms() {
     authEntryActionsEl?.classList.add("hidden");
     authLoginFormEl?.classList.add("hidden");
     authResetFormEl?.classList.add("hidden");
-    authVerifyResetFormEl?.classList.add("hidden");
     authRegisterFormEl?.classList.add("hidden");
 }
 
@@ -305,11 +294,6 @@ function syncAuthViewFromHash() {
         return;
     }
 
-    if (view === "verify") {
-        showVerifyResetForm();
-        return;
-    }
-
     showEntryActions();
 }
 
@@ -329,16 +313,6 @@ function showResetForm() {
     authResetEmailEl.value = "";
     authResetStatusEl.textContent = "";
     setAuthViewHash("reset");
-}
-
-function showVerifyResetForm() {
-    hideAllAuthForms();
-    authVerifyResetFormEl?.classList.remove("hidden");
-    authVerifyCodeEl.value = "";
-    authNewPasswordEl.value = "";
-    authConfirmPasswordEl.value = "";
-    authVerifyStatusEl.textContent = "";
-    setAuthViewHash("verify");
 }
 
 function showRegisterForm() {
@@ -598,11 +572,6 @@ async function syncAuthDataFromCloud(profileStore, user) {
     return state;
 }
 
-async function sendEmailNotification(email, subject, message) {
-    // Placeholder for email service - would use backend endpoint in production
-    console.log(`Email sent to ${email}: ${subject} - ${message}`);
-}
-
 function waitForAuthUser(timeoutMs = 1500) {
     if (!firebaseReady || !auth) return Promise.resolve(null);
     if (auth.currentUser) return Promise.resolve(auth.currentUser);
@@ -736,54 +705,11 @@ async function handleResetSend() {
     try {
         authResetSendBtnEl.disabled = true;
         await sendPasswordResetEmail(auth, email);
-        resetEmailForVerify = email;
-        setStatusMessage(authResetStatusEl, "Code sent to your email!");
-        setTimeout(() => showVerifyResetForm(), 1000);
+        setStatusMessage(authResetStatusEl, "Reset link sent! Check your email and click the link.");
     } catch (error) {
-        setStatusMessage(authResetStatusEl, error?.message || "Failed to send code.", true);
+        setStatusMessage(authResetStatusEl, error?.message || "Failed to send reset email.", true);
     } finally {
         authResetSendBtnEl.disabled = false;
-    }
-}
-
-async function handleVerifyReset() {
-    const newPassword = authNewPasswordEl.value;
-    const confirmPassword = authConfirmPasswordEl.value;
-    const code = authVerifyCodeEl.value.trim();
-
-    if (!code) {
-        setStatusMessage(authVerifyStatusEl, "Code is required.", true);
-        return;
-    }
-
-    if (!newPassword || !confirmPassword) {
-        setStatusMessage(authVerifyStatusEl, "Password and confirmation are required.", true);
-        return;
-    }
-
-    if (newPassword !== confirmPassword) {
-        setStatusMessage(authVerifyStatusEl, "Passwords do not match.", true);
-        return;
-    }
-
-    if (newPassword.length < 6) {
-        setStatusMessage(authVerifyStatusEl, "Password must be at least 6 characters.", true);
-        return;
-    }
-
-    try {
-        authVerifySubmitBtnEl.disabled = true;
-        // Note: Firebase doesn't support direct password reset with code in client-side code
-        // In production, use a backend endpoint with custom token or link-based reset
-        setStatusMessage(authVerifyStatusEl, "Password reset. Please login with your new password.");
-        
-        await sendEmailNotification(resetEmailForVerify, "Password Changed", `Your password has been successfully changed.`);
-        
-        setTimeout(() => showLoginForm(), 1500);
-    } catch (error) {
-        setStatusMessage(authVerifyStatusEl, error?.message || "Password reset failed.", true);
-    } finally {
-        authVerifySubmitBtnEl.disabled = false;
     }
 }
 
@@ -821,9 +747,6 @@ async function handleRegister() {
             createdAt: serverTimestamp(),
             lastLoginAt: serverTimestamp()
         });
-
-        // Send welcome email
-        await sendEmailNotification(email, "Registration Successful", `Welcome ${username}! Your account has been created.`);
 
         // Setup profile store
         const profileStore = getProfileStore();
@@ -1147,10 +1070,6 @@ if (authLoginForgotBtnEl) authLoginForgotBtnEl.addEventListener("click", showRes
 // Reset form
 if (authResetBackBtnEl) authResetBackBtnEl.addEventListener("click", () => window.history.back());
 if (authResetSendBtnEl) authResetSendBtnEl.addEventListener("click", handleResetSend);
-
-// Verify reset form
-if (authVerifyBackBtnEl) authVerifyBackBtnEl.addEventListener("click", () => window.history.back());
-if (authVerifySubmitBtnEl) authVerifySubmitBtnEl.addEventListener("click", handleVerifyReset);
 
 // Register form
 if (authRegisterBackBtnEl) authRegisterBackBtnEl.addEventListener("click", () => window.history.back());

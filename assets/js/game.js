@@ -655,7 +655,7 @@ async function getCloudSaveSdk() {
     if (cloudSaveSdk) return cloudSaveSdk;
 
     try {
-        const firebaseModule = await import("./firebase.js");
+        const firebaseModule = await import("./assets/js/firebase.js");
         if (!firebaseModule?.firebaseReady || !firebaseModule?.auth || !firebaseModule?.db) {
             return null;
         }

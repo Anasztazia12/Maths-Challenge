@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -69,70 +69,13 @@
         </section>
     </div>
 
-    <script src="profile-manager.js"></script>
-    <script src="hamburger.js"></script>
-    <script src="session-guard.js"></script>
-    <script src="player-avatar-widget.js"></script>
-    <script>
-        const WEEKLY_TOTAL_TASKS = 10;
-        const DAILY_LIMIT = WEEKLY_TOTAL_TASKS;
-
-        function getCurrentDayKey() {
-            const now = new Date();
-            const year = now.getFullYear();
-            const month = String(now.getMonth() + 1).padStart(2, "0");
-            const day = String(now.getDate()).padStart(2, "0");
-            return `${year}-${month}-${day}`;
-        }
-
-        function getCurrentWeekKey() {
-            const now = new Date();
-            const utcDate = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
-            const dayNumber = utcDate.getUTCDay() || 7;
-            utcDate.setUTCDate(utcDate.getUTCDate() + 4 - dayNumber);
-
-            const yearStart = new Date(Date.UTC(utcDate.getUTCFullYear(), 0, 1));
-            const weekNumber = Math.ceil((((utcDate - yearStart) / 86400000) + 1) / 7);
-
-            return `${utcDate.getUTCFullYear()}-W${String(weekNumber).padStart(2, "0")}`;
-        }
-
-        function getSafeWeeklyProgress() {
-            const profileStore = window.MathsProfileStore;
-            const scopedKey = profileStore ? profileStore.getScopedStorageKey("weeklyProgress") : "weeklyProgress";
-            const currentWeekKey = getCurrentWeekKey();
-            const storedWeekKey = localStorage.getItem(profileStore ? profileStore.getScopedStorageKey("weeklyWeekKey") : "weeklyWeekKey");
-
-            if (storedWeekKey !== currentWeekKey) {
-                return { completed: 0, byDay: {} };
-            }
-
-            const raw = localStorage.getItem(scopedKey);
-            if (!raw) return { completed: 0, byDay: {} };
-
-            try {
-                const parsed = JSON.parse(raw);
-                return {
-                    completed: Math.max(0, Math.min(WEEKLY_TOTAL_TASKS, Number(parsed?.completed) || 0)),
-                    byDay: parsed && typeof parsed.byDay === "object" && parsed.byDay ? parsed.byDay : {}
-                };
-            } catch {
-                return { completed: 0, byDay: {} };
-            }
-        }
-
-        function updateHomeDailyNote() {
-            const noteEl = document.getElementById("home-daily-note");
-            if (!noteEl) return;
-            noteEl.innerText = "Your 2 daily challenges are waiting for you in Weekly Challenge ⭐";
-        }
-
-        updateHomeDailyNote();
-    </script>
-
-    <script type="module" src="firebase.js"></script>
-    <script type="module" src="register.js"></script>
-    <script src="sw-register.js"></script>
-    <script src="pwa-install.js"></script>
+    <script src="assets/js/profile-manager.js"></script>
+    <script src="assets/js/hamburger.js"></script>
+    <script src="assets/js/session-guard.js"></script>
+    <script src="assets/js/player-avatar-widget.js"></script>
+    <script type="module" src="assets/js/firebase.js"></script>
+    <script type="module" src="assets/js/register.js"></script>
+    <script src="assets/js/sw-register.js"></script>
+    <script src="assets/js/pwa-install.js"></script>
 </body>
 </html>

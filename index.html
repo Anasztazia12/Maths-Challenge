@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -56,21 +56,6 @@
                 <p id="auth-reset-status" class="auth-status"></p>
             </div>
 
-            <!-- Verify Reset Code Form -->
-            <div id="auth-verify-reset-form" class="auth-form hidden">
-                <p class="auth-title">Enter Code</p>
-                <div class="auth-grid">
-                    <input id="auth-verify-code" type="text" inputmode="numeric" placeholder="Enter code from email" autocomplete="one-time-code">
-                    <input id="auth-new-password" type="password" placeholder="New Password" autocomplete="new-password">
-                    <input id="auth-confirm-password" type="password" placeholder="Confirm Password" autocomplete="new-password">
-                </div>
-                <div class="auth-actions auth-mode-actions">
-                    <button class="menu-btn" id="auth-verify-back-btn" type="button">Back</button>
-                    <button class="menu-btn special" id="auth-verify-submit-btn" type="button">Change Password</button>
-                </div>
-                <p id="auth-verify-status" class="auth-status"></p>
-            </div>
-
             <!-- Registration Form -->
             <div id="auth-register-form" class="auth-form hidden">
                 <p class="auth-title">Registration</p>
@@ -98,12 +83,12 @@
 
     </div><!-- /game-container -->
 
-    <script src="profile-manager.js"></script>
-    <script src="player-avatar-widget.js"></script>
+    <script src="assets/js/profile-manager.js"></script>
+    <script src="assets/js/player-avatar-widget.js"></script>
 
-    <script type="module" src="firebase.js"></script>
-    <script type="module" src="register.js"></script>
-    <script src="sw-register.js"></script>
-    <script src="pwa-install.js"></script>
+    <script type="module" src="assets/js/firebase.js"></script>
+    <script type="module" src="assets/js/register.js"></script>
+    <script src="assets/js/sw-register.js"></script>
+    <script src="assets/js/pwa-install.js"></script>
 </body>
 </html>

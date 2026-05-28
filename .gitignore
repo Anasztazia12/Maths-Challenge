@@ -5,6 +5,7 @@
 .env.*
 !.env.example
 firebase.local.js
+firebase.public.js
 serviceAccount*.json
 firebase-adminsdk*.json
 *.pem
