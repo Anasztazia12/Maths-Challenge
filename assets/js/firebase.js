@@ -24,11 +24,15 @@ async function tryLoadModuleConfig(path) {
             method: "HEAD",
             cache: "no-store"
         });
-        if (!response.ok) return null;
+        if (!response.ok) {
+            console.warn(`Firebase config fetch for ${path} returned ${response.status}.`);
+            return null;
+        }
 
         const configModule = await import(path);
         return configModule.firebaseConfig ?? configModule.default ?? null;
     } catch (error) {
+        console.warn(`Firebase config load for ${path} failed.`, error);
         return null;
     }
 }
@@ -55,7 +59,9 @@ let auth = null;
 let db = null;
 let firebaseReady = false;
 
-if (!hasPlaceholderConfig(firebaseConfig)) {
+if (hasPlaceholderConfig(firebaseConfig)) {
+    console.error("Firebase config could not be loaded (still using placeholder values). Auth/Firestore will be disabled.");
+} else {
     try {
         app = initializeApp(firebaseConfig);
         auth = getAuth(app);
