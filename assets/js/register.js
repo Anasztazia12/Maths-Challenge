@@ -261,6 +261,7 @@ function hideAllAuthForms() {
 function showEntryActions() {
     hideAllAuthForms();
     authEntryActionsEl?.classList.remove("hidden");
+    setAuthViewHash("");
 }
 
 function setAuthViewHash(view) {
@@ -653,7 +654,17 @@ function renderHomeCornerAvatar(profile) {
 
 // ===== Auth Handlers =====
 
+const FIREBASE_UNAVAILABLE_MESSAGE = "Cloud login isn't available right now. If you opened this page by double-clicking the file, please serve it through a local web server (e.g. http://localhost) instead.";
+
+function checkFirebaseAvailable(statusEl) {
+    if (firebaseReady && auth) return true;
+    setStatusMessage(statusEl, FIREBASE_UNAVAILABLE_MESSAGE, true);
+    return false;
+}
+
 async function handleLogin() {
+    if (!checkFirebaseAvailable(authLoginStatusEl)) return;
+
     const email = authLoginEmailEl.value.trim();
     const password = authLoginPasswordEl.value;
 
@@ -695,6 +706,8 @@ async function handleLogin() {
 }
 
 async function handleResetSend() {
+    if (!checkFirebaseAvailable(authResetStatusEl)) return;
+
     const email = authResetEmailEl.value.trim();
 
     if (!email) {
@@ -714,6 +727,8 @@ async function handleResetSend() {
 }
 
 async function handleRegister() {
+    if (!checkFirebaseAvailable(authRegisterStatusEl)) return;
+
     const email = authRegisterEmailEl.value.trim();
     const username = authRegisterUsernameEl.value.trim();
     const password = authRegisterPasswordEl.value;
@@ -1063,16 +1078,16 @@ if (registerBtn) registerBtn.addEventListener("click", showRegisterForm);
 if (guestBtn) guestBtn.addEventListener("click", handleGuestMode);
 
 // Login form
-if (authLoginBackBtnEl) authLoginBackBtnEl.addEventListener("click", () => window.history.back());
+if (authLoginBackBtnEl) authLoginBackBtnEl.addEventListener("click", showEntryActions);
 if (authLoginSubmitBtnEl) authLoginSubmitBtnEl.addEventListener("click", handleLogin);
 if (authLoginForgotBtnEl) authLoginForgotBtnEl.addEventListener("click", showResetForm);
 
 // Reset form
-if (authResetBackBtnEl) authResetBackBtnEl.addEventListener("click", () => window.history.back());
+if (authResetBackBtnEl) authResetBackBtnEl.addEventListener("click", showLoginForm);
 if (authResetSendBtnEl) authResetSendBtnEl.addEventListener("click", handleResetSend);
 
 // Register form
-if (authRegisterBackBtnEl) authRegisterBackBtnEl.addEventListener("click", () => window.history.back());
+if (authRegisterBackBtnEl) authRegisterBackBtnEl.addEventListener("click", showEntryActions);
 if (authRegisterSubmitBtnEl) authRegisterSubmitBtnEl.addEventListener("click", handleRegister);
 if (authRegisterPasswordToggleEl) {
     authRegisterPasswordToggleEl.addEventListener("click", (e) => {
@@ -1141,6 +1156,10 @@ async function initializeHomeState() {
         clearSessionMode();
         clearAuthBadgeQueue();
 
+        // Registered unconditionally so the Back/Forgot-password hash navigation
+        // keeps working even when Firebase itself failed to initialize.
+        window.addEventListener("hashchange", syncAuthViewFromHash);
+
         if (!firebaseReady || !auth) {
             return;
         }
@@ -1158,7 +1177,6 @@ async function initializeHomeState() {
             localStorage.setItem(LAST_LOGIN_EMAIL_KEY, rememberedEmail);
         }
 
-        window.addEventListener("hashchange", syncAuthViewFromHash);
         return;
     }
 
