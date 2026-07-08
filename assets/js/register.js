@@ -720,7 +720,13 @@ async function handleResetSend() {
         await sendPasswordResetEmail(auth, email);
         setStatusMessage(authResetStatusEl, "Reset link sent! Check your email and click the link.");
     } catch (error) {
-        setStatusMessage(authResetStatusEl, error?.message || "Failed to send reset email.", true);
+        if (error?.code === "auth/user-not-found") {
+            setStatusMessage(authResetStatusEl, "No account is registered with this email address.", true);
+        } else if (error?.code === "auth/invalid-email") {
+            setStatusMessage(authResetStatusEl, "That doesn't look like a valid email address.", true);
+        } else {
+            setStatusMessage(authResetStatusEl, error?.message || "Failed to send reset email.", true);
+        }
     } finally {
         authResetSendBtnEl.disabled = false;
     }
