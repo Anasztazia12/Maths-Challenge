@@ -323,17 +323,16 @@ if (arcadeCanvas) {
     function handleWrongMath(reasonText) {
         state.failThisChallenge += 1;
         state.basket = 0;
-        loseLife(2, reasonText);
-
-        if (!world.running) {
-            return;
-        }
+        state.combo = 0;
+        addScore(-1);
+        playHitSound();
+        state.invincibleUntil = performance.now() + 850;
 
         if (state.failThisChallenge < MAX_CHALLENGE_FAILS) {
             spawnRecoveryApples();
             state.invincibleUntil = performance.now() + 1800;
             const remaining = MAX_CHALLENGE_FAILS - state.failThisChallenge;
-            showMessage(`Wrong! New apples incoming • ${remaining} mistakes left`, 1200);
+            showMessage(`Wrong! New apples incoming • ${remaining} tries left`, 1200);
             updateHud();
             return;
         }
@@ -342,7 +341,7 @@ if (arcadeCanvas) {
         if (arcadeOverlay) {
             arcadeOverlay.classList.remove("hidden");
             arcadeOverlayTitle.innerText = "Game Over";
-            arcadeOverlayText.innerText = `${reasonText} • You used all ${MAX_CHALLENGE_FAILS} mistakes on this challenge.`;
+            arcadeOverlayText.innerText = `${reasonText} • You used all ${MAX_CHALLENGE_FAILS} tries on this math challenge.`;
         }
     }
 
@@ -764,16 +763,6 @@ if (arcadeCanvas) {
         state.enemyBullets.forEach((bullet) => { bullet.x += bullet.vx; });
 
         state.lifePickups.forEach((pickup) => { pickup.x -= world.speed + 0.45; });
-
-        let escapedEnemies = 0;
-        state.enemies.forEach((enemy) => {
-            if (enemy.x + enemy.width < -140) escapedEnemies += 1;
-        });
-        if (escapedEnemies > 0) {
-            loseLife(1, "Enemy escaped.");
-            addScore(-2);
-            showMessage("Enemy escaped! -1 life", 900);
-        }
 
         state.apples = state.apples.filter((apple) => apple.x > -90);
         state.platforms = state.platforms.filter((platform) => platform.x + platform.width > -100);

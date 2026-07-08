@@ -24,9 +24,12 @@ const selectedTables = tablesParam
     .filter((num) => Number.isInteger(num) && num >= 1 && num <= 12);
 
 function randomFromTables() {
-    if (selectedTables.length === 0) return rand(12);
-    const index = Math.floor(Math.random() * selectedTables.length);
-    return selectedTables[index];
+    if (selectedTables.length > 0) {
+        const index = Math.floor(Math.random() * selectedTables.length);
+        return selectedTables[index];
+    }
+    const fallbackSet = difficultyTableSets[diff] || difficultyTableSets.easy;
+    return randomFromSet(fallbackSet);
 }
 
 // DOM elements
@@ -843,10 +846,18 @@ const ranges = {
     hard: 150
 };
 
-const mixedRanges = {
-    easy: 100,
-    medium: 500,
-    hard: 10000
+const mixedRanges = ranges;
+
+const difficultyTableSets = {
+    easy: [1, 2, 3, 4, 5],
+    medium: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    hard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+};
+
+const difficultyFactorMax = {
+    easy: 10,
+    medium: 12,
+    hard: 12
 };
 
 const mixedTableSets = {
@@ -895,14 +906,14 @@ function generateQuestion() {
             break;
         case "multiplication":
             a = randomFromTables();
-            b = rand(12);
+            b = rand(difficultyFactorMax[diff] || difficultyFactorMax.easy);
             correctAnswer = a * b;
             currentExpression = `${a} × ${b}`;
             questionEl.innerText = `${currentExpression} = ?`;
             break;
         case "division":
             b = randomFromTables();
-            a = rand(12);
+            a = rand(difficultyFactorMax[diff] || difficultyFactorMax.easy);
             correctAnswer = a;
             let product = a * b;
             currentExpression = `${product} ÷ ${b}`;
