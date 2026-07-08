@@ -1,0 +1,23 @@
+{
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/.*/**",
+      ".venv/**",
+      ".git/**",
+      ".github/**",
+      "node_modules/**",
+      "**/serviceAccount*.json",
+      "**/firebase-adminsdk*.json",
+      "assets/js/firebase.local.js",
+      "assets/js/firebase.local.example.js",
+      "*.pem",
+      "*.p12",
+      "*.key",
+      ".env",
+      ".env.*"
+    ]
+  }
+}
