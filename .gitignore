@@ -1,4 +1,5 @@
 .venv/
+.firebase/
 
 # Optional local environment and secret config files
 .env

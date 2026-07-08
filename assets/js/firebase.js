@@ -19,20 +19,21 @@ function isLocalEnvironment() {
 }
 
 async function tryLoadModuleConfig(path) {
+    const resolvedUrl = new URL(path, import.meta.url).href;
     try {
-        const response = await fetch(path, {
+        const response = await fetch(resolvedUrl, {
             method: "HEAD",
             cache: "no-store"
         });
         if (!response.ok) {
-            console.warn(`Firebase config fetch for ${path} returned ${response.status}.`);
+            console.warn(`Firebase config fetch for ${resolvedUrl} returned ${response.status}.`);
             return null;
         }
 
-        const configModule = await import(path);
+        const configModule = await import(resolvedUrl);
         return configModule.firebaseConfig ?? configModule.default ?? null;
     } catch (error) {
-        console.warn(`Firebase config load for ${path} failed.`, error);
+        console.warn(`Firebase config load for ${resolvedUrl} failed.`, error);
         return null;
     }
 }
