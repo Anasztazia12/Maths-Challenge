@@ -207,7 +207,25 @@ function buildFigureHtml(profile, sizeClass = "large") {
     const poseClass = avatar?.avatarType ? `pose-${avatar.avatarType}` : "";
 
     if (hasBaseImage) {
-        return `<div class="avatar-figure ${sizeClass} ${poseClass}" style="--avatar-bg:${bgStyle};"><div class="avatar-figure-bg"></div>${baseImage}</div>`;
+        const hasHair = hairLength && hairLength.id !== "hair-length-none";
+        const hasOutfit = outfit && outfit.id !== "outfit-sky";
+        return `<div class="avatar-figure ${sizeClass} ${poseClass}" style="--avatar-bg:${bgStyle};">
+            <div class="avatar-figure-bg"></div>
+            ${baseImage}
+            ${hatLabel && hatLabel !== "None"
+                ? (hatImageSources.length > 0
+                    ? `<div class="avatar-hat avatar-hat-image-wrap">${buildImageWithFallback(hatImageSources, "avatar-hat-image", hat?.label || "Hat")}</div>`
+                    : `<div class="avatar-hat">${hatLabel}</div>`)
+                : ""}
+            ${glassesLabel && glassesLabel !== "None"
+                ? (glassesImageSources.length > 0
+                    ? `<div class="avatar-glasses avatar-glasses-image-wrap">${buildImageWithFallback(glassesImageSources, "avatar-glasses-image", glasses?.label || "Sunglasses")}</div>`
+                    : `<div class="avatar-glasses">${glassesLabel}</div>`)
+                : ""}
+            ${hasHair ? `<div class="avatar-photo-badge avatar-photo-hair-badge" style="background:${hairColorValue}">${hairLengthLabel} hair</div>` : ""}
+            ${hasOutfit ? `<div class="avatar-photo-badge avatar-photo-outfit-badge" style="background:${outfitColor}">${outfit.label}</div>` : ""}
+            ${accessoryLabel && accessoryLabel !== "None" ? `<div class="avatar-photo-badge avatar-photo-accessory-badge">${accessoryLabel}</div>` : ""}
+        </div>`;
     }
     return `<div class="avatar-figure ${sizeClass} ${poseClass}" style="--avatar-bg:${bgStyle};--avatar-skin:${skinColor};--avatar-outfit:${outfitColor};--avatar-hair:${hairColorValue};--avatar-eye:${eyeColorValue};">
         <div class="avatar-figure-bg"></div>

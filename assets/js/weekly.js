@@ -164,9 +164,13 @@ function updateProgressUI() {
     const completed = weeklyProgress.completed;
     const dayKey = getCurrentDayKey();
     const todayCount = Math.max(0, Math.min(DAILY_MAX, Number(weeklyProgress.byDay?.[dayKey] || 0)));
-    
+    const dailyRemaining = Math.max(0, DAILY_RECOMMENDED - todayCount);
+
     // Weekly progress text
-    if(progressText) progressText.innerText = `Weekly progress: ${completed}/${WEEKLY_TOTAL_TASKS} • Today: ${todayCount}/${DAILY_MAX}`;
+    const dailyStatusText = dailyRemaining > 0
+        ? `${dailyRemaining} of your ${DAILY_RECOMMENDED} daily challenges are waiting!`
+        : `Today's ${DAILY_RECOMMENDED} daily challenges are done! (${todayCount}/${DAILY_MAX} today)`;
+    if(progressText) progressText.innerText = `Weekly progress: ${completed}/${WEEKLY_TOTAL_TASKS} • ${dailyStatusText}`;
     
     // Star progress (10 tasks = full 100%)
     if(starProgress) {
