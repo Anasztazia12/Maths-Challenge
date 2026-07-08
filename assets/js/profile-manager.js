@@ -250,9 +250,16 @@
             { id: "type-photo-8", label: "Photo Avatar 8", glyph: "Avatar 8", cost: 0 },
             { id: "type-photo-9", label: "Photo Avatar 9", glyph: "Avatar 9", cost: 50 },
             { id: "type-photo-10", label: "Photo Avatar 10", glyph: "Avatar 10", cost: 65 },
-            { id: "type-girl", label: "Girl", glyph: "Girl", cost: 0 },
             { id: "type-boy", label: "Boy", glyph: "Boy", cost: 10 },
-            { id: "type-dog", label: "Dog", glyph: "Dog", cost: 40 }
+            { id: "type-dog", label: "Dog", glyph: "Dog", cost: 40 },
+            { id: "type-monster-1", label: "Purple Cyclops", glyph: "Monster 1", cost: 20 },
+            { id: "type-monster-2", label: "Green Grinner", glyph: "Monster 2", cost: 35 },
+            { id: "type-monster-3", label: "Orange Fuzzball", glyph: "Monster 3", cost: 50 },
+            { id: "type-monster-4", label: "Blue Star Blob", glyph: "Monster 4", cost: 70 },
+            { id: "type-robot", label: "Robot", glyph: "Robot", cost: 20 },
+            { id: "type-alien", label: "Alien", glyph: "Alien", cost: 30 },
+            { id: "type-fantasy", label: "Fantasy Creature", glyph: "Fantasy", cost: 40 },
+            { id: "type-superhero", label: "Superhero", glyph: "Superhero", cost: 50 }
         ],
         eyes: [
             { id: "eyes-classic", label: "Classic Eyes", glyph: "• •", cost: 0 },
@@ -703,6 +710,30 @@
         }
         if (avatarTypeId === "type-photo-6") {
             return ["assets/image/avatar6.png"];
+        }
+        if (avatarTypeId === "type-monster-1") {
+            return ["assets/image/monster1.svg"];
+        }
+        if (avatarTypeId === "type-monster-2") {
+            return ["assets/image/monster2.svg"];
+        }
+        if (avatarTypeId === "type-monster-3") {
+            return ["assets/image/monster3.svg"];
+        }
+        if (avatarTypeId === "type-monster-4") {
+            return ["assets/image/monster4.svg"];
+        }
+        if (avatarTypeId === "type-robot") {
+            return ["assets/image/monster-robot.svg"];
+        }
+        if (avatarTypeId === "type-alien") {
+            return ["assets/image/monster-alien.svg"];
+        }
+        if (avatarTypeId === "type-fantasy") {
+            return ["assets/image/monster-fantasy.svg"];
+        }
+        if (avatarTypeId === "type-superhero") {
+            return ["assets/image/monster-superhero.svg"];
         }
         return [];
     }
