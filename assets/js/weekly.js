@@ -12,7 +12,15 @@ const WEEKLY_TOTAL_TASKS = 10;
 const DAILY_RECOMMENDED = 2;
 const DAILY_MAX = WEEKLY_TOTAL_TASKS;
 
-const savedWeeklyProgress = JSON.parse(localStorage.getItem(getScopedKey("weeklyProgress")) || "null");
+function loadSavedWeeklyProgress() {
+    try {
+        return JSON.parse(localStorage.getItem(getScopedKey("weeklyProgress")) || "null");
+    } catch {
+        return null;
+    }
+}
+
+const savedWeeklyProgress = loadSavedWeeklyProgress();
 const legacyWeeklyCurrent = Number(localStorage.getItem(getScopedKey("weeklyCurrent")) || 0);
 const initialCompleted = Number.isFinite(savedWeeklyProgress?.completed)
     ? savedWeeklyProgress.completed
@@ -346,13 +354,14 @@ window.addEventListener("load", () => {
         localStorage.removeItem(getScopedKey("weeklyTaskDone"));
         localStorage.removeItem(getScopedKey("doingWeekly"));
 
+        // Update first: updateProgressUI closes the result panel when the week isn't finished.
+        updateProgressUI();
+
         if (bonusDelta > 0 && weeklyResultText && weeklyResultPanel) {
             weeklyResultText.innerText = `Daily challenge bonus: +${bonusDelta} points awarded.`;
             weeklyResultPanel.classList.remove("hidden");
             syncWeeklyModalState();
         }
-
-        updateProgressUI();
     } else {
         updateProgressUI();
     }

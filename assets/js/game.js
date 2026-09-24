@@ -285,6 +285,7 @@ function playWrongFeedback() {
 
 function getInGameBackTarget() {
     if (isWeekly) return "weekly.html";
+    if (source === "game") return "game.html";
     if (op === "addition") return "addition.html";
     if (op === "subtraction") return "subtraction.html";
     if (op === "multiplication") return "multiplication.html";
@@ -354,6 +355,7 @@ function updateTimerUi(msLeft) {
 
 function handleTimedOutQuestion() {
     stopQuestionTimer();
+    if (isAnswerLocked || hasStartedEndScreen) return;
 
     questionResults.push({
         index: currentQuestion,
@@ -410,9 +412,10 @@ function getTableInfoLabel() {
         return "Table: Mix operations";
     }
 
-    if (selectedTables.length === 0) return "Table: 1x-12x";
-
-    const sorted = [...selectedTables].sort((a, b) => a - b);
+    const tables = selectedTables.length > 0
+        ? selectedTables
+        : (difficultyTableSets[diff] || difficultyTableSets.easy);
+    const sorted = [...new Set(tables)].sort((a, b) => a - b);
     if (sorted.length === 1) return `Table: ${sorted[0]}x`;
     if (sorted.length === 12) return "Table: 1x-12x";
     return `Tables: ${sorted.map((num) => `${num}x`).join(", ")}`;
@@ -584,6 +587,8 @@ let timedTickLastSecond = null;
 let hasCompletedRun = false;
 let hasPersistedCurrentAttempt = false;
 let attemptStartedAt = new Date().toISOString();
+let isAnswerLocked = false;
+let hasStartedEndScreen = false;
 
 function getResultRating(correctCount, totalCount) {
     if (correctCount === totalCount && totalCount > 0) return "Excellent!";
@@ -959,12 +964,15 @@ function generateQuestion() {
 
 // Multiple choice setup
 function setupMultipleChoice() {
-    let answers = [correctAnswer];
-    while (answers.length < 3) {
-        let wrong = correctAnswer + Math.floor(Math.random() * 10) - 5;
-        if (wrong !== correctAnswer && wrong >= 0) answers.push(wrong);
+    const answers = [correctAnswer];
+    while (answers.length < choiceButtons.length) {
+        const wrong = correctAnswer + Math.floor(Math.random() * 11) - 5;
+        if (wrong >= 0 && !answers.includes(wrong)) answers.push(wrong);
     }
-    answers.sort(() => Math.random() - 0.5);
+    for (let i = answers.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [answers[i], answers[j]] = [answers[j], answers[i]];
+    }
 
     choiceButtons.forEach((btn, i) => {
         btn.innerText = answers[i];
@@ -974,12 +982,14 @@ function setupMultipleChoice() {
 
 // Check answer
 async function checkAnswer(value) {
+    if (isAnswerLocked || hasStartedEndScreen) return;
     const usesInputMode = mode === "input" || isTimedMode;
     sanitizeAnswerInputValue();
     const rawInput = usesInputMode ? answerInput.value.trim() : String(value);
     if (usesInputMode && rawInput === "") return;
     if (usesInputMode) value = Number(rawInput);
 
+    isAnswerLocked = true;
     stopQuestionTimer();
 
     const isCorrect = value === correctAnswer;
@@ -1001,6 +1011,7 @@ async function checkAnswer(value) {
     }
 
     clearAnswerInput();
+    isAnswerLocked = false;
 
     // Next question or end
     if (currentQuestion < 20) {
@@ -1088,6 +1099,8 @@ function loadSavedWeeklyResultData() {
 // End screen
 async function showEndScreen() {
     stopQuestionTimer();
+    if (hasStartedEndScreen) return;
+    hasStartedEndScreen = true;
     const profileContext = getCurrentProfileContext();
 
     if (isWeekly) {
@@ -1095,7 +1108,9 @@ async function showEndScreen() {
     }
 
     const tablesQuery = tablesParam ? `&tables=${encodeURIComponent(tablesParam)}` : "";
-    const replayQuery = `mode=${mode || "input"}&op=${op || "mixed"}&diff=${diff || "easy"}${tablesQuery}`;
+    const timeQuery = isTimedMode && requestedTimeLimit > 0 ? `&time=${requestedTimeLimit}` : "";
+    const srcQuery = source ? `&src=${encodeURIComponent(source)}` : "";
+    const replayQuery = `mode=${mode || "input"}&op=${op || "mixed"}&diff=${diff || "easy"}${tablesQuery}${timeQuery}${srcQuery}`;
     const playAgainTarget = isWeekly ? "weekly.html" : `play.html?${replayQuery}`;
     const backTarget = isWeekly ? "weekly.html" : "home.html";
 

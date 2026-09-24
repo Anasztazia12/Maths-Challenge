@@ -6,14 +6,24 @@ if (arcadeCanvas) {
         return profileStore ? profileStore.getScopedStorageKey(baseKey) : baseKey;
     }
 
+    function readJson(key) {
+        try {
+            return JSON.parse(localStorage.getItem(key) || "null");
+        } catch {
+            return null;
+        }
+    }
+
+    // DOM
+    const arcadePanel = document.getElementById("arcade-panel");
+    const arcadeCanvasWrap = document.getElementById("arcade-canvas-wrap");
     const arcadeTargetEl = document.getElementById("arcade-target");
-    const arcadeBasketEl = document.getElementById("arcade-basket");
-    const arcadeNeedEl = document.getElementById("arcade-need");
     const arcadeScoreEl = document.getElementById("arcade-score");
     const arcadePointsEl = document.getElementById("arcade-points");
     const arcadeLivesEl = document.getElementById("arcade-lives");
     const arcadeComboEl = document.getElementById("arcade-combo");
     const arcadeCheckpointEl = document.getElementById("arcade-checkpoint");
+    const arcadeProgressBarEl = document.getElementById("arcade-progress-bar");
     const arcadeOverlay = document.getElementById("arcade-overlay");
     const arcadeOverlayTitle = document.getElementById("arcade-overlay-title");
     const arcadeOverlayText = document.getElementById("arcade-overlay-text");
@@ -27,505 +37,132 @@ if (arcadeCanvas) {
 
     const ctx = arcadeCanvas.getContext("2d");
     const audioCtx = window.AudioContext ? new AudioContext() : null;
-    let arcadeAudioUnlocked = false;
 
-    const THEMES = [
-        { top: "#0f223c", bottom: "#281740", ground: "#2a1f4f" },
-        { top: "#12363f", bottom: "#1f1f50", ground: "#203d5d" },
-        { top: "#31203d", bottom: "#1d1f40", ground: "#493267" },
-        { top: "#0c2b2a", bottom: "#213344", ground: "#2b3f2f" }
-    ];
+    // Tuning
+    const STEP_MS = 1000 / 60;
+    const MAX_LIVES = 5;
+    const TASKS_PER_FIELD = 5;
+    const GRAVITY = 0.72;
+    const JUMP_VELOCITY = -15;
+    const JUMP_CUT_VELOCITY = -7;
+    const COYOTE_FRAMES = 6;
+    const JUMP_BUFFER_FRAMES = 7;
+    const APPLE_LOW_OFFSET = 36;
+    const APPLE_HIGH_OFFSET = 168;
 
     const DIFFICULTY = {
-        easy: { speed: 2.5, jumpPower: -16, gravity: 0.72, appleTick: 62, hazardTick: 95, enemyTick: 105 },
-        medium: { speed: 3.0, jumpPower: -15.3, gravity: 0.82, appleTick: 56, hazardTick: 86, enemyTick: 96 },
-        hard: { speed: 3.5, jumpPower: -14.8, gravity: 0.92, appleTick: 50, hazardTick: 78, enemyTick: 88 }
+        easy: { speed: 3.1, gap: 300, maxSpeedBonus: 1.4 },
+        medium: { speed: 3.7, gap: 270, maxSpeedBonus: 1.8 },
+        hard: { speed: 4.3, gap: 240, maxSpeedBonus: 2.2 }
     };
 
-    const MAX_CHALLENGE_FAILS = 5;
+    const THEMES = [
+        {
+            name: "Meadow",
+            skyTop: "#5ec2f7", skyBottom: "#d7f1ff",
+            far: "#8fb8e8", near: "#57c46b", nearDark: "#3a9d52",
+            grass: "#4cc44f", grassDark: "#2f9a3a", dirt: "#9a6532", dirtDark: "#7a4d24",
+            tree: "#2f8f47", sun: "#fff3b0", night: false
+        },
+        {
+            name: "Sunset",
+            skyTop: "#ff8a5b", skyBottom: "#ffd98a",
+            far: "#c96a6a", near: "#b88a3a", nearDark: "#946b28",
+            grass: "#8cbf3f", grassDark: "#6a9a2a", dirt: "#8a5230", dirtDark: "#6b3d22",
+            tree: "#6b7f2a", sun: "#fff1c4", night: false
+        },
+        {
+            name: "Starry Night",
+            skyTop: "#0b1030", skyBottom: "#33307a",
+            far: "#262a5e", near: "#1f4d3f", nearDark: "#173a30",
+            grass: "#2f8a55", grassDark: "#226b41", dirt: "#4a3326", dirtDark: "#37251b",
+            tree: "#16432f", sun: "#f5f3ff", night: true
+        },
+        {
+            name: "Candy Land",
+            skyTop: "#f5a8ff", skyBottom: "#ffe3f3",
+            far: "#c79bff", near: "#ff8cc6", nearDark: "#e56aa8",
+            grass: "#ff6fb5", grassDark: "#e04b97", dirt: "#9d4a86", dirtDark: "#7c356a",
+            tree: "#b03a86", sun: "#fffbe6", night: false
+        }
+    ];
 
     const world = {
-        width: arcadeCanvas.width,
-        height: arcadeCanvas.height,
-        groundY: arcadeCanvas.height - 70,
-        gravity: 0.82,
+        width: 860,
+        height: 420,
+        groundY: 356,
         speed: 3,
+        scroll: 0,
         frame: 0,
-        running: true
+        shake: 0
     };
 
     const player = {
-        x: 120,
+        x: 110,
         y: 0,
-        width: 68,
-        height: 74,
+        width: 54,
+        height: 64,
         vy: 0,
-        jumpPower: -15.3,
-        onGround: false
+        onGround: true,
+        framesSinceGround: 0,
+        jumpBuffer: 0,
+        jumpHeld: false,
+        shootFlash: 0
     };
 
-    const savedArcadeProfile = JSON.parse(localStorage.getItem(getScopedKey("arcadeProfile")) || "null") || {};
-
-    const profile = {
-        coins: Math.max(0, Number(savedArcadeProfile.coins) || Number(localStorage.getItem(getScopedKey("arcadeCoins")) || 0)),
-        weaponLevel: Math.max(1, Number(savedArcadeProfile.weaponLevel) || 1),
-        cosmetics: {
-            fur: savedArcadeProfile?.cosmetics?.fur || "brown",
-            eyes: savedArcadeProfile?.cosmetics?.eyes || "normal",
-            ears: savedArcadeProfile?.cosmetics?.ears || "normal",
-            smile: savedArcadeProfile?.cosmetics?.smile || "normal"
-        }
-    };
-
-    function saveArcadeProfile() {
-        localStorage.setItem(getScopedKey("arcadeCoins"), String(profile.coins));
-        localStorage.setItem(getScopedKey("arcadeProfile"), JSON.stringify(profile));
-    }
+    const savedArcadeProfile = readJson(getScopedKey("arcadeProfile")) || {};
+    const furStyle = savedArcadeProfile?.cosmetics?.fur === "pink" ? "pink" : "brown";
+    const FUR = furStyle === "pink"
+        ? { main: "#e58ac2", dark: "#c0619d", light: "#fbd3ea" }
+        : { main: "#a8703f", dark: "#80522c", light: "#f2d4ae" };
 
     const state = {
+        mode: "ready", // ready | playing | over
         score: 0,
-        lives: 10,
+        bestScore: Math.max(0, Number(localStorage.getItem(getScopedKey("arcadeBestScore")) || 0)),
+        lives: MAX_LIVES,
         combo: 0,
         bestCombo: 0,
-        nextCheckpoint: 5,
         level: 1,
-        levelDistance: 0,
-        levelGoal: 1350,
-        basket: 0,
         solvedThisLevel: 0,
-        failThisChallenge: 0,
-        awaitingStart: true,
-        awaitingNextField: false,
-        challenge: null,
+        solvedTotal: 0,
+        goldThisRun: 0,
+        question: null,
+        gateId: 0,
+        gateActive: false,
+        lastEventWasGate: false,
+        nextEventIn: 0,
+        invincibleUntil: 0,
+        powerUntil: 0,
+        shootCooldown: 0,
+        shootHeld: false,
+        toast: null,
+        banner: null,
         apples: [],
-        platforms: [],
         obstacles: [],
         enemies: [],
-        lifePickups: [],
+        pickups: [],
+        boxes: [],
         bullets: [],
-        enemyBullets: [],
-        shootCooldown: 0,
-        powerShotUntil: 0,
-        invincibleUntil: 0,
-        messageUntil: 0,
-        messageText: "",
-        phaseOrder: ["apples", "hazards", "enemies"],
-        phaseIndex: 0,
-        phaseTick: 0,
-        spawnAppleTick: 0,
-        spawnHazardTick: 0,
-        spawnEnemyTick: 0,
-        spawnRouteTick: 0,
-        spawnLifeTick: 0
+        particles: [],
+        floaters: []
     };
 
     let difficulty = arcadeDifficultyButtonsWrap?.dataset.selected || "easy";
 
-    function playTone(freq, duration, type = "sine", volume = 0.05) {
-        if (!audioCtx) return;
-        const oscillator = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        oscillator.type = type;
-        oscillator.frequency.value = freq;
-        gain.gain.value = volume;
-        oscillator.connect(gain);
-        gain.connect(audioCtx.destination);
-        const now = audioCtx.currentTime;
-        gain.gain.setValueAtTime(volume, now);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-        oscillator.start(now);
-        oscillator.stop(now + duration);
-    }
-
-    function unlockArcadeAudio() {
-        if (!audioCtx) return;
-        if (arcadeAudioUnlocked && audioCtx.state !== "suspended") return;
-        arcadeAudioUnlocked = true;
-        if (audioCtx.state === "suspended") {
-            audioCtx.resume();
-        }
-    }
-
-    function playCollectSound() { playTone(560, 0.07, "triangle", 0.05); }
-    function playShootSound() { playTone(440, 0.05, "square", 0.04); }
-    function playSuccessSound() {
-        playTone(620, 0.09, "triangle", 0.06);
-        setTimeout(() => playTone(760, 0.11, "triangle", 0.05), 65);
-    }
-    function playNewTaskSound() {
-        playTone(820, 0.07, "triangle", 0.05);
-        setTimeout(() => playTone(980, 0.08, "triangle", 0.045), 70);
-    }
-    function playHitSound() { playTone(180, 0.14, "sawtooth", 0.06); }
-    function playWrongPickSound() { playTone(230, 0.12, "square", 0.05); }
+    // ---------- Helpers ----------
 
     function randInt(min, max) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
-    function formatLives() {
-        return Number.isInteger(state.lives) ? String(state.lives) : state.lives.toFixed(1);
+    function pick(list) {
+        return list[Math.floor(Math.random() * list.length)];
     }
 
-    function formatHeartLives() {
-        const maxHearts = 10;
-        let value = Math.max(0, Math.min(maxHearts, state.lives));
-        let text = "";
-
-        for (let i = 0; i < maxHearts; i++) {
-            if (value >= 1) {
-                text += "❤️";
-                value -= 1;
-            } else if (value >= 0.5) {
-                text += "💖";
-                value -= 0.5;
-            } else {
-                text += "🤍";
-            }
-        }
-
-        return text;
-    }
-
-    function showMessage(text, durationMs = 900) {
-        state.messageText = text;
-        state.messageUntil = performance.now() + durationMs;
-    }
-
-    function newChallenge() {
-        const lvl = Math.max(1, state.level);
-        const pick = Math.random();
-        if (pick < 0.34) {
-            const maxA = Math.min(24, 9 + lvl * 2);
-            const maxB = Math.min(22, 8 + lvl * 2);
-            const a = randInt(2, maxA);
-            const b = randInt(1, maxB);
-            return { text: `${a} + ${b}`, target: a + b };
-        }
-        if (pick < 0.67) {
-            const maxMul = Math.min(12, 7 + Math.floor(lvl / 2));
-            const a = randInt(2, maxMul);
-            const b = randInt(2, maxMul);
-            return { text: `${a} × ${b}`, target: a * b };
-        }
-        const a = randInt(10 + lvl * 2, Math.min(40, 20 + lvl * 4));
-        const b = randInt(2, Math.min(12, 8 + Math.floor(lvl / 2)));
-        return { text: `${a} - ${b}`, target: a - b };
-    }
-
-    function getCurrentPhase() {
-        return state.phaseOrder[state.phaseIndex % state.phaseOrder.length];
-    }
-
-    function phaseDuration() {
-        const base = 280;
-        const faster = Math.min(90, (state.level - 1) * 12);
-        return base - faster;
-    }
-
-    function nextPhase() {
-        state.phaseIndex = (state.phaseIndex + 1) % state.phaseOrder.length;
-        state.phaseTick = 0;
-        const phaseLabel = getCurrentPhase();
-        if (phaseLabel === "apples") showMessage("Apple wave", 650);
-        if (phaseLabel === "hazards") showMessage("Obstacle wave", 650);
-        if (phaseLabel === "enemies") showMessage("Enemy wave", 650);
-    }
-
-    function applyDifficulty() {
-        const cfg = DIFFICULTY[difficulty] || DIFFICULTY.easy;
-        player.jumpPower = cfg.jumpPower;
-        world.gravity = cfg.gravity;
-        world.speed = cfg.speed + (state.level - 1) * 0.25;
-    }
-
-    function syncArcadeDifficultyFromButtons() {
-        difficulty = arcadeDifficultyButtonsWrap?.dataset.selected || "easy";
-    }
-
-    function resetWaveObjects() {
-        state.apples = [];
-        state.platforms = [];
-        state.obstacles = [];
-        state.enemies = [];
-        state.lifePickups = [];
-        state.bullets = [];
-        state.enemyBullets = [];
-        state.spawnAppleTick = 0;
-        state.spawnHazardTick = 0;
-        state.spawnEnemyTick = 0;
-        state.spawnRouteTick = 0;
-        state.spawnLifeTick = 0;
-    }
-
-    function startLevel(isNext = false) {
-        if (isNext) {
-            state.level += 1;
-            showMessage(`NEW FIELD! ${state.level}`, 1400);
-        }
-
-        state.levelDistance = 0;
-        state.levelGoal = 1300 + state.level * 300;
-        state.phaseIndex = 0;
-        state.phaseTick = 0;
-        state.basket = 0;
-        state.failThisChallenge = 0;
-        state.solvedThisLevel = 0;
-        state.challenge = newChallenge();
-        playNewTaskSound();
-        resetWaveObjects();
-        applyDifficulty();
-
-        player.y = world.groundY - player.height;
-        player.vy = 0;
-        player.onGround = true;
-    }
-
-    function resetGame() {
-        state.score = 0;
-        state.lives = 10;
-        state.combo = 0;
-        state.bestCombo = 0;
-        state.nextCheckpoint = 5;
-        state.level = 1;
-        state.solvedThisLevel = 0;
-        state.failThisChallenge = 0;
-        state.powerShotUntil = 0;
-        state.invincibleUntil = 0;
-        state.awaitingNextField = false;
-        world.running = true;
-        if (arcadeOverlay) arcadeOverlay.classList.add("hidden");
-        startLevel(false);
-        updateHud();
-    }
-
-    function updateHud() {
-        const progress = Math.min(100, Math.floor((state.levelDistance / state.levelGoal) * 100));
-        if (arcadeTargetEl) arcadeTargetEl.innerText = `Target: ${state.challenge.text}`;
-        if (arcadeBasketEl) arcadeBasketEl.style.display = "none";
-        if (arcadeNeedEl) arcadeNeedEl.style.display = "none";
-        if (arcadeScoreEl) arcadeScoreEl.innerText = `Score: ${state.score}`;
-        if (arcadePointsEl) arcadePointsEl.innerText = `Points: ${profile.coins}`;
-        if (arcadeLivesEl) arcadeLivesEl.innerText = `Lives: ${formatHeartLives()} (${formatLives()}/10)`;
-        if (arcadeComboEl) arcadeComboEl.innerText = `Combo: x${state.combo}`;
-        if (arcadeCheckpointEl) arcadeCheckpointEl.innerText = `Field ${state.level} • Solved ${state.solvedThisLevel}/5`;
-    }
-
-    function spawnRecoveryApples() {
-        // Reset active hazards so the player can retry math without instant collisions.
-        resetWaveObjects();
-
-        spawnApple(true);
-        spawnApple(true);
-        spawnApple(false);
-    }
-
-    function handleWrongMath(reasonText) {
-        state.failThisChallenge += 1;
-        state.basket = 0;
-        state.combo = 0;
-        addScore(-1);
-        playHitSound();
-        state.invincibleUntil = performance.now() + 850;
-
-        if (state.failThisChallenge < MAX_CHALLENGE_FAILS) {
-            spawnRecoveryApples();
-            state.invincibleUntil = performance.now() + 1800;
-            const remaining = MAX_CHALLENGE_FAILS - state.failThisChallenge;
-            showMessage(`Wrong! New apples incoming • ${remaining} tries left`, 1200);
-            updateHud();
-            return;
-        }
-
-        world.running = false;
-        if (arcadeOverlay) {
-            arcadeOverlay.classList.remove("hidden");
-            arcadeOverlayTitle.innerText = "Game Over";
-            arcadeOverlayText.innerText = `${reasonText} • You used all ${MAX_CHALLENGE_FAILS} tries on this math challenge.`;
-        }
-    }
-
-    function neededValue() {
-        return Math.max(1, state.challenge.target - state.basket);
-    }
-
-    function hasPowerShot() {
-        return performance.now() < state.powerShotUntil;
-    }
-
-    function addScore(delta) {
-        state.score = Math.max(0, state.score + delta);
-    }
-
-    function addCoins(delta) {
-        profile.coins = Math.max(0, profile.coins + delta);
-        saveArcadeProfile();
-    }
-    function getReadabilityScale() {
-        const clientWidth = arcadeCanvas.clientWidth || world.width;
-        if (clientWidth <= 420) return 1.45;
-        if (clientWidth <= 520) return 1.3;
-        if (clientWidth <= 680) return 1.15;
-        return 1;
-    }
-
-    function maxApplesOnField() {
-        const clientWidth = arcadeCanvas.clientWidth || world.width;
-        if (clientWidth <= 420) return 3;
-        if (clientWidth <= 680) return 4;
-        return 5;
-    }
-
-    function appleColorByValue(value) {
-        const palette = ["#ff7a59", "#7c3aed", "#06b6d4", "#f59e0b", "#10b981", "#ec4899", "#3b82f6", "#a855f7", "#eab308", "#14b8a6", "#ef4444", "#22c55e"];
-        return palette[Math.abs(value) % palette.length];
-    }
-
-    function hasNeededAppleOnField() {
-        const need = neededValue();
-        return state.apples.some((apple) => apple.value === need && apple.x > -40 && apple.x < world.width + 120);
-    }
-
-    function spawnApple(forceAnswer = false) {
-        const x = world.width + randInt(80, 160);
-        const scale = getReadabilityScale();
-        const hasUpperRoute = state.platforms.some((platform) => platform.y < world.groundY - 100 && platform.x > player.x - 160 && platform.x < world.width + 220);
-
-        let y;
-        if (hasUpperRoute) {
-            const lanePick = Math.random();
-            if (lanePick < 0.34) y = world.groundY - randInt(32, 52);
-            else if (lanePick < 0.78) y = world.groundY - randInt(138, 166);
-            else y = world.groundY - randInt(186, 214);
-        } else {
-            const laneTop = Math.random() < 0.5;
-            y = laneTop ? world.groundY - randInt(130, 165) : world.groundY - randInt(34, 54);
-        }
-
-        const need = neededValue();
-        const useAnswer = forceAnswer || (need > 0 && Math.random() < 0.3);
-        let value = useAnswer ? need : randInt(1, Math.min(12, state.challenge.target + 1));
-        if (!useAnswer && value === need) {
-            value = Math.max(1, Math.min(12, value + (Math.random() < 0.5 ? -1 : 1)));
-        }
-
-        state.apples.push({
-            x,
-            y,
-            radius: Math.round(18 * scale),
-            value,
-            isAnswer: value === need
-        });
-    }
-
-    function spawnStairRoute() {
-        const startX = world.width + randInt(70, 140);
-        const stepWidth = randInt(52, 64);
-        const stepRise = randInt(22, 28);
-        const stepHeight = 16;
-        const stepCount = 3;
-
-        for (let i = 0; i < stepCount; i++) {
-            state.platforms.push({
-                x: startX + i * stepWidth,
-                y: world.groundY - (i + 1) * stepRise,
-                width: stepWidth + 10,
-                height: stepHeight
-            });
-        }
-
-        const upperY = world.groundY - (stepCount + 1) * stepRise;
-        let cursorX = startX + stepCount * stepWidth + 10;
-        const segmentCount = randInt(3, 5);
-
-        for (let i = 0; i < segmentCount; i++) {
-            const segmentWidth = randInt(110, 170);
-            state.platforms.push({
-                x: cursorX,
-                y: upperY,
-                width: segmentWidth,
-                height: 18
-            });
-
-            const gapWidth = randInt(46, 92);
-            cursorX += segmentWidth + gapWidth;
-        }
-
-        const downStart = cursorX + 8;
-        for (let i = 0; i < stepCount; i++) {
-            state.platforms.push({
-                x: downStart + i * stepWidth,
-                y: upperY + i * stepRise,
-                width: stepWidth + 8,
-                height: stepHeight
-            });
-        }
-    }
-
-    function spawnHazard() {
-        const x = world.width + randInt(80, 150);
-
-        if (Math.random() < 0.45) {
-            const count = Math.random() < 0.4 ? 2 : 1;
-            for (let i = 0; i < count; i++) {
-                state.platforms.push({
-                    x: x + i * randInt(66, 96),
-                    y: world.groundY - randInt(88, 140),
-                    width: randInt(90, 140),
-                    height: 18
-                });
-            }
-            return;
-        }
-
-        const roll = Math.random();
-        let type = "spike";
-        if (roll < 0.4) type = "crate";
-        else if (roll < 0.74) type = "block";
-        else type = "brick";
-
-        const h = type === "spike" ? randInt(22, 42) : randInt(30, 68);
-        const w = type === "spike" ? randInt(28, 46) : randInt(32, 68);
-
-        state.obstacles.push({
-            x,
-            y: world.groundY - h,
-            width: w,
-            height: h,
-            type,
-            breakable: type === "crate",
-            breakByHead: type === "brick",
-            standable: type !== "spike"
-        });
-    }
-
-    function spawnEnemy() {
-        const x = world.width + randInt(130, 220);
-        const upperPlatform = state.platforms.find((platform) => platform.y < world.groundY - 100 && platform.x > player.x - 80 && platform.x < world.width + 220);
-        const spawnOnUpper = Boolean(upperPlatform) && Math.random() < 0.7;
-        const y = spawnOnUpper
-            ? upperPlatform.y - randInt(56, 66)
-            : world.groundY - randInt(70, 150);
-        state.enemies.push({
-            x,
-            y,
-            width: 64,
-            height: 52,
-            hp: randInt(3, 4),
-            maxHp: 4
-        });
-    }
-
-    function spawnLifePickup() {
-        const x = world.width + randInt(120, 220);
-        const highLane = Math.random() < 0.55;
-        const y = highLane ? world.groundY - randInt(130, 190) : world.groundY - randInt(48, 78);
-        state.lifePickups.push({
-            x,
-            y,
-            radius: 14,
-            type: Math.random() < 0.22 ? "power" : "life"
-        });
+    function hash(n) {
+        const s = Math.sin(n * 127.1 + 311.7) * 43758.5453;
+        return s - Math.floor(s);
     }
 
     function intersectsRect(ax, ay, aw, ah, bx, by, bw, bh) {
@@ -540,92 +177,472 @@ if (arcadeCanvas) {
         return dx * dx + dy * dy <= r * r;
     }
 
-    function addHalfLife() {
-        state.lives = Math.min(10, Math.round((state.lives + 0.5) * 2) / 2);
+    function roundRect(x, y, w, h, r) {
+        const radius = Math.min(r, w / 2, h / 2);
+        ctx.beginPath();
+        ctx.moveTo(x + radius, y);
+        ctx.arcTo(x + w, y, x + w, y + h, radius);
+        ctx.arcTo(x + w, y + h, x, y + h, radius);
+        ctx.arcTo(x, y + h, x, y, radius);
+        ctx.arcTo(x, y, x + w, y, radius);
+        ctx.closePath();
     }
 
-    function loseLife(amount, reason) {
-        state.lives = Math.round((state.lives - amount) * 2) / 2;
-        state.combo = 0;
-        state.invincibleUntil = performance.now() + 850;
-        playHitSound();
+    function currentTheme() {
+        return THEMES[(state.level - 1) % THEMES.length];
+    }
 
-        if (state.lives <= 0) {
-            state.lives = 0;
-            world.running = false;
-            if (arcadeOverlay) {
-                arcadeOverlay.classList.remove("hidden");
-                arcadeOverlayTitle.innerText = "Game Over";
-                arcadeOverlayText.innerText = `${reason} Final score: ${state.score} • Best combo: x${state.bestCombo}`;
-            }
-            return;
+    function isPanelVisible() {
+        return !arcadePanel || !arcadePanel.classList.contains("hidden");
+    }
+
+    function isInvincible() {
+        return world.frame < state.invincibleUntil;
+    }
+
+    function hasPower() {
+        return world.frame < state.powerUntil;
+    }
+
+    // ---------- Audio ----------
+
+    function playTone(freq, duration, type = "sine", volume = 0.05, delayMs = 0) {
+        if (!audioCtx) return;
+        const start = () => {
+            const oscillator = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            oscillator.type = type;
+            oscillator.frequency.value = freq;
+            oscillator.connect(gain);
+            gain.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
+            gain.gain.setValueAtTime(volume, now);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+            oscillator.start(now);
+            oscillator.stop(now + duration);
+        };
+        if (delayMs > 0) setTimeout(start, delayMs);
+        else start();
+    }
+
+    function unlockArcadeAudio() {
+        if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+    }
+
+    const sounds = {
+        jump: () => playTone(420, 0.09, "triangle", 0.04),
+        shoot: () => playTone(660, 0.05, "square", 0.025),
+        correct: () => {
+            playTone(660, 0.1, "triangle", 0.06);
+            playTone(880, 0.12, "triangle", 0.06, 80);
+            playTone(1100, 0.16, "triangle", 0.05, 160);
+        },
+        wrong: () => {
+            playTone(260, 0.14, "square", 0.05);
+            playTone(180, 0.2, "square", 0.05, 110);
+        },
+        hit: () => playTone(150, 0.18, "sawtooth", 0.06),
+        stomp: () => playTone(520, 0.08, "triangle", 0.06),
+        pickup: () => {
+            playTone(740, 0.07, "triangle", 0.05);
+            playTone(990, 0.09, "triangle", 0.05, 60);
+        },
+        field: () => {
+            [523, 659, 784, 1047].forEach((freq, i) => playTone(freq, 0.16, "triangle", 0.06, i * 110));
+        },
+        over: () => {
+            [392, 330, 262].forEach((freq, i) => playTone(freq, 0.22, "triangle", 0.06, i * 160));
         }
+    };
 
-        showMessage("Life lost", 700);
+    // ---------- Wallet ----------
+
+    function getWalletGold() {
+        const profileStore = window.MathsProfileStore;
+        if (profileStore?.getPoints) return profileStore.getPoints();
+        return Math.max(0, Number(localStorage.getItem(getScopedKey("arcadeCoins")) || 0));
     }
 
-    function completeMathGoal(source) {
-        addScore(3);
-        addCoins(1);
-        addHalfLife();
-        state.failThisChallenge = 0;
-        state.solvedThisLevel += 1;
-        state.combo += 1;
-        state.bestCombo = Math.max(state.bestCombo, state.combo);
-
-        if (source === "shot") {
-            state.enemies = [];
-            state.enemyBullets = [];
-            showMessage("Perfect shot! +0.5 life", 1100);
+    function awardGold(amount) {
+        const safe = Math.max(0, Math.round(amount));
+        if (safe <= 0) return;
+        const profileStore = window.MathsProfileStore;
+        let next;
+        if (profileStore?.addPoints) {
+            next = profileStore.addPoints(safe);
         } else {
-            showMessage("Correct! +0.5 life", 900);
+            next = getWalletGold() + safe;
         }
+        localStorage.setItem(getScopedKey("arcadeCoins"), String(next));
+        state.goldThisRun += safe;
+    }
 
-        if (state.score >= state.nextCheckpoint) {
-            state.lives = Math.min(10, state.lives + 1);
-            state.nextCheckpoint += 5;
-            showMessage("Checkpoint! +1 life", 1200);
+    // ---------- Math questions ----------
+
+    function makeQuestion() {
+        const growth = Math.min(state.level - 1, 5);
+        const ops = {
+            easy: ["+", "+", "-", "-", "×"],
+            medium: ["+", "-", "×", "×", "÷"],
+            hard: ["+", "-", "×", "÷", "×", "÷"]
+        }[difficulty] || ["+", "-"];
+        const op = pick(ops);
+        const addMax = { easy: 10, medium: 40, hard: 90 }[difficulty] + growth * (difficulty === "easy" ? 2 : 6);
+        const tableMax = Math.min(12, { easy: 5, medium: 10, hard: 12 }[difficulty] + (difficulty === "easy" ? Math.floor(growth / 2) : 0));
+
+        if (op === "+") {
+            const a = randInt(1, addMax);
+            const b = randInt(1, addMax);
+            return { op, a, b, text: `${a} + ${b}`, answer: a + b };
         }
+        if (op === "-") {
+            const a = randInt(3, addMax + 5);
+            const b = randInt(1, a - 1);
+            return { op, a, b, text: `${a} − ${b}`, answer: a - b };
+        }
+        if (op === "×") {
+            const a = randInt(2, tableMax);
+            const b = randInt(1, tableMax);
+            return { op, a, b, text: `${a} × ${b}`, answer: a * b };
+        }
+        const b = randInt(2, tableMax);
+        const answer = randInt(1, tableMax);
+        return { op, a: answer * b, b, text: `${answer * b} ÷ ${b}`, answer };
+    }
 
-        state.basket = 0;
-        state.challenge = newChallenge();
-        playSuccessSound();
-        setTimeout(() => playNewTaskSound(), 120);
+    function makeWrongAnswer(question) {
+        const { answer, op, a, b } = question;
+        const candidates = [answer + 1, answer - 1, answer + 2, answer - 2];
+        if (op === "+" || op === "-") candidates.push(answer + 10, answer - 10);
+        if (op === "×") candidates.push(a * (b + 1), a * (b - 1), (a + 1) * b, (a - 1) * b);
+        if (op === "÷") candidates.push(answer + b, Math.max(0, answer - 1));
+        const valid = candidates.filter((value) => value >= 0 && value !== answer);
+        return pick(valid);
+    }
+
+    function newQuestion() {
+        state.question = makeQuestion();
         updateHud();
     }
 
-    function shoot() {
-        if (!world.running || state.shootCooldown > 0) return;
-        unlockArcadeAudio();
+    // ---------- Spawning ----------
 
-        state.shootCooldown = 12;
-        const powered = hasPowerShot();
-        const baseRadius = 7 + (profile.weaponLevel - 1);
-        const baseSpeed = 9.2 + (profile.weaponLevel - 1) * 0.4;
-        state.bullets.push({
-            x: player.x + player.width - 2,
-            y: player.y + player.height * 0.45,
-            radius: powered ? baseRadius + 4 : baseRadius,
-            vx: powered ? baseSpeed + 2 : baseSpeed,
-            vy: 0,
-            power: powered,
-            piercing: powered
+    function spawnGate() {
+        state.gateId += 1;
+        const x = world.width + 60;
+        const correctIsHigh = Math.random() < 0.5;
+        const wrong = makeWrongAnswer(state.question);
+        const lanes = [
+            { y: world.groundY - APPLE_LOW_OFFSET, value: correctIsHigh ? wrong : state.question.answer },
+            { y: world.groundY - APPLE_HIGH_OFFSET, value: correctIsHigh ? state.question.answer : wrong }
+        ];
+        lanes.forEach((lane, i) => {
+            state.apples.push({
+                gate: state.gateId,
+                x,
+                baseY: lane.y,
+                y: lane.y,
+                radius: 24,
+                value: lane.value,
+                isCorrect: lane.value === state.question.answer,
+                phase: i * 1.7
+            });
         });
-        playShootSound();
+        state.gateActive = true;
     }
 
-    function jump() {
+    function spawnFiller() {
+        const x = world.width + 40;
+        const needsHeart = state.lives < MAX_LIVES;
+        const table = [
+            ["spike", 30],
+            ["crate", 18],
+            ["block", 10],
+            ["slime", 22],
+            ["bat", state.level >= 2 || difficulty !== "easy" ? 12 : 0],
+            ["box", 8],
+            ["heart", needsHeart ? 7 : 0]
+        ];
+        const total = table.reduce((sum, [, weight]) => sum + weight, 0);
+        let roll = Math.random() * total;
+        let kind = "spike";
+        for (const [name, weight] of table) {
+            roll -= weight;
+            if (roll <= 0) {
+                kind = name;
+                break;
+            }
+        }
+
+        if (kind === "spike") {
+            const count = randInt(1, state.level >= 3 ? 3 : 2);
+            state.obstacles.push({ type: "spike", x, y: world.groundY - 30, width: count * 28, height: 30, standable: false });
+        } else if (kind === "crate") {
+            const size = 46;
+            const stacked = state.level >= 2 && Math.random() < 0.35;
+            state.obstacles.push({ type: "crate", x, y: world.groundY - size, width: size, height: size, standable: true, hp: 1 });
+            if (stacked) {
+                state.obstacles.push({ type: "crate", x, y: world.groundY - size * 2, width: size, height: size, standable: true, hp: 1 });
+            }
+        } else if (kind === "block") {
+            const h = randInt(50, 70);
+            state.obstacles.push({ type: "block", x, y: world.groundY - h, width: 54, height: h, standable: true });
+        } else if (kind === "slime") {
+            state.enemies.push({ type: "slime", x, y: world.groundY - 40, width: 50, height: 40, hp: 2, maxHp: 2, phase: Math.random() * 6 });
+        } else if (kind === "bat") {
+            const baseY = world.groundY - randInt(120, 160);
+            state.enemies.push({ type: "bat", x, y: baseY, baseY, width: 46, height: 30, hp: 1, maxHp: 1, phase: Math.random() * 6 });
+        } else if (kind === "box") {
+            state.boxes.push({ x, y: world.groundY - 200, width: 40, height: 40, bump: 0 });
+        } else {
+            state.pickups.push({ type: "heart", x, y: world.groundY - randInt(60, 150), radius: 15, phase: 0 });
+        }
+    }
+
+    function eventGap() {
+        const cfg = DIFFICULTY[difficulty] || DIFFICULTY.easy;
+        return Math.max(190, cfg.gap - (state.level - 1) * 8) + randInt(-20, 40);
+    }
+
+    function updateSpawns() {
+        state.nextEventIn -= world.speed;
+        if (state.nextEventIn > 0) return;
+
+        if (!state.gateActive && !state.lastEventWasGate) {
+            spawnGate();
+            state.lastEventWasGate = true;
+            state.nextEventIn = eventGap() + 60;
+            return;
+        }
+
+        spawnFiller();
+        state.lastEventWasGate = false;
+        state.nextEventIn = eventGap();
+    }
+
+    // ---------- Effects ----------
+
+    function burst(x, y, colors, count = 14, speed = 4) {
+        for (let i = 0; i < count; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const velocity = speed * (0.4 + Math.random() * 0.8);
+            state.particles.push({
+                x,
+                y,
+                vx: Math.cos(angle) * velocity,
+                vy: Math.sin(angle) * velocity - 1.5,
+                life: 36 + randInt(0, 16),
+                maxLife: 52,
+                size: randInt(3, 6),
+                color: pick(colors)
+            });
+        }
+    }
+
+    function floatText(x, y, text, color = "#ffffff", size = 22) {
+        state.floaters.push({ x, y, text, color, size, life: 55, maxLife: 55 });
+    }
+
+    function showToast(text, color = "#ffffff", frames = 80) {
+        state.toast = { text, color, until: world.frame + frames, start: world.frame };
+    }
+
+    function showBanner(title, subtitle, frames = 120) {
+        state.banner = { title, subtitle, until: world.frame + frames, start: world.frame };
+    }
+
+    // ---------- Game flow ----------
+
+    function applyDifficulty() {
+        const cfg = DIFFICULTY[difficulty] || DIFFICULTY.easy;
+        world.speed = cfg.speed + Math.min(cfg.maxSpeedBonus, (state.level - 1) * 0.3);
+    }
+
+    function clearField() {
+        state.apples = [];
+        state.obstacles = [];
+        state.enemies = [];
+        state.pickups = [];
+        state.boxes = [];
+        state.bullets = [];
+        state.gateActive = false;
+        state.lastEventWasGate = false;
+        state.nextEventIn = 260;
+    }
+
+    function resetGame() {
+        state.score = 0;
+        state.lives = MAX_LIVES;
+        state.combo = 0;
+        state.bestCombo = 0;
+        state.level = 1;
+        state.solvedThisLevel = 0;
+        state.solvedTotal = 0;
+        state.goldThisRun = 0;
+        state.invincibleUntil = 0;
+        state.powerUntil = 0;
+        state.shootCooldown = 0;
+        state.toast = null;
+        state.particles = [];
+        state.floaters = [];
+        world.scroll = 0;
+        world.shake = 0;
+        player.y = world.groundY - player.height;
+        player.vy = 0;
+        player.onGround = true;
+        player.jumpBuffer = 0;
+        clearField();
+        applyDifficulty();
+        newQuestion();
+    }
+
+    function startGame() {
         unlockArcadeAudio();
-        if (!world.running || !player.onGround) return;
-        player.vy = player.jumpPower;
-        player.onGround = false;
+        difficulty = arcadeDifficultyButtonsWrap?.dataset.selected || "easy";
+        resetGame();
+        state.mode = "playing";
+        arcadeRulesEl?.classList.add("hidden");
+        arcadeOverlay?.classList.add("hidden");
+        showBanner("GO!", `Field 1 · ${currentTheme().name}`, 80);
+        playTone(880, 0.12, "triangle", 0.05);
     }
 
-    function updatePlayerPhysics() {
+    function showReadyScreen() {
+        state.mode = "ready";
+        difficulty = arcadeDifficultyButtonsWrap?.dataset.selected || "easy";
+        resetGame();
+        arcadeOverlay?.classList.add("hidden");
+        arcadeRulesEl?.classList.remove("hidden");
+    }
+
+    function gameOver() {
+        state.mode = "over";
+        sounds.over();
+        const isNewBest = state.score > state.bestScore;
+        if (isNewBest) {
+            state.bestScore = state.score;
+            localStorage.setItem(getScopedKey("arcadeBestScore"), String(state.bestScore));
+        }
+        if (arcadeOverlay) {
+            arcadeOverlayTitle.innerText = isNewBest && state.score > 0 ? "New best score! 🏆" : "Game Over";
+            arcadeOverlayText.innerHTML = `
+                <span class="arcade-result-grid">
+                    <span><strong>${state.score}</strong>Score</span>
+                    <span><strong>${state.solvedTotal}</strong>Correct</span>
+                    <span><strong>${state.level}</strong>Field</span>
+                    <span><strong>+${state.goldThisRun}</strong>Gold</span>
+                </span>
+                <span class="arcade-result-best">Best score: ${state.bestScore} · Best combo: x${state.bestCombo}</span>`;
+            arcadeOverlay.classList.remove("hidden");
+        }
+        updateHud();
+    }
+
+    function hurt(reason) {
+        if (isInvincible() || state.mode !== "playing") return;
+        state.lives -= 1;
+        state.combo = 0;
+        state.invincibleUntil = world.frame + 80;
+        world.shake = 10;
+        sounds.hit();
+        burst(player.x + player.width / 2, player.y + player.height / 2, ["#ff5d73", "#ffffff", "#ffb3c1"], 16, 4);
+        floatText(player.x + player.width / 2, player.y - 8, "−1 ❤", "#ff6b81", 22);
+        if (reason) showToast(reason, "#ffd1d8", 70);
+        updateHud();
+        if (state.lives <= 0) gameOver();
+    }
+
+    function solveQuestion(apple) {
+        state.combo += 1;
+        state.bestCombo = Math.max(state.bestCombo, state.combo);
+        const points = 10 + Math.min(20, (state.combo - 1) * 2);
+        state.score += points;
+        state.solvedThisLevel += 1;
+        state.solvedTotal += 1;
+        awardGold(1);
+        sounds.correct();
+        burst(apple.x, apple.y, ["#ffe066", "#7cf29a", "#ffffff", "#66d9ff"], 22, 5);
+        floatText(apple.x, apple.y - 30, `+${points}`, "#fff59d", 26);
+        showToast(state.combo >= 3 ? `Correct! Combo x${state.combo} 🔥` : pick(["Correct! ✨", "Great job! ⭐", "Awesome! 🎉", "Well done! 👏"]), "#b9ffcf", 70);
+
+        if (state.solvedThisLevel >= TASKS_PER_FIELD) {
+            completeField();
+        } else {
+            newQuestion();
+        }
+    }
+
+    function completeField() {
+        state.level += 1;
+        state.solvedThisLevel = 0;
+        state.lives = Math.min(MAX_LIVES, state.lives + 1);
+        state.score += 25;
+        awardGold(2);
+        clearField();
+        applyDifficulty();
+        newQuestion();
+        sounds.field();
+        showBanner(`FIELD ${state.level}`, `${currentTheme().name} · +1 ❤  +2 gold`, 150);
+    }
+
+    function answerWrong(apple) {
+        sounds.wrong();
+        burst(apple.x, apple.y, ["#ff6b6b", "#8b1e1e", "#ffffff"], 14, 4);
+        floatText(apple.x, apple.y - 30, `✗ ${apple.value}`, "#ff8a8a", 24);
+        state.invincibleUntil = 0;
+        hurt(`Not ${apple.value}. Try again: ${state.question.text}`);
+    }
+
+    // ---------- Player ----------
+
+    function requestJump() {
+        unlockArcadeAudio();
+        if (state.mode !== "playing" || !isPanelVisible()) return;
+        player.jumpHeld = true;
+        player.jumpBuffer = JUMP_BUFFER_FRAMES;
+    }
+
+    function releaseJump() {
+        player.jumpHeld = false;
+        if (player.vy < JUMP_CUT_VELOCITY) player.vy = JUMP_CUT_VELOCITY;
+    }
+
+    function shoot() {
+        unlockArcadeAudio();
+        if (state.mode !== "playing" || !isPanelVisible() || state.shootCooldown > 0) return;
+        const powered = hasPower();
+        state.shootCooldown = powered ? 8 : 14;
+        player.shootFlash = 6;
+        state.bullets.push({
+            x: player.x + player.width,
+            y: player.y + player.height * 0.48,
+            radius: powered ? 10 : 7,
+            vx: powered ? 11 : 9.5,
+            piercing: powered,
+            power: powered
+        });
+        sounds.shoot();
+    }
+
+    function updatePlayer() {
         const previousBottom = player.y + player.height;
 
-        player.vy += world.gravity;
+        if (player.jumpBuffer > 0) {
+            player.jumpBuffer -= 1;
+            if (player.onGround || player.framesSinceGround < COYOTE_FRAMES) {
+                player.vy = JUMP_VELOCITY;
+                player.onGround = false;
+                player.framesSinceGround = COYOTE_FRAMES;
+                player.jumpBuffer = 0;
+                sounds.jump();
+                burst(player.x + player.width / 2, player.y + player.height, ["#ffffff", "#e2e8f0"], 6, 2);
+                if (!player.jumpHeld) player.vy = JUMP_CUT_VELOCITY - 3;
+            }
+        }
+
+        player.vy = Math.min(player.vy + GRAVITY, 16);
         player.y += player.vy;
+        const wasOnGround = player.onGround;
         player.onGround = false;
 
         if (player.y + player.height >= world.groundY) {
@@ -634,728 +651,1047 @@ if (arcadeCanvas) {
             player.onGround = true;
         }
 
-        for (const platform of state.platforms) {
-            const onTop = previousBottom <= platform.y
-                && player.y + player.height >= platform.y
-                && player.x + player.width > platform.x + 6
-                && player.x < platform.x + platform.width - 6
-                && player.vy >= 0;
-            if (onTop) {
-                player.y = platform.y - player.height;
-                player.vy = 0;
-                player.onGround = true;
-            }
-        }
-
         for (const obstacle of state.obstacles) {
             if (!obstacle.standable) continue;
-            const onTop = previousBottom <= obstacle.y
+            const landing = previousBottom <= obstacle.y + 2
                 && player.y + player.height >= obstacle.y
                 && player.x + player.width > obstacle.x + 4
                 && player.x < obstacle.x + obstacle.width - 4
                 && player.vy >= 0;
-            if (onTop) {
+            if (landing) {
                 player.y = obstacle.y - player.height;
                 player.vy = 0;
                 player.onGround = true;
             }
         }
 
-        for (let obstacleIndex = state.obstacles.length - 1; obstacleIndex >= 0; obstacleIndex--) {
-            const obstacle = state.obstacles[obstacleIndex];
-            if (!obstacle.breakByHead) continue;
-
-            const hitFromBelow = player.vy < 0
-                && player.y <= obstacle.y + obstacle.height
-                && player.y >= obstacle.y + obstacle.height - 16
-                && player.x + player.width > obstacle.x + 4
-                && player.x < obstacle.x + obstacle.width - 4;
-
-            if (!hitFromBelow) continue;
-
-            player.vy = 1.2;
-            state.obstacles.splice(obstacleIndex, 1);
-
-            if (Math.random() < 0.52) {
-                addHalfLife();
-                showMessage("Brick bonus: +0.5 life", 900);
-            } else {
-                state.powerShotUntil = performance.now() + 9000;
-                showMessage("Power shot unlocked!", 1000);
-            }
-
-            playCollectSound();
-            updateHud();
-            break;
-        }
-    }
-
-    function updateSpawns() {
-        const cfg = DIFFICULTY[difficulty] || DIFFICULTY.easy;
-        const phase = getCurrentPhase();
-
-        state.spawnRouteTick += 1;
-        if (state.spawnRouteTick > Math.max(240, 340 - state.level * 10)) {
-            state.spawnRouteTick = 0;
-            spawnStairRoute();
-            showMessage("Stairs ahead", 700);
-        }
-
-        state.phaseTick += 1;
-        if (state.phaseTick > phaseDuration()) {
-            nextPhase();
-        }
-
-        if (phase === "apples") {
-            state.spawnAppleTick += 1;
-            const noExactNeededVisible = !hasNeededAppleOnField();
-            const spawnThreshold = noExactNeededVisible
-                ? Math.max(34, cfg.appleTick + 4 - state.level * 2)
-                : Math.max(50, cfg.appleTick + 14 - state.level * 2);
-
-            if (state.spawnAppleTick > spawnThreshold && state.apples.length < maxApplesOnField()) {
-                state.spawnAppleTick = 0;
-                // If no correct apple is visible, always spawn a correct one.
-                if (noExactNeededVisible) {
-                    spawnApple(true);
-                } else {
-                    spawnApple(false);
+        if (player.onGround) {
+            if (!wasOnGround && previousBottom < player.y + player.height + 1) {
+                // Landing puff.
+                if (player.framesSinceGround > 10) {
+                    burst(player.x + player.width / 2, player.y + player.height, ["#ffffff", "#e2e8f0"], 5, 1.6);
                 }
             }
+            player.framesSinceGround = 0;
+        } else {
+            player.framesSinceGround += 1;
         }
 
-        if (phase === "hazards") {
-            state.spawnHazardTick += 1;
-            if (state.spawnHazardTick > Math.max(62, cfg.hazardTick - state.level * 2)) {
-                state.spawnHazardTick = 0;
-                spawnHazard();
-            }
+        // Bonus boxes: bump from below.
+        for (let i = state.boxes.length - 1; i >= 0; i--) {
+            const box = state.boxes[i];
+            const headHit = player.vy < 0
+                && player.y <= box.y + box.height
+                && player.y - player.vy >= box.y + box.height - 2
+                && player.x + player.width > box.x + 4
+                && player.x < box.x + box.width - 4;
+            if (!headHit) continue;
+            player.y = box.y + box.height;
+            player.vy = 2;
+            state.boxes.splice(i, 1);
+            burst(box.x + box.width / 2, box.y + box.height / 2, ["#ffd43b", "#fff3bf", "#f59f00"], 18, 4);
+            const reward = state.lives < MAX_LIVES && Math.random() < 0.6 ? "heart" : "power";
+            state.pickups.push({ type: reward, x: box.x + box.width / 2, y: box.y - 22, radius: 15, phase: 0 });
+            sounds.pickup();
         }
 
-        if (phase === "enemies") {
-            state.spawnEnemyTick += 1;
-            if (state.spawnEnemyTick > Math.max(68, cfg.enemyTick - state.level * 2)) {
-                state.spawnEnemyTick = 0;
-                spawnEnemy();
-            }
-        }
-
-        state.spawnLifeTick += 1;
-        if (state.spawnLifeTick > Math.max(290, 360 - state.level * 10)) {
-            state.spawnLifeTick = 0;
-            spawnLifePickup();
-        }
+        if (state.shootCooldown > 0) state.shootCooldown -= 1;
+        if (player.shootFlash > 0) player.shootFlash -= 1;
+        if (state.shootHeld) shoot();
     }
+
+    // ---------- World update ----------
 
     function updateMovement() {
-        state.apples.forEach((apple) => { apple.x -= world.speed; });
-        state.platforms.forEach((platform) => { platform.x -= world.speed + 0.2; });
-        state.obstacles.forEach((obstacle) => { obstacle.x -= world.speed + 0.35; });
+        const speed = world.speed;
+        world.scroll += speed;
+
+        state.apples.forEach((apple) => {
+            apple.x -= speed;
+            apple.y = apple.baseY + Math.sin(world.frame * 0.08 + apple.phase) * 4;
+        });
+        state.obstacles.forEach((obstacle) => { obstacle.x -= speed; });
+        state.boxes.forEach((box) => { box.x -= speed; });
+        state.pickups.forEach((pickup) => {
+            pickup.x -= speed;
+            pickup.phase += 0.08;
+        });
         state.enemies.forEach((enemy) => {
-            enemy.x -= world.speed + 0.7;
-        });
-
-        state.bullets.forEach((bullet) => {
-            bullet.x += bullet.vx;
-            bullet.y += bullet.vy;
-        });
-
-        state.enemyBullets.forEach((bullet) => { bullet.x += bullet.vx; });
-
-        state.lifePickups.forEach((pickup) => { pickup.x -= world.speed + 0.45; });
-
-        state.apples = state.apples.filter((apple) => apple.x > -90);
-        state.platforms = state.platforms.filter((platform) => platform.x + platform.width > -100);
-        state.obstacles = state.obstacles.filter((obstacle) => obstacle.x + obstacle.width > -100);
-        state.enemies = state.enemies.filter((enemy) => enemy.x + enemy.width > -140);
-        state.lifePickups = state.lifePickups.filter((pickup) => pickup.x + pickup.radius > -90);
-        state.bullets = state.bullets.filter((bullet) => bullet.x < world.width + 80 && bullet.y > -80 && bullet.y < world.height + 80);
-        state.enemyBullets = state.enemyBullets.filter((bullet) => bullet.x > -80);
-    }
-
-    function handlePlayerApplePickup() {
-        for (let i = state.apples.length - 1; i >= 0; i--) {
-            const apple = state.apples[i];
-            if (!intersectsCircleRect(apple.x, apple.y, apple.radius, player.x, player.y, player.width, player.height)) continue;
-
-            state.basket += apple.value;
-            state.apples.splice(i, 1);
-            playCollectSound();
-
-            if (state.basket === state.challenge.target) {
-                completeMathGoal("pickup");
-                return;
-            }
-            if (state.basket > state.challenge.target) {
-                addScore(-1);
-                addCoins(-1);
-                playWrongPickSound();
-                handleWrongMath("Wrong total");
-                return;
-            }
-            updateHud();
-        }
-    }
-
-    function handleLifePickupCollection() {
-        for (let i = state.lifePickups.length - 1; i >= 0; i--) {
-            const pickup = state.lifePickups[i];
-            if (!intersectsCircleRect(pickup.x, pickup.y, pickup.radius, player.x, player.y, player.width, player.height)) continue;
-
-            state.lifePickups.splice(i, 1);
-            playCollectSound();
-
-            if (pickup.type === "power") {
-                state.powerShotUntil = performance.now() + 9000;
-                showMessage("Power shot ready!", 900);
+            enemy.phase += 0.12;
+            if (enemy.type === "slime") {
+                enemy.x -= speed + 0.9;
             } else {
-                addHalfLife();
-                addCoins(1);
-                showMessage("Life pickup +0.5", 900);
+                enemy.x -= speed + 1.4;
+                enemy.y = enemy.baseY + Math.sin(enemy.phase * 0.6) * 18;
             }
+        });
+        state.bullets.forEach((bullet) => { bullet.x += bullet.vx; });
 
+        state.particles.forEach((particle) => {
+            particle.x += particle.vx - speed * 0.3;
+            particle.y += particle.vy;
+            particle.vy += 0.18;
+            particle.life -= 1;
+        });
+        state.floaters.forEach((floater) => {
+            floater.y -= 0.9;
+            floater.life -= 1;
+        });
+
+        // A gate that scrolled away unanswered comes back with the same question.
+        const activeGateApples = state.apples.filter((apple) => apple.gate === state.gateId);
+        if (state.gateActive && activeGateApples.length > 0 && activeGateApples.every((apple) => apple.x < -40)) {
+            state.gateActive = false;
+            state.combo = 0;
+            showToast(`Missed it! Look again: ${state.question.text}`, "#ffe8a3", 80);
+            updateHud();
+        }
+
+        state.apples = state.apples.filter((apple) => apple.x > -60);
+        state.obstacles = state.obstacles.filter((obstacle) => obstacle.x + obstacle.width > -40);
+        state.boxes = state.boxes.filter((box) => box.x + box.width > -40);
+        state.pickups = state.pickups.filter((pickup) => pickup.x > -40);
+        state.enemies = state.enemies.filter((enemy) => enemy.x + enemy.width > -60);
+        state.bullets = state.bullets.filter((bullet) => bullet.x < world.width + 40);
+        state.particles = state.particles.filter((particle) => particle.life > 0);
+        state.floaters = state.floaters.filter((floater) => floater.life > 0);
+    }
+
+    function handleApples() {
+        for (let i = 0; i < state.apples.length; i++) {
+            const apple = state.apples[i];
+            if (!intersectsCircleRect(apple.x, apple.y, apple.radius - 3, player.x, player.y, player.width, player.height)) continue;
+
+            // The first apple touched in a gate counts; its partner pops.
+            const gate = apple.gate;
+            state.apples.forEach((other) => {
+                if (other.gate === gate && other !== apple) {
+                    burst(other.x, other.y, ["#ffffff", "#ffd6d6"], 6, 2);
+                }
+            });
+            state.apples = state.apples.filter((other) => other.gate !== gate);
+            if (gate === state.gateId) state.gateActive = false;
+
+            if (apple.isCorrect) solveQuestion(apple);
+            else answerWrong(apple);
+            return;
+        }
+    }
+
+    function handlePickups() {
+        for (let i = state.pickups.length - 1; i >= 0; i--) {
+            const pickup = state.pickups[i];
+            if (!intersectsCircleRect(pickup.x, pickup.y, pickup.radius, player.x, player.y, player.width, player.height)) continue;
+            state.pickups.splice(i, 1);
+            sounds.pickup();
+            if (pickup.type === "power") {
+                state.powerUntil = world.frame + 60 * 8;
+                showToast("Power shot! ⚡", "#a5f3fc", 70);
+                burst(pickup.x, pickup.y, ["#67e8f9", "#ffffff"], 14, 3);
+            } else if (state.lives < MAX_LIVES) {
+                state.lives += 1;
+                floatText(pickup.x, pickup.y - 16, "+1 ❤", "#ff8fab", 22);
+                burst(pickup.x, pickup.y, ["#ff6b8a", "#ffffff"], 14, 3);
+            } else {
+                state.score += 5;
+                floatText(pickup.x, pickup.y - 16, "+5", "#fff59d", 22);
+            }
             updateHud();
         }
     }
 
-    function handleEnemyStomp() {
-        for (let i = state.enemies.length - 1; i >= 0; i--) {
-            const enemy = state.enemies[i];
-            const touching = intersectsRect(player.x, player.y, player.width, player.height, enemy.x, enemy.y, enemy.width, enemy.height);
-            if (!touching) continue;
-
-            const stompHit = player.vy > 1.1 && (player.y + player.height) <= (enemy.y + 18);
-            if (!stompHit) continue;
-
-            state.enemies.splice(i, 1);
-            player.vy = player.jumpPower * 0.62;
-            player.onGround = false;
-            addScore(2);
-            addCoins(1);
-            state.combo += 1;
-            state.bestCombo = Math.max(state.bestCombo, state.combo);
-            showMessage("Enemy stomped!", 760);
-            playCollectSound();
-            updateHud();
-        }
-    }
-
-    function handleBulletHits() {
-        for (let bulletIndex = state.bullets.length - 1; bulletIndex >= 0; bulletIndex--) {
-            const bullet = state.bullets[bulletIndex];
+    function handleBullets() {
+        for (let b = state.bullets.length - 1; b >= 0; b--) {
+            const bullet = state.bullets[b];
             let consumed = false;
 
-            for (let appleIndex = state.apples.length - 1; appleIndex >= 0; appleIndex--) {
-                const apple = state.apples[appleIndex];
-                const dx = bullet.x - apple.x;
-                const dy = bullet.y - apple.y;
-                const r = bullet.radius + apple.radius + 3;
-                if (dx * dx + dy * dy > r * r) continue;
-
-                const need = neededValue();
-                // Keep the correct answer apple collectible only by touching it.
-                if (apple.value === need) {
-                    continue;
-                }
-
-                state.apples.splice(appleIndex, 1);
-                if (!bullet.piercing) {
-                    state.bullets.splice(bulletIndex, 1);
-                    consumed = true;
-                }
-
-                addScore(-1);
-                addCoins(-1);
-                playWrongPickSound();
-                // Do not remove life for wrong shots; only reduce points.
-                // handleWrongMath("Wrong number shot");
-                break;
-            }
-
-            if (consumed) continue;
-
-            for (let enemyIndex = state.enemies.length - 1; enemyIndex >= 0; enemyIndex--) {
-                const enemy = state.enemies[enemyIndex];
+            for (let e = state.enemies.length - 1; e >= 0; e--) {
+                const enemy = state.enemies[e];
                 if (!intersectsCircleRect(bullet.x, bullet.y, bullet.radius, enemy.x, enemy.y, enemy.width, enemy.height)) continue;
-
-                enemy.hp -= 1;
-                if (!bullet.piercing) {
-                    state.bullets.splice(bulletIndex, 1);
-                    consumed = true;
-                }
-                playCollectSound();
-
+                enemy.hp -= bullet.power ? 2 : 1;
+                enemy.flash = 6;
+                if (!bullet.piercing) consumed = true;
                 if (enemy.hp <= 0) {
-                    state.enemies.splice(enemyIndex, 1);
-                    addScore(1);
-                    addCoins(1);
-                    showMessage("Enemy defeated", 650);
+                    state.enemies.splice(e, 1);
+                    state.score += 5;
+                    floatText(enemy.x + enemy.width / 2, enemy.y - 10, "+5", "#fff59d", 20);
+                    burst(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.type === "slime" ? ["#a78bfa", "#ddd6fe", "#ffffff"] : ["#475569", "#cbd5e1"], 16, 4);
+                    sounds.stomp();
                 } else {
-                    showMessage(`Enemy hit (${enemy.hp} left)`, 520);
+                    playTone(300, 0.05, "square", 0.03);
                 }
                 break;
             }
 
-            if (consumed) continue;
-
-            for (let obstacleIndex = state.obstacles.length - 1; obstacleIndex >= 0; obstacleIndex--) {
-                const obstacle = state.obstacles[obstacleIndex];
-                if (!intersectsCircleRect(bullet.x, bullet.y, bullet.radius, obstacle.x, obstacle.y, obstacle.width, obstacle.height)) continue;
-
-                if (!bullet.piercing) {
-                    state.bullets.splice(bulletIndex, 1);
+            if (!consumed) {
+                for (let o = state.obstacles.length - 1; o >= 0; o--) {
+                    const obstacle = state.obstacles[o];
+                    if (obstacle.type === "spike") continue;
+                    if (!intersectsCircleRect(bullet.x, bullet.y, bullet.radius, obstacle.x, obstacle.y, obstacle.width, obstacle.height)) continue;
                     consumed = true;
+                    if (obstacle.type === "crate") {
+                        state.obstacles.splice(o, 1);
+                        state.score += 1;
+                        burst(obstacle.x + obstacle.width / 2, obstacle.y + obstacle.height / 2, ["#c07a35", "#8a5420", "#f0c38a"], 14, 4);
+                        playTone(240, 0.07, "triangle", 0.04);
+                    } else {
+                        burst(bullet.x, bullet.y, ["#ffffff", "#cbd5e1"], 4, 2);
+                    }
+                    break;
                 }
-                if (obstacle.breakable) {
-                    state.obstacles.splice(obstacleIndex, 1);
-                    playCollectSound();
-                    showMessage("Crate destroyed", 620);
-                }
-                break;
             }
+
+            if (consumed) state.bullets.splice(b, 1);
         }
     }
 
-    function handleDamageCollisions() {
-        if (performance.now() <= state.invincibleUntil) return;
+    function handleEnemiesAndHazards() {
+        const px = player.x + 6;
+        const py = player.y + 6;
+        const pw = player.width - 12;
+        const ph = player.height - 8;
+
+        for (let i = state.enemies.length - 1; i >= 0; i--) {
+            const enemy = state.enemies[i];
+            if (!intersectsRect(player.x, player.y, player.width, player.height, enemy.x + 4, enemy.y + 4, enemy.width - 8, enemy.height - 6)) continue;
+
+            const stomp = player.vy > 0.5 && player.y + player.height - player.vy <= enemy.y + 14;
+            if (stomp) {
+                state.enemies.splice(i, 1);
+                player.vy = JUMP_VELOCITY * 0.65;
+                player.onGround = false;
+                state.score += 5;
+                floatText(enemy.x + enemy.width / 2, enemy.y - 10, "STOMP! +5", "#fff59d", 20);
+                burst(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, ["#a78bfa", "#ddd6fe", "#ffffff"], 16, 4);
+                sounds.stomp();
+                continue;
+            }
+            hurt("Ouch! Jump on monsters or shoot them.");
+            return;
+        }
 
         for (const obstacle of state.obstacles) {
-            const touching = intersectsRect(
-                player.x + 6,
-                player.y + 6,
-                player.width - 12,
-                player.height - 8,
-                obstacle.x + 2,
-                obstacle.y + 2,
-                Math.max(4, obstacle.width - 4),
-                Math.max(4, obstacle.height - 4)
-            );
-
-            const standing = player.y + player.height <= obstacle.y + 3
-                && player.x + player.width > obstacle.x + 4
-                && player.x < obstacle.x + obstacle.width - 4;
-
-            if (touching && !(obstacle.standable && standing)) {
-                loseLife(1, "Obstacle collision.");
-                return;
-            }
-        }
-
-        for (const enemy of state.enemies) {
-            if (intersectsRect(player.x, player.y, player.width, player.height, enemy.x, enemy.y, enemy.width, enemy.height)) {
-                loseLife(1, "Monster collision.");
-                return;
-            }
-        }
-
-    }
-
-    function updateLevelProgress() {
-        if (state.solvedThisLevel < 5) return;
-
-        if (!state.awaitingNextField) {
-            state.awaitingNextField = true;
-            world.running = false;
-            showMessage(`NEW FIELD! ${state.level + 1}`, 1500);
-            startLevel(true);
-            state.awaitingNextField = false;
-            world.running = true;
+            const inset = obstacle.type === "spike" ? 6 : 3;
+            const touching = intersectsRect(px, py, pw, ph, obstacle.x + inset, obstacle.y + inset, obstacle.width - inset * 2, obstacle.height - inset);
+            if (!touching) continue;
+            const standingOnTop = obstacle.standable && player.y + player.height <= obstacle.y + 4;
+            if (standingOnTop) continue;
+            hurt(obstacle.type === "spike" ? "Ouch, spikes! Jump over them." : "Bonk! Jump over it or shoot the crate.");
+            return;
         }
     }
 
     function update() {
-        if (!world.running || state.awaitingStart) return;
-        if (document.getElementById("arcade-panel")?.classList.contains("hidden")) return;
-
         world.frame += 1;
-        if (state.shootCooldown > 0) state.shootCooldown -= 1;
+        if (world.shake > 0) world.shake *= 0.85;
+        if (world.shake < 0.3) world.shake = 0;
 
-        updatePlayerPhysics();
+        if (state.mode !== "playing") {
+            // Idle scenery on the ready / game over screens.
+            world.scroll += state.mode === "ready" ? 1.2 : 0;
+            state.particles.forEach((particle) => {
+                particle.x += particle.vx;
+                particle.y += particle.vy;
+                particle.vy += 0.18;
+                particle.life -= 1;
+            });
+            state.particles = state.particles.filter((particle) => particle.life > 0);
+            return;
+        }
+
+        updatePlayer();
         updateSpawns();
         updateMovement();
-        handleEnemyStomp();
-        handlePlayerApplePickup();
-        handleLifePickupCollection();
-        handleBulletHits();
-        handleDamageCollisions();
-        updateLevelProgress();
-        updateHud();
+        handleApples();
+        if (state.mode !== "playing") return;
+        handlePickups();
+        handleBullets();
+        handleEnemiesAndHazards();
     }
 
-    function drawBackground() {
-        const theme = THEMES[(state.level - 1) % THEMES.length];
-        const sky = ctx.createLinearGradient(0, 0, 0, world.height);
-        sky.addColorStop(0, theme.top);
-        sky.addColorStop(1, theme.bottom);
+    // ---------- HUD (DOM) ----------
+
+    let lastHudKey = "";
+
+    function updateHud() {
+        const key = [state.lives, state.question?.text, state.score, state.goldThisRun, state.combo, state.level, state.solvedThisLevel].join("|");
+        if (key === lastHudKey) return;
+        lastHudKey = key;
+
+        if (arcadeLivesEl) {
+            arcadeLivesEl.innerHTML = Array.from({ length: MAX_LIVES }, (_, i) =>
+                `<span class="arcade-heart${i < state.lives ? "" : " empty"}">${i < state.lives ? "❤" : "♡"}</span>`
+            ).join("");
+            arcadeLivesEl.setAttribute("aria-label", `Lives: ${state.lives} of ${MAX_LIVES}`);
+        }
+        if (arcadeTargetEl && state.question) arcadeTargetEl.innerText = `${state.question.text} = ?`;
+        if (arcadeScoreEl) arcadeScoreEl.innerText = `⭐ ${state.score}`;
+        if (arcadePointsEl) arcadePointsEl.innerText = `🪙 ${getWalletGold()}`;
+        if (arcadeComboEl) {
+            arcadeComboEl.innerText = `🔥 x${state.combo}`;
+            arcadeComboEl.classList.toggle("hidden", state.combo < 2);
+        }
+        if (arcadeCheckpointEl) arcadeCheckpointEl.innerText = `Field ${state.level} · ${state.solvedThisLevel}/${TASKS_PER_FIELD}`;
+        if (arcadeProgressBarEl) arcadeProgressBarEl.style.width = `${(state.solvedThisLevel / TASKS_PER_FIELD) * 100}%`;
+    }
+
+    // ---------- Drawing: scenery ----------
+
+    function drawSky(theme) {
+        const sky = ctx.createLinearGradient(0, 0, 0, world.groundY);
+        sky.addColorStop(0, theme.skyTop);
+        sky.addColorStop(1, theme.skyBottom);
         ctx.fillStyle = sky;
         ctx.fillRect(0, 0, world.width, world.height);
 
-        const horizonY = world.groundY - 8;
-        ctx.fillStyle = theme.ground;
-        ctx.fillRect(0, horizonY, world.width, world.height - horizonY);
-
-        ctx.strokeStyle = "rgba(255,255,255,0.15)";
-        ctx.lineWidth = 1;
-        for (let i = 0; i < 13; i++) {
-            const x = ((i * 120) - (world.frame * world.speed * 0.6)) % (world.width + 130);
+        const sunX = world.width * 0.8;
+        const sunY = 78;
+        if (theme.night) {
+            for (let i = 0; i < 60; i++) {
+                const sx = (hash(i) * world.width * 1.3 - world.scroll * 0.02) % (world.width + 20);
+                const x = sx < 0 ? sx + world.width + 20 : sx;
+                const y = hash(i + 99) * (world.groundY - 140);
+                const twinkle = 0.5 + 0.5 * Math.sin(world.frame * 0.05 + i);
+                ctx.fillStyle = `rgba(255,255,255,${0.35 + twinkle * 0.6})`;
+                ctx.fillRect(x, y, 2, 2);
+            }
+            ctx.fillStyle = theme.sun;
             ctx.beginPath();
-            ctx.moveTo(x, world.height);
-            ctx.lineTo(world.width / 2, horizonY);
-            ctx.stroke();
+            ctx.arc(sunX, sunY, 26, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = theme.skyTop;
+            ctx.beginPath();
+            ctx.arc(sunX + 11, sunY - 6, 22, 0, Math.PI * 2);
+            ctx.fill();
+        } else {
+            const glow = ctx.createRadialGradient(sunX, sunY, 10, sunX, sunY, 90);
+            glow.addColorStop(0, "rgba(255,255,220,0.9)");
+            glow.addColorStop(1, "rgba(255,255,220,0)");
+            ctx.fillStyle = glow;
+            ctx.fillRect(sunX - 90, sunY - 90, 180, 180);
+            ctx.fillStyle = theme.sun;
+            ctx.beginPath();
+            ctx.arc(sunX, sunY, 30, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Clouds
+        const cloudSpacing = 290;
+        const cloudScroll = world.scroll * 0.12;
+        const firstCloud = Math.floor(cloudScroll / cloudSpacing) - 1;
+        ctx.fillStyle = theme.night ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.85)";
+        for (let k = firstCloud; k < firstCloud + Math.ceil(world.width / cloudSpacing) + 3; k++) {
+            const x = k * cloudSpacing - cloudScroll + hash(k) * 120;
+            const y = 40 + hash(k + 7) * 90;
+            const s = 0.7 + hash(k + 3) * 0.6;
+            ctx.beginPath();
+            ctx.arc(x, y, 20 * s, 0, Math.PI * 2);
+            ctx.arc(x + 22 * s, y - 10 * s, 24 * s, 0, Math.PI * 2);
+            ctx.arc(x + 48 * s, y, 20 * s, 0, Math.PI * 2);
+            ctx.rect(x, y, 48 * s, 20 * s);
+            ctx.fill();
         }
     }
 
-    function drawGoalFlag() {
-        const remaining = state.levelGoal - state.levelDistance;
-        if (remaining > 380) return;
+    function ridgeY(worldX, base, a1, f1, a2, f2) {
+        return base - (Math.sin(worldX * f1) * a1 + Math.sin(worldX * f2 + 1.7) * a2);
+    }
 
-        const x = Math.max(player.x + 220, world.width - remaining - 24);
-        const y = world.groundY - 140;
-        ctx.strokeStyle = "#ffffff";
-        ctx.lineWidth = 3;
+    function drawRidge(color, factor, base, a1, f1, a2, f2) {
+        const offset = world.scroll * factor;
+        ctx.fillStyle = color;
         ctx.beginPath();
-        ctx.moveTo(x, world.groundY);
-        ctx.lineTo(x, y);
-        ctx.stroke();
-
-        ctx.fillStyle = "#ffeb3b";
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        ctx.lineTo(x + 38, y + 12);
-        ctx.lineTo(x, y + 24);
+        ctx.moveTo(0, world.groundY);
+        for (let x = 0; x <= world.width + 16; x += 16) {
+            ctx.lineTo(x, ridgeY(x + offset, base, a1, f1, a2, f2));
+        }
+        ctx.lineTo(world.width, world.groundY);
         ctx.closePath();
         ctx.fill();
     }
 
-    function drawChallengeOverlay() {
-        const scale = getReadabilityScale();
-        const targetFont = Math.round(21 * scale);
-        const tipFont = Math.round(20 * scale);
+    function drawTrees(theme) {
+        const factor = 0.45;
+        const spacing = 150;
+        const offset = world.scroll * factor;
+        const first = Math.floor(offset / spacing) - 1;
+        for (let k = first; k < first + Math.ceil(world.width / spacing) + 3; k++) {
+            if (hash(k + 21) < 0.35) continue;
+            const x = k * spacing - offset + hash(k) * 70;
+            const groundAt = ridgeY(x + offset, world.groundY - 34, 16, 0.011, 8, 0.023);
+            const h = 26 + hash(k + 5) * 22;
+            ctx.fillStyle = "rgba(60,35,20,0.8)";
+            ctx.fillRect(x - 3, groundAt - h * 0.5, 6, h * 0.5 + 6);
+            ctx.fillStyle = theme.tree;
+            ctx.beginPath();
+            ctx.arc(x, groundAt - h * 0.65, h * 0.42, 0, Math.PI * 2);
+            ctx.arc(x - h * 0.25, groundAt - h * 0.45, h * 0.3, 0, Math.PI * 2);
+            ctx.arc(x + h * 0.25, groundAt - h * 0.45, h * 0.3, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
 
-        ctx.fillStyle = "rgba(0,0,0,0.48)";
-        ctx.fillRect(16, 12, 500, 92);
-        ctx.strokeStyle = "rgba(255,255,255,0.25)";
-        ctx.strokeRect(16, 12, 500, 92);
+    function drawGround(theme) {
+        const top = world.groundY;
+        ctx.fillStyle = theme.dirt;
+        ctx.fillRect(0, top, world.width, world.height - top);
 
-        ctx.fillStyle = "#ffffff";
-        ctx.font = `bold ${targetFont}px Arial`;
-        ctx.textAlign = "left";
-        ctx.textBaseline = "middle";
-        ctx.fillText(`TARGET: ${state.challenge.text}`, 30, 40);
-
-        ctx.fillStyle = "#8dffbf";
-        ctx.font = `bold ${tipFont}px Arial`;
-        ctx.fillText("Collect exact apples to solve it", 30, 68);
-
-        if (hasPowerShot()) {
-            ctx.fillStyle = "#9fddff";
-            ctx.font = "bold 18px Arial";
-            ctx.fillText("POWER SHOT ACTIVE", 320, 88);
+        const tile = 48;
+        const offset = world.scroll % tile;
+        ctx.fillStyle = theme.dirtDark;
+        for (let x = -offset - tile; x < world.width + tile; x += tile) {
+            const k = Math.round((x + world.scroll) / tile);
+            ctx.beginPath();
+            ctx.ellipse(x + 14 + hash(k) * 16, top + 30 + hash(k + 4) * 22, 5, 3, 0, 0, Math.PI * 2);
+            ctx.ellipse(x + 34, top + 50 + hash(k + 8) * 8, 3, 2, 0, 0, Math.PI * 2);
+            ctx.fill();
         }
 
-        if (performance.now() < state.messageUntil) {
-            ctx.fillStyle = "#ffd36b";
-            ctx.font = "bold 24px Arial";
-            ctx.fillText(state.messageText, 530, 60);
+        ctx.fillStyle = theme.grass;
+        ctx.fillRect(0, top, world.width, 12);
+        ctx.fillStyle = theme.grassDark;
+        ctx.fillRect(0, top + 12, world.width, 4);
+        const bladeOffset = world.scroll % 16;
+        ctx.fillStyle = theme.grass;
+        for (let x = -bladeOffset; x < world.width + 16; x += 16) {
+            ctx.beginPath();
+            ctx.moveTo(x, top + 2);
+            ctx.lineTo(x + 5, top - 6);
+            ctx.lineTo(x + 10, top + 2);
+            ctx.fill();
         }
+    }
+
+    function drawScenery() {
+        const theme = currentTheme();
+        drawSky(theme);
+        drawRidge(theme.far, 0.2, world.groundY - 110, 38, 0.006, 16, 0.017);
+        drawRidge(theme.near, 0.45, world.groundY - 34, 16, 0.011, 8, 0.023);
+        drawTrees(theme);
+        drawGround(theme);
+    }
+
+    // ---------- Drawing: sprites ----------
+
+    function drawShadow(x, width, height = 6) {
+        ctx.fillStyle = "rgba(0,0,0,0.18)";
+        ctx.beginPath();
+        ctx.ellipse(x, world.groundY + 3, width / 2, height / 2, 0, 0, Math.PI * 2);
+        ctx.fill();
     }
 
     function drawBear() {
-        const blink = performance.now() < state.invincibleUntil && Math.floor(performance.now() / 90) % 2 === 0;
-        if (blink) return;
+        const { x, y, width: w } = player;
+        const airHeight = world.groundY - (y + player.height);
+        drawShadow(x + w / 2, Math.max(18, 48 - airHeight * 0.15));
 
-        const cx = player.x + player.width * 0.5;
-        const furMain = profile.cosmetics.fur === "pink" ? "#d977b3" : "#9b6b42";
-        const furDark = profile.cosmetics.fur === "pink" ? "#b45595" : "#7a5233";
-        const paws = profile.cosmetics.fur === "pink" ? "#9a3f77" : "#74482b";
+        if (isInvincible() && Math.floor(world.frame / 5) % 2 === 0) return;
 
-        ctx.fillStyle = furMain;
-        ctx.fillRect(player.x + 10, player.y + 26, 48, 42);
+        const running = player.onGround && state.mode !== "over";
+        const t = world.frame * 0.35;
+        const swing = running ? Math.sin(t) * 7 : 0;
+        const bob = running ? Math.abs(Math.sin(t)) * -2 : 0;
+        const by = y + bob;
 
-        ctx.fillStyle = furDark;
-        ctx.fillRect(player.x + 4, player.y + 30, 10, 26);
-        ctx.fillRect(player.x + player.width - 14, player.y + 30, 10, 26);
-
-        ctx.fillStyle = paws;
-        ctx.fillRect(player.x + 18, player.y + 64, 10, 10);
-        ctx.fillRect(player.x + 40, player.y + 64, 10, 10);
-
+        // Scarf tail
+        ctx.fillStyle = "#ef4444";
+        const flap = Math.sin(world.frame * 0.4) * 3;
         ctx.beginPath();
-        ctx.arc(cx, player.y + 22, 20, 0, Math.PI * 2);
+        ctx.moveTo(x + 18, by + 32);
+        ctx.lineTo(x - 4, by + 30 + flap);
+        ctx.lineTo(x - 2, by + 40 + flap);
+        ctx.lineTo(x + 18, by + 38);
         ctx.fill();
 
+        // Legs
+        ctx.fillStyle = FUR.dark;
+        if (player.onGround) {
+            roundRect(x + 14 + swing, by + 50, 12, 15, 5);
+            ctx.fill();
+            roundRect(x + 30 - swing, by + 50, 12, 15, 5);
+            ctx.fill();
+        } else {
+            roundRect(x + 12, by + 48, 12, 12, 5);
+            ctx.fill();
+            roundRect(x + 32, by + 46, 12, 12, 5);
+            ctx.fill();
+        }
+
+        // Body
+        ctx.fillStyle = FUR.main;
         ctx.beginPath();
-        const earRadius = profile.cosmetics.ears === "round" ? 10 : 8;
-        ctx.arc(cx - 12, player.y + 8, earRadius, 0, Math.PI * 2);
-        ctx.arc(cx + 12, player.y + 8, earRadius, 0, Math.PI * 2);
+        ctx.ellipse(x + 28, by + 40, 21, 18, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = FUR.light;
+        ctx.beginPath();
+        ctx.ellipse(x + 32, by + 44, 11, 11, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        ctx.fillStyle = "#f6dfc3";
-        ctx.beginPath();
-        ctx.arc(cx, player.y + 26, 9, 0, Math.PI * 2);
+        // Scarf
+        ctx.fillStyle = "#ef4444";
+        roundRect(x + 14, by + 28, 30, 7, 3);
         ctx.fill();
 
-        ctx.fillStyle = "#1f1f1f";
+        // Arm (holds the apple blaster)
+        ctx.fillStyle = FUR.dark;
         ctx.beginPath();
-        const eyeRadius = profile.cosmetics.eyes === "spark" ? 3 : 2;
-        ctx.arc(cx - 5, player.y + 19, eyeRadius, 0, Math.PI * 2);
-        ctx.arc(cx + 5, player.y + 19, eyeRadius, 0, Math.PI * 2);
-        ctx.arc(cx, player.y + 26, 2, 0, Math.PI * 2);
+        ctx.ellipse(x + 44, by + 42 - swing * 0.3, 7, 6, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#334155";
+        roundRect(x + 46, by + 38 - swing * 0.3, 14, 7, 3);
+        ctx.fill();
+        if (player.shootFlash > 0) {
+            ctx.fillStyle = hasPower() ? "rgba(103,232,249,0.9)" : "rgba(255,230,120,0.95)";
+            ctx.beginPath();
+            ctx.arc(x + 63, by + 41 - swing * 0.3, 6 + player.shootFlash, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Head
+        const hx = x + 30;
+        const hy = by + 16;
+        ctx.fillStyle = FUR.main;
+        ctx.beginPath();
+        ctx.arc(hx - 11, hy - 12, 7, 0, Math.PI * 2);
+        ctx.arc(hx + 10, hy - 12, 7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = FUR.light;
+        ctx.beginPath();
+        ctx.arc(hx - 11, hy - 12, 3.5, 0, Math.PI * 2);
+        ctx.arc(hx + 10, hy - 12, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = FUR.main;
+        ctx.beginPath();
+        ctx.arc(hx, hy, 17, 0, Math.PI * 2);
         ctx.fill();
 
-        if (profile.cosmetics.smile === "big") {
-            ctx.strokeStyle = "#1f1f1f";
+        // Face
+        ctx.fillStyle = FUR.light;
+        ctx.beginPath();
+        ctx.ellipse(hx + 7, hy + 5, 9, 7, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#1f2937";
+        ctx.beginPath();
+        ctx.ellipse(hx + 12, hy + 2, 3.5, 2.6, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        const hurtFace = isInvincible();
+        if (hurtFace) {
+            ctx.strokeStyle = "#1f2937";
             ctx.lineWidth = 2;
             ctx.beginPath();
-            ctx.arc(cx, player.y + 29, 6, 0.1 * Math.PI, 0.9 * Math.PI);
+            ctx.moveTo(hx - 2, hy - 7);
+            ctx.lineTo(hx + 4, hy - 3);
+            ctx.moveTo(hx + 4, hy - 7);
+            ctx.lineTo(hx - 2, hy - 3);
             ctx.stroke();
+        } else {
+            ctx.fillStyle = "#1f2937";
+            ctx.beginPath();
+            ctx.arc(hx + 1, hy - 5, 3, 0, Math.PI * 2);
+            ctx.arc(hx + 12, hy - 6, 2.4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = "#ffffff";
+            ctx.beginPath();
+            ctx.arc(hx + 2, hy - 6, 1.1, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        ctx.strokeStyle = "#1f2937";
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        if (hurtFace) ctx.arc(hx + 7, hy + 12, 3, Math.PI * 1.1, Math.PI * 1.9);
+        else ctx.arc(hx + 7, hy + 6, 4, 0.15 * Math.PI, 0.85 * Math.PI);
+        ctx.stroke();
+
+        ctx.fillStyle = "rgba(255,120,150,0.45)";
+        ctx.beginPath();
+        ctx.arc(hx - 6, hy + 4, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    function drawApple(apple) {
+        const { x, y, radius: r } = apple;
+        drawShadow(x, r * 1.2, 5);
+
+        const body = ctx.createRadialGradient(x - r * 0.35, y - r * 0.4, r * 0.15, x, y, r * 1.1);
+        body.addColorStop(0, "#ff7a7a");
+        body.addColorStop(0.55, "#e53935");
+        body.addColorStop(1, "#a61b1b");
+        ctx.fillStyle = body;
+        ctx.beginPath();
+        ctx.arc(x - r * 0.3, y, r * 0.78, 0, Math.PI * 2);
+        ctx.arc(x + r * 0.3, y, r * 0.78, 0, Math.PI * 2);
+        ctx.arc(x, y + r * 0.12, r * 0.86, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = "#5b3a1a";
+        ctx.lineWidth = 3;
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(x, y - r * 0.62);
+        ctx.quadraticCurveTo(x + 2, y - r * 0.95, x + 5, y - r * 1.12);
+        ctx.stroke();
+        ctx.lineCap = "butt";
+
+        ctx.fillStyle = "#4caf50";
+        ctx.beginPath();
+        ctx.ellipse(x + 11, y - r * 0.95, 8, 4, -0.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "rgba(255,255,255,0.35)";
+        ctx.beginPath();
+        ctx.ellipse(x - r * 0.42, y - r * 0.3, r * 0.18, r * 0.28, 0.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        const text = String(apple.value);
+        const fontSize = text.length >= 3 ? 17 : 21;
+        ctx.font = `900 ${fontSize}px "Trebuchet MS", Arial, sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.lineJoin = "round";
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = "rgba(60,0,0,0.85)";
+        ctx.strokeText(text, x, y + 3);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillText(text, x, y + 3);
+    }
+
+    function drawObstacle(obstacle) {
+        const { x, y, width: w, height: h } = obstacle;
+
+        if (obstacle.type === "spike") {
+            const count = Math.round(w / 28);
+            for (let i = 0; i < count; i++) {
+                const sx = x + i * 28;
+                const grad = ctx.createLinearGradient(sx, 0, sx + 28, 0);
+                grad.addColorStop(0, "#f1f5f9");
+                grad.addColorStop(0.5, "#cbd5e1");
+                grad.addColorStop(1, "#64748b");
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.moveTo(sx, y + h);
+                ctx.lineTo(sx + 14, y);
+                ctx.lineTo(sx + 28, y + h);
+                ctx.closePath();
+                ctx.fill();
+                ctx.strokeStyle = "#334155";
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            }
+            return;
+        }
+
+        if (obstacle.type === "crate") {
+            ctx.fillStyle = "#c07a35";
+            roundRect(x, y, w, h, 4);
+            ctx.fill();
+            ctx.strokeStyle = "#7a4a1c";
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            ctx.strokeStyle = "#8a5420";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(x + 5, y + h / 3);
+            ctx.lineTo(x + w - 5, y + h / 3);
+            ctx.moveTo(x + 5, y + (h * 2) / 3);
+            ctx.lineTo(x + w - 5, y + (h * 2) / 3);
+            ctx.stroke();
+            ctx.strokeStyle = "#e7b27a";
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(x + 6, y + 6);
+            ctx.lineTo(x + w - 6, y + h - 6);
+            ctx.stroke();
+            return;
+        }
+
+        // Stone block
+        const grad = ctx.createLinearGradient(0, y, 0, y + h);
+        grad.addColorStop(0, "#94a3b8");
+        grad.addColorStop(1, "#475569");
+        ctx.fillStyle = grad;
+        roundRect(x, y, w, h, 6);
+        ctx.fill();
+        ctx.strokeStyle = "#334155";
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+        ctx.fillStyle = "rgba(255,255,255,0.25)";
+        roundRect(x + 5, y + 4, w - 10, 6, 3);
+        ctx.fill();
+        ctx.strokeStyle = "rgba(30,41,59,0.55)";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(x + w * 0.3, y + h * 0.35);
+        ctx.lineTo(x + w * 0.45, y + h * 0.55);
+        ctx.lineTo(x + w * 0.38, y + h * 0.75);
+        ctx.stroke();
+    }
+
+    function drawBox(box) {
+        const bob = Math.sin(world.frame * 0.1 + box.x * 0.01) * 2;
+        const y = box.y + bob;
+        ctx.fillStyle = "#facc15";
+        roundRect(box.x, y, box.width, box.height, 6);
+        ctx.fill();
+        ctx.strokeStyle = "#a16207";
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.fillStyle = "#a16207";
+        [[5, 5], [box.width - 9, 5], [5, box.height - 9], [box.width - 9, box.height - 9]].forEach(([dx, dy]) => {
+            ctx.fillRect(box.x + dx, y + dy, 4, 4);
+        });
+        ctx.font = "900 24px 'Trebuchet MS', Arial, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillStyle = "#ffffff";
+        ctx.strokeStyle = "#a16207";
+        ctx.lineWidth = 4;
+        ctx.strokeText("?", box.x + box.width / 2, y + box.height / 2 + 1);
+        ctx.fillText("?", box.x + box.width / 2, y + box.height / 2 + 1);
+    }
+
+    function drawEnemy(enemy) {
+        const cx = enemy.x + enemy.width / 2;
+        const flashing = enemy.flash > 0;
+        if (enemy.flash > 0) enemy.flash -= 1;
+
+        if (enemy.type === "slime") {
+            const squash = Math.sin(enemy.phase) * 0.08;
+            const w = enemy.width * (1 + squash);
+            const h = enemy.height * (1 - squash);
+            const bottom = enemy.y + enemy.height;
+            drawShadow(cx, w * 0.9, 6);
+            ctx.fillStyle = flashing ? "#ffffff" : "#8b5cf6";
+            ctx.beginPath();
+            ctx.moveTo(cx - w / 2, bottom);
+            ctx.quadraticCurveTo(cx - w / 2, bottom - h * 1.15, cx, bottom - h);
+            ctx.quadraticCurveTo(cx + w / 2, bottom - h * 1.15, cx + w / 2, bottom);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = "rgba(255,255,255,0.3)";
+            ctx.beginPath();
+            ctx.ellipse(cx - w * 0.18, bottom - h * 0.7, 6, 4, -0.5, 0, Math.PI * 2);
+            ctx.fill();
+            drawEyes(cx - 9, bottom - h * 0.5, cx + 7, bottom - h * 0.5);
+        } else {
+            const flap = Math.sin(enemy.phase * 2.2);
+            const cy = enemy.y + enemy.height / 2;
+            ctx.fillStyle = flashing ? "#ffffff" : "#3f3f6e";
+            ctx.beginPath();
+            ctx.moveTo(cx - 6, cy);
+            ctx.lineTo(cx - 26, cy - 12 * flap);
+            ctx.lineTo(cx - 18, cy + 6);
+            ctx.closePath();
+            ctx.moveTo(cx + 6, cy);
+            ctx.lineTo(cx + 26, cy - 12 * flap);
+            ctx.lineTo(cx + 18, cy + 6);
+            ctx.closePath();
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(cx, cy, 13, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(cx - 10, cy - 8);
+            ctx.lineTo(cx - 7, cy - 18);
+            ctx.lineTo(cx - 3, cy - 10);
+            ctx.moveTo(cx + 10, cy - 8);
+            ctx.lineTo(cx + 7, cy - 18);
+            ctx.lineTo(cx + 3, cy - 10);
+            ctx.fill();
+            drawEyes(cx - 5, cy - 1, cx + 5, cy - 1, "#fde047");
+        }
+
+        if (enemy.maxHp > 1) {
+            for (let i = 0; i < enemy.maxHp; i++) {
+                ctx.fillStyle = i < enemy.hp ? "#ff5d73" : "rgba(0,0,0,0.3)";
+                ctx.beginPath();
+                ctx.arc(cx - 6 + i * 12, enemy.y - 8, 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
         }
     }
 
-    function drawApples() {
-        const scale = getReadabilityScale();
-        state.apples.forEach((apple) => {
-            ctx.beginPath();
-            ctx.fillStyle = appleColorByValue(apple.value);
-            ctx.arc(apple.x, apple.y, apple.radius, 0, Math.PI * 2);
-            ctx.fill();
-
-            ctx.fillStyle = "#fff";
-            const fontSize = Math.round(Math.max(15, Math.min(24, 15 * scale)));
-            ctx.font = `bold ${fontSize}px Arial`;
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.fillText(String(apple.value), apple.x, apple.y + 1);
-        });
+    function drawEyes(x1, y1, x2, y2, white = "#ffffff") {
+        ctx.fillStyle = white;
+        ctx.beginPath();
+        ctx.arc(x1, y1, 5.5, 0, Math.PI * 2);
+        ctx.arc(x2, y2, 5.5, 0, Math.PI * 2);
+        ctx.fill();
+        // Pupils look toward the bear.
+        ctx.fillStyle = "#111827";
+        ctx.beginPath();
+        ctx.arc(x1 - 2, y1 + 1, 2.6, 0, Math.PI * 2);
+        ctx.arc(x2 - 2, y2 + 1, 2.6, 0, Math.PI * 2);
+        ctx.fill();
     }
 
-    function drawPlatformsAndObstacles() {
-        state.platforms.forEach((platform) => {
-            ctx.fillStyle = "#3477b6";
-            ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
-            ctx.fillStyle = "#9ad2ff";
-            ctx.fillRect(platform.x + 4, platform.y + 4, platform.width - 8, 4);
-        });
+    function drawPickup(pickup) {
+        const bob = Math.sin(pickup.phase) * 4;
+        const x = pickup.x;
+        const y = pickup.y + bob;
+        const glow = ctx.createRadialGradient(x, y, 2, x, y, 26);
+        glow.addColorStop(0, pickup.type === "heart" ? "rgba(255,120,160,0.55)" : "rgba(103,232,249,0.55)");
+        glow.addColorStop(1, "rgba(255,255,255,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(x - 26, y - 26, 52, 52);
 
-        state.obstacles.forEach((obstacle) => {
-            if (obstacle.type === "spike") {
-                ctx.fillStyle = "#ff7b7b";
-                ctx.beginPath();
-                ctx.moveTo(obstacle.x, obstacle.y + obstacle.height);
-                ctx.lineTo(obstacle.x + obstacle.width * 0.5, obstacle.y);
-                ctx.lineTo(obstacle.x + obstacle.width, obstacle.y + obstacle.height);
-                ctx.closePath();
-                ctx.fill();
-                return;
-            }
-
-            if (obstacle.type === "crate") {
-                ctx.fillStyle = "#a26a34";
-                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
-                ctx.strokeStyle = "#e7b27a";
-                ctx.lineWidth = 2;
-                ctx.strokeRect(obstacle.x + 3, obstacle.y + 3, obstacle.width - 6, obstacle.height - 6);
-                ctx.beginPath();
-                ctx.moveTo(obstacle.x + 4, obstacle.y + 4);
-                ctx.lineTo(obstacle.x + obstacle.width - 4, obstacle.y + obstacle.height - 4);
-                ctx.moveTo(obstacle.x + obstacle.width - 4, obstacle.y + 4);
-                ctx.lineTo(obstacle.x + 4, obstacle.y + obstacle.height - 4);
-                ctx.stroke();
-                return;
-            }
-
-            if (obstacle.type === "brick") {
-                ctx.fillStyle = "#b35a3c";
-                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
-                ctx.strokeStyle = "#e9b49a";
-                ctx.lineWidth = 1.2;
-                const step = 14;
-                for (let x = obstacle.x + step; x < obstacle.x + obstacle.width; x += step) {
-                    ctx.beginPath();
-                    ctx.moveTo(x, obstacle.y);
-                    ctx.lineTo(x, obstacle.y + obstacle.height);
-                    ctx.stroke();
-                }
-                ctx.beginPath();
-                ctx.moveTo(obstacle.x, obstacle.y + obstacle.height * 0.5);
-                ctx.lineTo(obstacle.x + obstacle.width, obstacle.y + obstacle.height * 0.5);
-                ctx.stroke();
-                return;
-            }
-
-            ctx.fillStyle = "#3f4f8f";
-            ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
-            ctx.fillStyle = "#7f98d1";
-            ctx.fillRect(obstacle.x + 4, obstacle.y + 4, Math.max(8, obstacle.width - 8), 6);
-        });
-    }
-
-    function drawEnemies() {
-        const styleIndex = (state.level - 1) % 3;
-        const bodyColors = ["#57ffd0", "#ff8fb1", "#7ee2ff"];
-
-        state.enemies.forEach((enemy) => {
-            ctx.fillStyle = bodyColors[styleIndex];
+        if (pickup.type === "heart") {
+            ctx.fillStyle = "#ff4d79";
             ctx.beginPath();
-            ctx.ellipse(enemy.x + enemy.width * 0.5, enemy.y + enemy.height * 0.5, enemy.width * 0.5, enemy.height * 0.48, 0, 0, Math.PI * 2);
+            ctx.moveTo(x, y + 12);
+            ctx.bezierCurveTo(x - 18, y, x - 12, y - 14, x, y - 5);
+            ctx.bezierCurveTo(x + 12, y - 14, x + 18, y, x, y + 12);
             ctx.fill();
-
-            ctx.fillStyle = "#1b1b1b";
+            ctx.fillStyle = "rgba(255,255,255,0.6)";
             ctx.beginPath();
-            ctx.arc(enemy.x + 19, enemy.y + 17, 3, 0, Math.PI * 2);
-            ctx.arc(enemy.x + 43, enemy.y + 17, 3, 0, Math.PI * 2);
+            ctx.arc(x - 6, y - 4, 2.5, 0, Math.PI * 2);
             ctx.fill();
+            return;
+        }
 
-            const hpWidth = enemy.width;
-            const hpRatio = Math.max(0, enemy.hp / enemy.maxHp);
-            ctx.fillStyle = "rgba(0,0,0,0.45)";
-            ctx.fillRect(enemy.x, enemy.y - 10, hpWidth, 6);
-            ctx.fillStyle = "#ff5555";
-            ctx.fillRect(enemy.x, enemy.y - 10, hpWidth * hpRatio, 6);
-        });
+        ctx.fillStyle = "#22d3ee";
+        ctx.beginPath();
+        ctx.arc(x, y, 14, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#fef08a";
+        ctx.beginPath();
+        ctx.moveTo(x + 3, y - 10);
+        ctx.lineTo(x - 6, y + 2);
+        ctx.lineTo(x, y + 2);
+        ctx.lineTo(x - 3, y + 10);
+        ctx.lineTo(x + 6, y - 2);
+        ctx.lineTo(x, y - 2);
+        ctx.closePath();
+        ctx.fill();
     }
 
     function drawBullets() {
         state.bullets.forEach((bullet) => {
-            ctx.fillStyle = bullet.power ? "#95f0ff" : "#ffe45e";
+            const color = bullet.power ? "103,232,249" : "255,214,90";
+            const trail = ctx.createLinearGradient(bullet.x - 30, 0, bullet.x, 0);
+            trail.addColorStop(0, `rgba(${color},0)`);
+            trail.addColorStop(1, `rgba(${color},0.6)`);
+            ctx.fillStyle = trail;
+            ctx.fillRect(bullet.x - 30, bullet.y - bullet.radius * 0.6, 30, bullet.radius * 1.2);
+            ctx.fillStyle = `rgb(${color})`;
             ctx.beginPath();
             ctx.arc(bullet.x, bullet.y, bullet.radius, 0, Math.PI * 2);
             ctx.fill();
-
-            if (bullet.power) {
-                ctx.strokeStyle = "rgba(149,240,255,0.6)";
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.arc(bullet.x, bullet.y, bullet.radius + 5, 0, Math.PI * 2);
-                ctx.stroke();
-            }
-        });
-
-        state.enemyBullets.forEach((bullet) => {
-            ctx.fillStyle = "#ff8a8a";
+            ctx.fillStyle = "rgba(255,255,255,0.85)";
             ctx.beginPath();
-            ctx.arc(bullet.x, bullet.y, bullet.radius, 0, Math.PI * 2);
+            ctx.arc(bullet.x + 1, bullet.y - 1, bullet.radius * 0.45, 0, Math.PI * 2);
             ctx.fill();
         });
     }
 
-    function drawLifePickups() {
-        state.lifePickups.forEach((pickup) => {
-            if (pickup.type === "power") {
-                ctx.fillStyle = "#7dd3fc";
-                ctx.beginPath();
-                ctx.arc(pickup.x, pickup.y, pickup.radius, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.fillStyle = "#082f49";
-                ctx.font = "bold 15px Arial";
-                ctx.textAlign = "center";
-                ctx.textBaseline = "middle";
-                ctx.fillText("⚡", pickup.x, pickup.y + 1);
-                return;
-            }
-
-            ctx.fillStyle = "#ff5f8a";
-            ctx.beginPath();
-            ctx.arc(pickup.x - 5, pickup.y - 2, 6, 0, Math.PI * 2);
-            ctx.arc(pickup.x + 5, pickup.y - 2, 6, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.moveTo(pickup.x - 12, pickup.y);
-            ctx.lineTo(pickup.x + 12, pickup.y);
-            ctx.lineTo(pickup.x, pickup.y + 12);
-            ctx.closePath();
-            ctx.fill();
+    function drawEffects() {
+        state.particles.forEach((particle) => {
+            ctx.globalAlpha = Math.max(0, particle.life / particle.maxLife);
+            ctx.fillStyle = particle.color;
+            ctx.fillRect(particle.x - particle.size / 2, particle.y - particle.size / 2, particle.size, particle.size);
         });
+        ctx.globalAlpha = 1;
+
+        state.floaters.forEach((floater) => {
+            ctx.globalAlpha = Math.min(1, floater.life / 20);
+            outlinedText(floater.text, floater.x, floater.y, floater.size, floater.color);
+        });
+        ctx.globalAlpha = 1;
+    }
+
+    function outlinedText(text, x, y, size, color, stroke = "rgba(15,23,42,0.85)") {
+        ctx.font = `900 ${size}px "Trebuchet MS", Arial, sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.lineJoin = "round";
+        ctx.lineWidth = Math.max(4, size * 0.22);
+        ctx.strokeStyle = stroke;
+        ctx.strokeText(text, x, y);
+        ctx.fillStyle = color;
+        ctx.fillText(text, x, y);
+    }
+
+    function drawMessages() {
+        if (state.toast && world.frame < state.toast.until) {
+            const age = world.frame - state.toast.start;
+            const remaining = state.toast.until - world.frame;
+            ctx.globalAlpha = Math.min(1, age / 6, remaining / 12);
+            const size = world.width < 700 ? 22 : 24;
+            outlinedText(state.toast.text, world.width / 2, 132, size, state.toast.color);
+            ctx.globalAlpha = 1;
+        }
+
+        if (state.banner && world.frame < state.banner.until) {
+            const age = world.frame - state.banner.start;
+            const remaining = state.banner.until - world.frame;
+            const pop = Math.min(1, age / 10);
+            ctx.globalAlpha = Math.min(1, remaining / 20);
+            ctx.fillStyle = "rgba(15,23,42,0.35)";
+            ctx.fillRect(0, world.height * 0.36, world.width, 96);
+            outlinedText(state.banner.title, world.width / 2, world.height * 0.36 + 38, Math.round(48 * (0.6 + pop * 0.4)), "#fde047");
+            outlinedText(state.banner.subtitle, world.width / 2, world.height * 0.36 + 78, 20, "#ffffff");
+            ctx.globalAlpha = 1;
+        }
+
+        if (state.mode === "playing" && hasPower()) {
+            const left = Math.ceil((state.powerUntil - world.frame) / 60);
+            outlinedText(`⚡ ${left}s`, world.width - 44, world.height - 24, 18, "#a5f3fc");
+        }
     }
 
     function draw() {
-        drawBackground();
-        drawGoalFlag();
-        drawChallengeOverlay();
-        drawPlatformsAndObstacles();
-        drawEnemies();
-        drawApples();
-        drawLifePickups();
+        ctx.save();
+        if (world.shake > 0) {
+            ctx.translate((Math.random() - 0.5) * world.shake, (Math.random() - 0.5) * world.shake);
+        }
+        drawScenery();
+        state.obstacles.forEach(drawObstacle);
+        state.boxes.forEach(drawBox);
+        state.pickups.forEach(drawPickup);
+        state.apples.forEach(drawApple);
+        state.enemies.forEach(drawEnemy);
         drawBullets();
         drawBear();
+        drawEffects();
+        ctx.restore();
+        drawMessages();
     }
 
-    function loop() {
-        update();
-        draw();
+    // ---------- Canvas sizing ----------
+
+    function resizeCanvas() {
+        const cssWidth = arcadeCanvasWrap?.clientWidth || arcadeCanvas.clientWidth || 860;
+        // Narrow screens get a narrower world, so everything is drawn bigger.
+        world.width = cssWidth < 600 ? 560 : 860;
+        world.height = 420;
+        world.groundY = world.height - 64;
+
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const cssHeight = cssWidth * (world.height / world.width);
+        arcadeCanvas.width = Math.round(cssWidth * dpr);
+        arcadeCanvas.height = Math.round(cssHeight * dpr);
+        ctx.setTransform(arcadeCanvas.width / world.width, 0, 0, arcadeCanvas.height / world.height, 0, 0);
+
+        if (player.onGround) player.y = world.groundY - player.height;
+    }
+
+    // ---------- Main loop ----------
+
+    let lastTime = 0;
+    let accumulator = 0;
+
+    function loop(now) {
         requestAnimationFrame(loop);
+        if (!isPanelVisible() || document.hidden) {
+            lastTime = now;
+            return;
+        }
+
+        if (!lastTime) lastTime = now;
+        accumulator += Math.min(250, now - lastTime);
+        lastTime = now;
+
+        let steps = 0;
+        while (accumulator >= STEP_MS && steps < 5) {
+            update();
+            accumulator -= STEP_MS;
+            steps += 1;
+        }
+        if (steps === 5) accumulator = 0;
+
+        updateHud();
+        draw();
+    }
+
+    // ---------- Input ----------
+
+    const JUMP_KEYS = ["ArrowUp", "KeyW", "Space"];
+    const SHOOT_KEYS = ["KeyF", "KeyJ", "ArrowRight", "Enter"];
+
+    function isTypingTarget(target) {
+        return target instanceof HTMLElement && Boolean(target.closest("input, textarea, select, [contenteditable='true']"));
     }
 
     window.addEventListener("keydown", (event) => {
-        if (event.code === "ArrowUp" || event.code === "KeyW") {
+        if (!isPanelVisible() || isTypingTarget(event.target)) return;
+
+        if (JUMP_KEYS.includes(event.code)) {
             event.preventDefault();
-            jump();
+            if (state.mode !== "playing") {
+                if (!event.repeat && event.code === "Space") startGame();
+                return;
+            }
+            if (!event.repeat) requestJump();
         }
-        if (event.code === "Space" || event.code === "KeyF") {
+        if (SHOOT_KEYS.includes(event.code)) {
             event.preventDefault();
+            if (event.code === "Enter" && state.mode !== "playing") {
+                startGame();
+                return;
+            }
+            state.shootHeld = true;
             shoot();
         }
     });
 
-    if (arcadeJumpBtn) {
-        arcadeJumpBtn.addEventListener("pointerdown", (event) => {
+    window.addEventListener("keyup", (event) => {
+        if (JUMP_KEYS.includes(event.code)) releaseJump();
+        if (SHOOT_KEYS.includes(event.code)) state.shootHeld = false;
+    });
+
+    function bindHoldButton(button, onDown, onUp) {
+        if (!button) return;
+        button.addEventListener("pointerdown", (event) => {
             event.preventDefault();
-            jump();
+            onDown();
         });
+        ["pointerup", "pointercancel", "pointerleave"].forEach((type) => button.addEventListener(type, onUp));
+        button.addEventListener("contextmenu", (event) => event.preventDefault());
     }
 
-    if (arcadeShootBtn) {
-        arcadeShootBtn.addEventListener("pointerdown", (event) => {
-            event.preventDefault();
-            shoot();
-        });
-    }
+    bindHoldButton(arcadeJumpBtn, requestJump, releaseJump);
+    bindHoldButton(arcadeShootBtn, () => {
+        state.shootHeld = true;
+        shoot();
+    }, () => {
+        state.shootHeld = false;
+    });
 
-    if (arcadeCanvas) {
-        arcadeCanvas.addEventListener("pointerdown", jump);
-    }
+    arcadeCanvas.addEventListener("pointerdown", (event) => {
+        event.preventDefault();
+        requestJump();
+    });
+    ["pointerup", "pointercancel", "pointerleave"].forEach((type) => arcadeCanvas.addEventListener(type, releaseJump));
 
-    if (arcadeRestartBtn) {
-        arcadeRestartBtn.addEventListener("click", () => {
-            unlockArcadeAudio();
-            syncArcadeDifficultyFromButtons();
-            state.awaitingStart = false;
-            resetGame();
-        });
-    }
+    window.addEventListener("blur", () => {
+        state.shootHeld = false;
+        player.jumpHeld = false;
+    });
+
+    if (arcadeRestartBtn) arcadeRestartBtn.addEventListener("click", startGame);
+    if (arcadeStartBtn) arcadeStartBtn.addEventListener("click", startGame);
+    if (openRunnerBtn) openRunnerBtn.addEventListener("click", () => {
+        showReadyScreen();
+        requestAnimationFrame(resizeCanvas);
+    });
 
     if (arcadeDifficultyButtonsWrap) {
-        const difficultyButtons = arcadeDifficultyButtonsWrap.querySelectorAll(".mode-btn");
-        difficultyButtons.forEach((button) => {
+        arcadeDifficultyButtonsWrap.querySelectorAll(".mode-btn").forEach((button) => {
             button.addEventListener("click", () => {
-                unlockArcadeAudio();
-                syncArcadeDifficultyFromButtons();
-                state.awaitingStart = false;
-                resetGame();
+                // Let the page's own handler update data-selected first.
+                setTimeout(showReadyScreen, 0);
             });
         });
     }
 
-    if (openRunnerBtn) {
-        openRunnerBtn.addEventListener("click", () => {
-            state.awaitingStart = true;
-            world.running = false;
-            arcadeRulesEl?.classList.remove("hidden");
-        });
+    if (window.ResizeObserver && arcadeCanvasWrap) {
+        new ResizeObserver(resizeCanvas).observe(arcadeCanvasWrap);
+    } else {
+        window.addEventListener("resize", resizeCanvas);
     }
 
-    if (arcadeStartBtn) {
-        arcadeStartBtn.addEventListener("click", () => {
-            unlockArcadeAudio();
-            state.awaitingStart = false;
-            arcadeRulesEl?.classList.add("hidden");
-            world.running = true;
-            resetGame();
-        });
-    }
-
-    player.y = world.groundY - player.height;
-    arcadeRulesEl?.classList.remove("hidden");
-    resetGame();
-    loop();
+    resizeCanvas();
+    showReadyScreen();
+    requestAnimationFrame(loop);
 }
