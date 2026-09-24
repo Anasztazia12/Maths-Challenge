@@ -14,10 +14,10 @@
         return sources[0] || "assets/image/avatar.png";
     }
 
+    // The wallet lives in the profile store; arcadeCoins is only a mirror and can be stale.
     function getGoldValue(profileStore) {
-        const localGold = Math.max(0, Number(localStorage.getItem(getScopedKey("arcadeCoins")) || 0));
-        const profileGold = Math.max(0, Number(profileStore?.getPoints?.() || 0));
-        return Math.max(0, Math.round(Math.max(localGold, profileGold)));
+        if (profileStore?.getPoints) return Math.max(0, Math.round(Number(profileStore.getPoints()) || 0));
+        return Math.max(0, Math.round(Number(localStorage.getItem(getScopedKey("arcadeCoins")) || 0)));
     }
 
     function getWidgetHostElement() {
@@ -47,17 +47,23 @@
             hostElement.appendChild(container);
         }
 
-        const avatarSrc = getCurrentAvatarSource(profileStore, activeProfile);
         const goldValue = getGoldValue(profileStore);
         const safeName = String(activeProfile.name || "Player").trim() || "Player";
+        // Show the avatar with everything it wears (hat, glasses, extra) when the shared renderer is loaded.
+        const avatarHtml = window.MathsAvatar
+            ? `<div class="player-corner-avatar av-corner" role="img" aria-label="Player avatar">${window.MathsAvatar.buildAvatarHtml(activeProfile.avatar, { background: false, fill: 0.96 })}</div>`
+            : `<img class="player-corner-avatar" src="${getCurrentAvatarSource(profileStore, activeProfile)}" alt="Player avatar">`;
 
-        container.innerHTML = `
+        const html = `
             <div class="player-corner-name">${safeName}</div>
-            <div class="player-corner-avatar-wrap">
-                <img class="player-corner-avatar" src="${avatarSrc}" alt="Player avatar">
-            </div>
+            <div class="player-corner-avatar-wrap">${avatarHtml}</div>
             <div class="player-corner-gold">Gold: ${goldValue} <span aria-hidden="true">🥇</span></div>
         `;
+        // It refreshes every second; only touch the DOM when something changed.
+        if (container.dataset.html !== html) {
+            container.dataset.html = html;
+            container.innerHTML = html;
+        }
 
         return container;
     }

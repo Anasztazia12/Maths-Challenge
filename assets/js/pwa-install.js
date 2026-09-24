@@ -14,6 +14,13 @@
     return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
   }
 
+  // Keeps the menu icon (added by hamburger.js) when the label changes.
+  function setButtonLabel(text) {
+    const icon = installBtn.querySelector("svg");
+    installBtn.textContent = text;
+    if (icon) installBtn.prepend(icon);
+  }
+
   function setInstallVisible(isVisible) {
     installBtn.hidden = !isVisible;
     installBtn.classList.toggle("hidden", !isVisible);
@@ -23,7 +30,7 @@
     if (isInstalled) {
       installBtn.hidden = false;
       installBtn.classList.remove("hidden");
-      installBtn.textContent = "Installed ✓";
+      setButtonLabel("Installed ✓");
       installBtn.disabled = true;
       installBtn.setAttribute("aria-disabled", "true");
       installBtn.style.opacity = "0.85";
@@ -32,7 +39,7 @@
       return;
     }
 
-    installBtn.textContent = defaultButtonText;
+    setButtonLabel(defaultButtonText);
     installBtn.disabled = false;
     installBtn.removeAttribute("aria-disabled");
     installBtn.style.opacity = "";

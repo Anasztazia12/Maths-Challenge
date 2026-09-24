@@ -17,9 +17,7 @@
 </head>
 <body class="bg-operations">
 
-    <aside id="shop-corner-avatar" class="shop-corner-avatar" aria-label="Selected avatar"></aside>
-
-    <div class="game-container shop-container">
+    <div class="game-container shop-container shop2">
         <div class="hamburger-menu-wrapper">
             <button class="hamburger-btn" id="hamburger-btn" aria-label="Menu" aria-expanded="false">
                 <span></span>
@@ -35,44 +33,42 @@
             </nav>
         </div>
 
-        <h1>Avatar Shop</h1>
-        <p class="subtitle">Choose a category, then tap visual item cards to equip or buy.</p>
-
-        <p id="shop-profile-label" class="auth-user-label">Profile: -</p>
-        <p id="shop-points" class="shop-points">Points: 0</p>
-
-        <div id="shop-avatar-preview" class="shop-avatar-preview"></div>
-
-        <section class="section shop-block">
-            <h2>Category</h2>
-            <div class="shop-category-header hidden" id="shop-category-header">
-                <button class="menu-btn shop-back-btn" id="shop-category-back-btn" type="button">Back</button>
-                <p id="shop-selected-category" class="shop-selected-category">Selected: -</p>
+        <header class="shop2-header">
+            <h1>Avatar Shop</h1>
+            <div class="shop2-balance" aria-label="Your gold">
+                <span class="shop2-coin" aria-hidden="true"></span>
+                <b id="shop-points">0</b>
+                <small>gold</small>
             </div>
-            <div id="shop-category-tabs" class="shop-category-tabs"></div>
-        </section>
+        </header>
 
-        <section class="section shop-block" id="shop-preset-section">
-            <h2>Base Avatars</h2>
-            <div id="shop-preset-list" class="shop-list"></div>
-        </section>
+        <div class="shop2-layout">
+            <section class="shop2-fitting" aria-label="Preview">
+                <div id="shop-avatar-preview" class="shop2-stage-frame"></div>
+                <div class="shop2-action" id="shop-action">
+                    <div class="shop2-action-text">
+                        <strong id="shop-action-title">Your avatar</strong>
+                        <span id="shop-action-sub">Tap any item to try it on.</span>
+                    </div>
+                    <div class="shop2-action-buttons">
+                        <button type="button" id="shop-cancel-btn" class="shop2-btn ghost hidden">Cancel</button>
+                        <button type="button" id="shop-confirm-btn" class="shop2-btn primary hidden">Wear</button>
+                    </div>
+                </div>
+            </section>
 
-        <section class="section shop-block hidden" id="shop-wardrobe-section">
-            <h2 id="shop-wardrobe-title">Wardrobe</h2>
-            <div id="shop-wardrobe" class="shop-item-grid compact"></div>
-        </section>
-
-        <section class="section shop-block hidden" id="shop-market-section">
-            <h2 id="shop-market-title">Shop</h2>
-            <div id="shop-market" class="shop-item-grid compact"></div>
-        </section>
-
-        <p id="shop-status" class="save-status"></p>
+            <section class="shop2-catalog" aria-label="Items">
+                <div id="shop-category-tabs" class="shop2-tabs" role="tablist"></div>
+                <div id="shop-items" class="shop2-grid"></div>
+                <p id="shop-status" class="shop2-status" aria-live="polite"></p>
+            </section>
+        </div>
 
         <button class="menu-btn" onclick="goBackToHome()">⬅ Back to Home</button>
     </div>
 
     <script src="assets/js/profile-manager.js"></script>
+    <script src="assets/js/avatar-render.js"></script>
     <script src="assets/js/hamburger.js"></script>
     <script src="assets/js/session-guard.js"></script>
     <script src="assets/js/player-avatar-widget.js"></script>

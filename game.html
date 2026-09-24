@@ -78,62 +78,119 @@
         </div>
 
         <div id="arcade-panel" class="hidden">
-            <h2>Math Runner</h2>
-            <p class="subtitle">Run, jump and grab the apple with the right answer!</p>
-
-            <div class="section">
-                <h2>Difficulty</h2>
-                <div id="arcade-difficulty-buttons" class="mode-buttons" data-selected="easy">
-                    <button type="button" class="mode-btn selected" data-value="easy">Easy</button>
-                    <button type="button" class="mode-btn" data-value="medium">Medium</button>
-                    <button type="button" class="mode-btn" data-value="hard">Hard</button>
-                </div>
+            <div class="arcade-heading">
+                <h2>Math Runner</h2>
+                <p class="subtitle">Grab the bubble with the right answer. Tip: turn your phone sideways for a bigger view.</p>
             </div>
 
             <div id="arcade-canvas-wrap">
                 <canvas id="arcade-canvas" width="860" height="420"></canvas>
 
-                <div class="arcade-hud" aria-live="polite">
+                <div class="arcade-hud">
                     <div class="arcade-hud-top">
-                        <div id="arcade-lives" class="arcade-hud-lives"></div>
-                        <div id="arcade-target" class="arcade-hud-question">? = ?</div>
+                        <div class="arcade-hud-left">
+                            <button type="button" id="arcade-pause-btn" class="arcade-icon-btn" aria-label="Pause" aria-pressed="false">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"></rect><rect x="14" y="5" width="4" height="14" rx="1"></rect></svg>
+                            </button>
+                            <div id="arcade-lives" class="arcade-hud-lives" role="img"></div>
+                        </div>
+                        <div class="arcade-hud-question">
+                            <span class="arcade-hud-label">Solve</span>
+                            <span id="arcade-target" aria-live="polite">? = ?</span>
+                        </div>
                         <div class="arcade-hud-stats">
-                            <span id="arcade-score">⭐ 0</span>
-                            <span id="arcade-points">🪙 0</span>
+                            <span class="arcade-stat"><small>Score</small><b id="arcade-score">0</b></span>
+                            <span class="arcade-stat"><small>Gold</small><b id="arcade-points">0</b></span>
                         </div>
                     </div>
                     <div class="arcade-hud-bottom">
                         <div class="arcade-progress-track"><div id="arcade-progress-bar"></div></div>
                         <span id="arcade-checkpoint">Field 1 · 0/5</span>
-                        <span id="arcade-combo" class="arcade-hud-combo hidden">🔥 x2</span>
+                        <span id="arcade-combo" class="arcade-hud-combo hidden">Combo ×2</span>
                     </div>
                 </div>
 
                 <div id="arcade-rules" class="arcade-screen">
                     <div class="arcade-screen-card">
-                        <h2>How to Play</h2>
-                        <ul class="arcade-rules-list">
-                            <li>🍎 Solve the sum at the top. <strong>Low apple:</strong> just run into it. <strong>High apple:</strong> jump!</li>
-                            <li>❌ Wrong apple = −1 heart. ⭐ Correct = points + gold.</li>
-                            <li>👾 Jump on monsters or shoot them. Jump over spikes.</li>
-                            <li class="arcade-keys-hint">⌨️ Jump: ↑ / W / Space · Shoot: F / →</li>
-                        </ul>
-                        <button class="menu-btn special" id="arcade-start-btn" type="button">Start ▶</button>
+                        <div id="arcade-step-rules" class="arcade-step">
+                            <span class="arcade-eyebrow">How to play · 1/2</span>
+                            <h2>Grab the right answer</h2>
+                            <ul class="arcade-rules-list">
+                                <li><span class="arcade-dot"></span>Solve the sum shown at the top.</li>
+                                <li><span class="arcade-dot accent"></span>Two answers fly in: one low, one high. Run into the right one, or jump for it.</li>
+                                <li><span class="arcade-dot bad"></span>A wrong answer costs a life. Stomp or shoot enemies.</li>
+                                <li class="arcade-keys-hint"><kbd>←</kbd><kbd>→</kbd> move · <kbd>↑</kbd> jump · <kbd>F</kbd> shoot · <kbd>P</kbd> pause</li>
+                            </ul>
+                            <button class="arcade-cta" id="arcade-next-btn" type="button">Next</button>
+                        </div>
+
+                        <div id="arcade-step-setup" class="arcade-step hidden">
+                            <span class="arcade-eyebrow">Choose your runner · 2/2</span>
+                            <div class="arcade-carousel">
+                                <button type="button" class="arcade-carousel-arrow" id="arcade-char-prev" aria-label="Previous character">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7z"></path></svg>
+                                </button>
+                                <div class="arcade-carousel-stage">
+                                    <canvas id="arcade-char-preview" width="240" height="120" aria-hidden="true"></canvas>
+                                    <strong id="arcade-char-name" aria-live="polite">Astronaut</strong>
+                                </div>
+                                <button type="button" class="arcade-carousel-arrow" id="arcade-char-next" aria-label="Next character">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7z"></path></svg>
+                                </button>
+                            </div>
+                            <div class="arcade-carousel-dots" id="arcade-char-dots"></div>
+                            <div id="arcade-difficulty-buttons" class="arcade-segment" data-selected="easy" role="group" aria-label="Difficulty">
+                                <button type="button" class="mode-btn selected" data-value="easy">Easy</button>
+                                <button type="button" class="mode-btn" data-value="medium">Medium</button>
+                                <button type="button" class="mode-btn" data-value="hard">Hard</button>
+                            </div>
+                            <button class="arcade-cta" id="arcade-start-btn" type="button">Start run</button>
+                            <button class="arcade-link-btn" id="arcade-rules-link" type="button">How to play</button>
+                            <button class="arcade-link-btn arcade-exit-btn" type="button">Exit to menu</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="arcade-pause" class="arcade-screen hidden">
+                    <div class="arcade-screen-card">
+                        <span class="arcade-eyebrow">Paused</span>
+                        <h2>Take a breather</h2>
+                        <div class="arcade-card-actions">
+                            <button class="arcade-cta" id="arcade-resume-btn" type="button">Resume</button>
+                            <button class="arcade-ghost" id="arcade-quit-btn" type="button">End run</button>
+                        </div>
+                        <button class="arcade-link-btn arcade-exit-btn" type="button">Exit to menu</button>
                     </div>
                 </div>
 
                 <div id="arcade-overlay" class="arcade-screen hidden">
                     <div class="arcade-screen-card">
-                        <h2 id="arcade-overlay-title">Game Over</h2>
+                        <span class="arcade-eyebrow">Game over</span>
+                        <h2 id="arcade-overlay-title">Run complete</h2>
                         <p id="arcade-overlay-text"></p>
-                        <button class="menu-btn special" id="arcade-restart-btn" type="button">Play again ▶</button>
+                        <button class="arcade-cta" id="arcade-restart-btn" type="button">Run again</button>
+                        <button class="arcade-link-btn arcade-exit-btn" type="button">Exit to menu</button>
                     </div>
                 </div>
-            </div>
 
-            <div id="arcade-mobile-controls">
-                <button class="menu-btn" id="arcade-jump-btn" type="button">⬆ Jump</button>
-                <button class="menu-btn special" id="arcade-shoot-btn" type="button">💥 Shoot</button>
+                <div id="arcade-mobile-controls">
+                    <div class="arcade-touch-group">
+                        <button class="arcade-touch-btn" id="arcade-left-btn" type="button" aria-label="Move back">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7z"></path></svg>
+                        </button>
+                        <button class="arcade-touch-btn" id="arcade-right-btn" type="button" aria-label="Move forward">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7z"></path></svg>
+                        </button>
+                    </div>
+                    <div class="arcade-touch-group">
+                        <button class="arcade-touch-btn accent" id="arcade-shoot-btn" type="button" aria-label="Shoot">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v4M12 18v4M2 12h4M18 12h4" stroke-width="2" stroke-linecap="round"></path></svg>
+                        </button>
+                        <button class="arcade-touch-btn primary" id="arcade-jump-btn" type="button" aria-label="Jump">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l7 8h-4.5v6h-5v-6H5z"></path></svg>
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <button class="menu-btn" id="runner-back-btn">⬅ Back</button>
@@ -206,6 +263,7 @@
         });
     </script>
     <script src="assets/js/profile-manager.js"></script>
+    <script src="assets/js/avatar-render.js"></script>
     <script src="assets/js/session-guard.js"></script>
     <script src="assets/js/player-avatar-widget.js"></script>
     <script src="assets/js/arcade.js"></script>

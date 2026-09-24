@@ -1165,9 +1165,10 @@ async function showEndScreen() {
         hasCompletedRun = true;
         hasPersistedCurrentAttempt = true;
 
-        showGoldToast(`Available gold: ${formatGold(reward.availableGold)} • You earned: ${formatGold(reward.earnedGold)}`, false, 2400);
-        await new Promise((resolve) => window.setTimeout(resolve, 2400));
+        // Credit the gold first, so leaving the page during the toast cannot lose it.
         const walletGold = await addGoldToWallet(reward.earnedGold);
+        showGoldToast(`+${formatGold(reward.earnedGold)} gold added to your wallet • Wallet: ${formatGold(walletGold)}`, false, 2400);
+        await new Promise((resolve) => window.setTimeout(resolve, 2400));
 
         if (cloudSaveStatusEl) {
             cloudSaveStatusEl.innerText = getSessionMode() === "guest"

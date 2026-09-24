@@ -634,11 +634,13 @@ function renderHomeCornerAvatar(profile) {
     const profileName = profile.name || "Avatar";
 
     if (firstImage) {
+        // Show the avatar with everything it wears when the shared renderer is loaded.
+        const avatarHtml = window.MathsAvatar
+            ? `<div class="home-corner-avatar-img av-corner" role="img" aria-label="Avatar" style="cursor: pointer;" id="corner-avatar-click">${window.MathsAvatar.buildAvatarHtml(profile.avatar, { background: false, fill: 0.96 })}</div>`
+            : `<img class="home-corner-avatar-img" src="${firstImage}" alt="Avatar" style="cursor: pointer;" id="corner-avatar-click">`;
         homeCornerAvatarEl.innerHTML = `
             <div class="home-corner-avatar-title">${profileName}</div>
-            <div class="home-corner-avatar-card">
-                <img class="home-corner-avatar-img" src="${firstImage}" alt="Avatar" style="cursor: pointer;" id="corner-avatar-click">
-            </div>`;
+            <div class="home-corner-avatar-card">${avatarHtml}</div>`;
         document.getElementById("corner-avatar-click")?.addEventListener("click", () => {
             location.href = "shop.html";
         });

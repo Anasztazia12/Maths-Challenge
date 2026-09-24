@@ -357,7 +357,14 @@
             { id: "outfit-violet", label: "Violet Hoodie", color: "#a78bfa", cost: 30 },
             { id: "outfit-sunset", label: "Sunset Hoodie", color: "#fb7185", cost: 30 },
             { id: "outfit-pink", label: "Pink Hoodie", color: "#f472b6", cost: 20 },
-            { id: "outfit-sport", label: "Sport Jacket", color: "#60a5fa", cost: 25 }
+            { id: "outfit-sport", label: "Sport Jacket", color: "#60a5fa", cost: 25 },
+            { id: "outfit-bowtie", label: "Bow Tie", cost: 15 },
+            { id: "outfit-tie", label: "Smart Tie", cost: 20 },
+            { id: "outfit-medal", label: "Gold Medal", cost: 35 },
+            { id: "outfit-cape-red", label: "Hero Cape", cost: 30 },
+            { id: "outfit-cape-royal", label: "Royal Cape", cost: 45 },
+            { id: "outfit-cape-gold", label: "Gold Cape", cost: 55 },
+            { id: "outfit-cape-galaxy", label: "Galaxy Cape", cost: 65 }
         ]
     };
 
