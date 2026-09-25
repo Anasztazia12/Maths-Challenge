@@ -51,7 +51,7 @@
         const safeName = String(activeProfile.name || "Player").trim() || "Player";
         // Show the avatar with everything it wears (hat, glasses, extra) when the shared renderer is loaded.
         const avatarHtml = window.MathsAvatar
-            ? `<div class="player-corner-avatar av-corner" role="img" aria-label="Player avatar">${window.MathsAvatar.buildAvatarHtml(activeProfile.avatar, { background: false, fill: 0.96 })}</div>`
+            ? `<div class="player-corner-avatar av-corner" role="img" aria-label="Player avatar">${window.MathsAvatar.buildAvatarHtml(activeProfile.avatar, { background: false, fill: 0.8, centerY: 0.44 })}</div>`
             : `<img class="player-corner-avatar" src="${getCurrentAvatarSource(profileStore, activeProfile)}" alt="Player avatar">`;
 
         const html = `

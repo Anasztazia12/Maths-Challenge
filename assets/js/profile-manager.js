@@ -24,7 +24,8 @@
                 glasses: "glasses-none",
                 accessory: "acc-none",
                 background: "bg-sky",
-                outfit: "outfit-sky"
+                outfit: "outfit-sky",
+                clothes: "clothes-none"
             }
         },
         {
@@ -43,7 +44,8 @@
                 glasses: "glasses-none",
                 accessory: "acc-none",
                 background: "bg-forest",
-                outfit: "outfit-emerald"
+                outfit: "outfit-emerald",
+                clothes: "clothes-none"
             }
         },
         {
@@ -62,7 +64,8 @@
                 glasses: "glasses-none",
                 accessory: "acc-none",
                 background: "bg-sunset",
-                outfit: "outfit-pink"
+                outfit: "outfit-pink",
+                clothes: "clothes-none"
             }
         },
         {
@@ -81,7 +84,8 @@
                 glasses: "glasses-none",
                 accessory: "acc-none",
                 background: "bg-neon",
-                outfit: "outfit-violet"
+                outfit: "outfit-violet",
+                clothes: "clothes-none"
             }
         },
         {
@@ -100,7 +104,8 @@
                 glasses: "glasses-none",
                 accessory: "acc-none",
                 background: "bg-candy",
-                outfit: "outfit-sport"
+                outfit: "outfit-sport",
+                clothes: "clothes-none"
             }
         },
         {
@@ -119,7 +124,8 @@
                 glasses: "glasses-none",
                 accessory: "acc-none",
                 background: "bg-forest",
-                outfit: "outfit-emerald"
+                outfit: "outfit-emerald",
+                clothes: "clothes-none"
             }
         },
         {
@@ -138,7 +144,8 @@
                 glasses: "glasses-none",
                 accessory: "acc-none",
                 background: "bg-sky",
-                outfit: "outfit-sky"
+                outfit: "outfit-sky",
+                clothes: "clothes-none"
             }
         },
         {
@@ -157,7 +164,8 @@
                 glasses: "glasses-none",
                 accessory: "acc-none",
                 background: "bg-neon",
-                outfit: "outfit-violet"
+                outfit: "outfit-violet",
+                clothes: "clothes-none"
             }
         },
         {
@@ -176,7 +184,8 @@
                 glasses: "glasses-none",
                 accessory: "acc-none",
                 background: "bg-sky",
-                outfit: "outfit-pink"
+                outfit: "outfit-pink",
+                clothes: "clothes-none"
             }
         },
         {
@@ -195,7 +204,8 @@
                 glasses: "glasses-none",
                 accessory: "acc-none",
                 background: "bg-forest",
-                outfit: "outfit-emerald"
+                outfit: "outfit-emerald",
+                clothes: "clothes-none"
             }
         },
         {
@@ -214,7 +224,8 @@
                 glasses: "glasses-none",
                 accessory: "acc-bandana",
                 background: "bg-sunset",
-                outfit: "outfit-sunset"
+                outfit: "outfit-sunset",
+                clothes: "clothes-none"
             }
         },
         {
@@ -233,7 +244,8 @@
                 glasses: "glasses-round",
                 accessory: "acc-star-pin",
                 background: "bg-neon",
-                outfit: "outfit-violet"
+                outfit: "outfit-violet",
+                clothes: "clothes-none"
             }
         }
     ];
@@ -365,6 +377,22 @@
             { id: "outfit-cape-royal", label: "Royal Cape", cost: 45 },
             { id: "outfit-cape-gold", label: "Gold Cape", cost: 55 },
             { id: "outfit-cape-galaxy", label: "Galaxy Cape", cost: 65 }
+        ],
+        clothes: [
+            { id: "clothes-none", label: "Own Clothes", cost: 0 },
+            { id: "clothes-blue-tee", label: "Blue Tee & Jeans", cost: 20 },
+            { id: "clothes-pink-tee", label: "Pink Top & Skirt", cost: 20 },
+            { id: "clothes-blue-hoodie", label: "Blue Hoodie", cost: 30 },
+            { id: "clothes-pink-hoodie", label: "Pink Hoodie", cost: 30 },
+            { id: "clothes-summer-dress", label: "Summer Dress", cost: 40 },
+            { id: "clothes-school-boy", label: "School Uniform", cost: 35 },
+            { id: "clothes-school-girl", label: "School Dress", cost: 35 },
+            { id: "clothes-football", label: "Football Kit", cost: 40 },
+            { id: "clothes-sport-pink", label: "Pink Sport Kit", cost: 40 },
+            { id: "clothes-basketball", label: "Basketball Kit", cost: 45 },
+            { id: "clothes-party-suit", label: "Party Suit", cost: 60 },
+            { id: "clothes-party-dress", label: "Party Dress", cost: 60 },
+            { id: "clothes-princess", label: "Princess Dress", cost: 75 }
         ]
     };
 
@@ -381,7 +409,8 @@
         glasses: "glasses",
         accessory: "accessory",
         background: "background",
-        outfit: "outfit"
+        outfit: "outfit",
+        clothes: "clothes"
     };
 
     function toText(value) {

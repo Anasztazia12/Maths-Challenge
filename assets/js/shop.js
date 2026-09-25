@@ -16,7 +16,8 @@ const SHOP_CATEGORIES = [
     { id: "avatarType", label: "Characters" },
     { id: "hat", label: "Hats" },
     { id: "glasses", label: "Glasses" },
-    { id: "outfit", label: "Clothes" },
+    { id: "clothes", label: "Clothes" },
+    { id: "outfit", label: "Capes & Ties" },
     { id: "accessory", label: "Extras" },
     { id: "background", label: "Backgrounds" }
 ];
@@ -26,7 +27,9 @@ const HIDDEN_AVATAR_TYPE_IDS = new Set(["type-boy", "type-girl", "type-dog"]);
 // Duplicates or items without a good look: kept for owners, not sold any more.
 const RETIRED_ITEM_IDS = new Set(["hat-beanie", "glasses-square", "glasses-sun-color", "acc-bandana"]);
 
-const { buildAvatarHtml, ITEM_EMOJI, ACCESSORY_BOUNDS, LEGACY_OUTFIT_IDS } = window.MathsAvatar;
+const { buildAvatarHtml, ITEM_EMOJI, ACCESSORY_BOUNDS, LEGACY_OUTFIT_IDS, fitsClothes } = window.MathsAvatar;
+// Clothes are drawn on the kid characters; other characters preview them on this kid.
+const CLOTHES_DEMO_AVATAR = "type-photo-1";
 const NO_OUTFIT_ID = "outfit-sky";
 
 let activeCategory = "avatarType";
@@ -158,7 +161,10 @@ function getContext() {
 
 function getPreviewAvatar(profile) {
     if (!selected) return profile.avatar;
-    return { ...profile.avatar, [getAvatarKey(selected.category)]: selected.id };
+    const preview = { ...profile.avatar, [getAvatarKey(selected.category)]: selected.id };
+    // Let a non-kid character see the clothes on a kid while trying them on.
+    if (selected.category === "clothes" && !fitsClothes(preview.avatarType)) preview.avatarType = CLOTHES_DEMO_AVATAR;
+    return preview;
 }
 
 function getItemStatus(profile, category, item) {
@@ -177,6 +183,13 @@ function renderTabs() {
 }
 
 function buildThumb(category, item, profile) {
+    if (category === "clothes" && !isNoneItem(item)) {
+        const avatarType = fitsClothes(profile.avatar?.avatarType) ? profile.avatar.avatarType : CLOTHES_DEMO_AVATAR;
+        return buildAvatarHtml(
+            { ...profile.avatar, avatarType, clothes: item.id, outfit: NO_OUTFIT_ID, hat: "hat-none", glasses: "glasses-none", accessory: "acc-none" },
+            { background: false, fill: 1.25, centerY: 0.42 }
+        );
+    }
     if (category === "outfit" && !isNoneItem(item)) {
         // Clothes are shown on your own character.
         return buildAvatarHtml(
@@ -254,6 +267,9 @@ function renderAction(profile) {
         }
     }
 
+    if (selected?.category === "clothes" && !fitsClothes(profile.avatar?.avatarType)) {
+        sub = `${sub} Clothes show on the Kid characters.`;
+    }
     if (actionTitleEl) actionTitleEl.innerText = title;
     if (actionSubEl) actionSubEl.innerText = sub;
     if (cancelBtn) cancelBtn.classList.toggle("hidden", !selected);
